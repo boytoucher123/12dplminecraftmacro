@@ -90,6 +90,7 @@ src/
   game                starting worlds, per-frame update, event dispatch
   menu_panel          world menu panel (controller)
   game_panel          game panel: mouse capture, keys, frame loop (controller)
+tools/test_harness/   runs the macro as C++ for testing (not used by 12d)
 ```
 
 The code follows model–view–controller. The model modules (world, player,
@@ -126,7 +127,8 @@ when you change the world size, also update the products written next to it
 
 This was written without access to 12d Model. To check it, the macro was
 translated into C++ and run against stand-ins for the 12d calls it uses
-(panels, `Draw_Box` drawing, files, events). That covered world generation,
+(panels, `Draw_Box` drawing, files, events). That harness is in
+`tools/test_harness`, and its README explains how to use it. It covered world generation,
 movement, breaking and placing, crafting, cooking, cows, fall damage, death
 and respawn, and saving and loading, with the frames rendered to images. The
 code sticks to the language features and library calls the 12dOOM macro

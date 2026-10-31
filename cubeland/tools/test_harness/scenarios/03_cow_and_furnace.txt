@@ -1,0 +1,49 @@
+input New world name|Cow Test
+input Seed (blank for random)|777
+button create
+wait 2
+click 430 300
+wait 2
+call clear_front
+call cow_near
+wait 2
+call aim_cow
+wait 2
+snap 20_cow
+wait 1
+call aim_cow
+capclick
+wait 6
+call aim_cow
+capclick
+wait 6
+call aim_cow
+capclick
+wait 6
+call aim_cow
+capclick
+wait 6
+call aim_cow
+capclick
+wait 6
+call aim_cow
+capclick
+wait 40
+call dump
+snap 22_after
+wait 1
+call give_furnace
+call aim_block_front
+wait 2
+caprclick
+wait 2
+call dump
+call aim_placed
+wait 2
+snap 23_furnace
+wait 1
+caprclick
+wait 2
+call dump
+snap 24_furnace_ui
+wait 1
