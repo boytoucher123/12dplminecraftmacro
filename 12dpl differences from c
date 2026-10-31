@@ -1,0 +1,80 @@
+The 12d Programming Language (12dPL) uses C-style syntax but varies from C.
+Programs written in 12dPL are referred to as 12d macros, or simply macros.
+> 1-based indexing
+> all programs start in void main()
+> global variables are declared in {}
+> variables and functions cannot have the same name
+> there are no pointers
+> there are no classes (unless I specify there is)
+> Does not share types with C
+> Does not share functions with C
+> Switches support Integer64/Integer/Text/Real types
+> Text supports == operator
+> 'c' is an Integer, "c" is Text
+> Variable declared in for loop header exists beyond the for loop
+> No short-circuit evaluation, every condition is checked
+
+12d Environment
+> There are none-to-many views
+> Text is not supported in Perspective view
+> Project has tins and models, Models can have elements and tins, Elements are various things but the simple one is super string, which has vertexes. Models and tins can be displayed on views. Tins can exist without models, I won't recommend it.
+
+Panels
+> Widgets are created, then appended, then the panel is shown using Show_widget
+
+Provided context
+> I've provided the documentation for all the calls, as well an attempt at a MVC event based structure of a panel macro. At the least this provides context for how a loop is maintained.
+I've also attached the source code of 12dOOM, which is a mimic of doom recreated in 12d draw box. This is for reference but is not gospel as it is AI generated and is not properly formatted, but I can verify it at least runs and works.
+
+My formatting expectations
+> You should be able to gleam this from the scaffold provided but I like stuff aligned, tend towards meaningful variable names almost always rather than unreadable abbreviations, functions are written like so:
+<return_type> <function_name>(<parameters,...>)
+// ----------------------------------------------------------------
+// Explanation of function use
+// any other important details
+// ----------------------------------------------------------------
+{
+  // code...
+}
+
+As there are no constants, for Text/Real/Integer/Integer64/etc is it preferred to use object-like macros. For example with return codes I like to use SUCCESS (0) and FAILURE (-1) as my generic ones, or ATTR_REFERENCE_STRING ("reference_string") to keep the code protected from a mismatch in text. These sorts of things should reside in the appropriate header file.
+
+My custom structure
+the intent is to obey Model-View-Controller architecture, and have everything be event based, for loose coupling purposes. Each file should include the files it will uses (helps with Visual Studio Code syntax highlighting). "build.4dm" is where all source files are included, and it should work no matter the order if each file is including the required headers.
+
+Preprocessor - Function-like macros
+This is experimental concept, but consider
+Function-like macro:
+STR_TOKEN(I01) #I01
+STR_TOKEN(thing)
+"thing"
+
+My concept:
+#define PARAM_I01
+#include "STR_TOKEN(PARAM_I01)"
+
+the file content of "STR_TOKEN(PARAM_I01)"
+#ifndef PARAM_I01
+#error PARAM_I01 not defined
+#endif
+
+#ifndef STR
+#define STR(I01) #I01
+#endif
+
+STR(PARAM_I01)
+
+#undef PARAM_I01
+
+This example does not demonstrate the advantages too well because it is so simple but the advantage of this method is for one the lack of \ everywhere (neater, cleaner), and that is that the error code will appear in the file "STR_TOKEN(PARAM_I01)" with the include line also mentioned (more debugging info, nothing lost), rather than an error at column 50000 at some place that is not the definition of the macro, at only the cost of some boilerplate and unconventional usage
+this method also distinguishes these things from regular functions, which is safer
+
+Debugging
+#define DVAR1(I01) Print("DEBUG | "); Print(#I01); Print(I01); Print();
+#define D2(I01, I02) Print("DEBUG | ");  Print(I01); Print(I02); Print();
+This is the simplest debugging, but you can imagine D1-D8, DVAR1-DVAR8, and you can also imagine that if DEBUG is not defined then these are defined with no replacement. These live in their own header.
+
+Attributes
+You'll likely be very well off using attributes to store data about objects.
+Basically everything in 12d can have attributes. Attributes can have attributes. The project can have attributes. Attributes can store text and numbers.
+You could create a form of custom datatypes by creating attribute groups that have a child attribute called "datatype" and putting whatever you want in there, and so long as your program understands what you're talking about then it's effectively a data structure.
