@@ -1,0 +1,21 @@
+input New world name|Look
+input Seed (blank for random)|31337
+button create
+wait 1
+snap 60_help
+wait 1
+click 430 300
+wait 2
+call clear_front
+call stone_front
+wait 3
+capclick
+wait 1
+capclick
+wait 1
+snap 61_crack
+wait 1
+call to_water
+wait 25
+snap 62_underwater
+wait 1

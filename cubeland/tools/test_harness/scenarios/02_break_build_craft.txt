@@ -1,0 +1,59 @@
+input New world name|Test World
+input Seed (blank for random)|12345
+button create
+wait 2
+click 430 300
+wait 2
+call dump
+call look_down
+wait 2
+snap 10_down
+capclick
+wait 1
+capclick
+wait 1
+snap 11_crack
+wait 20
+call dump
+capclick
+wait 1
+capclick
+wait 30
+call dump
+snap 12_hole
+call give
+key 3
+wait 1
+caprclick
+wait 2
+call dump
+call look_level
+call cow_front
+wait 3
+call look_cow
+wait 2
+snap 13_cow
+capclick
+wait 6
+capclick
+wait 6
+capclick
+wait 6
+capclick
+wait 6
+capclick
+wait 40
+call dump
+key e
+move 300 300
+call recipe1
+wait 1
+call recipe1
+wait 1
+call recipe3
+wait 1
+snap 14_crafted
+call dump
+key e
+wait 2
+quit
