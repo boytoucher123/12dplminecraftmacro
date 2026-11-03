@@ -18,6 +18,11 @@ never uses it, and nothing here goes into 12d.
 - **Array mistakes.** It is compiled with AddressSanitizer and
   UndefinedBehaviorSanitizer, so reading past the end of an array, or before
   index 1, stops the run with a report pointing at the line.
+- **Record mistakes.** The `Attributes` stand-in copies by value (so code
+  that only works if 12d shares Attributes as handles breaks here) and
+  checks field types: a field written as an Integer and read as a Real is
+  reported as a type error. Each run ends with the number of attribute
+  calls and type errors; the type error count should be 0.
 - **Some 12dPL pitfalls.** The translator warns about `+=`, `?:`, variables
   declared in `for` headers, joining two string literals, and declaring
   the same variable twice in a function.
@@ -31,15 +36,16 @@ stand-ins only copy the behaviour the macro relies on.
 1. `translate.py` runs the C preprocessor over `cubeland.4dm`, removes the
    `{ }` braces around global variables, adds 1 to every array size (12dPL
    arrays start at 1), renames `main` and writes `build/game.cpp`.
-2. `runtime.h` defines the 12dPL types (`Integer`, `Real`, `Text`, ...) and
-   stand-ins for the library calls: maths, text, files, panels and widgets,
-   the cursor and the clock.
+2. `runtime.h` defines the 12dPL types (`Integer`, `Real`, `Text`,
+   `Attributes`, ...) and stand-ins for the library calls: maths, text,
+   attributes, files, panels and widgets, the cursor and the clock.
 3. `harness.cpp` holds the drawing calls, which fill polygons into a pixel
    buffer, and `Wait_on_events`, which plays back the scenario script. Each
    script step becomes the event 12d would send, and the clock moves on
    1/30 s per event.
-4. `hooks.cpp` is appended to the translated game, so it can read and change
-   the macro's globals. That's where `call` commands such as `dump`,
+4. `hooks.cpp` is appended to the translated game (after the macro's
+   `#define`s, dumped with `cpp -dM`), so it can use the macro's records,
+   functions and constants. That's where `call` commands such as `dump`,
    `give_beef` or `aim_cow` live.
 
 ## Using it
@@ -56,7 +62,7 @@ needed to turn the snapshots into `.png` files.
 ```
 
 ```bash
-./run.sh scenarios/02_break_build_craft.txt
+./run.sh scenarios/02_crafting_and_tools.txt
 ```
 
 Each run starts with no saved worlds. Pass `--keep` to keep them, which
@@ -87,19 +93,39 @@ One command per line; `#` starts a comment.
 
 When a script runs out, the panel is closed, so every scenario ends.
 
+`snap` names the next frame that is drawn, which is the frame after the next
+event, so put a `wait 1` (or another event) after it. `call` hooks that click
+(`slot<n>`, `output`, `grid_*`) put their clicks at the front of the queue, so
+they happen before the next script line.
+
+Two environment variables help when something goes wrong:
+
+```bash
+TRACE=1 ./run.sh scenarios/02_crafting_and_tools.txt
+```
+
+```bash
+TRACE_ATTR=1 ./run.sh scenarios/07_scenery.txt
+```
+
+`TRACE` prints every scripted event; `TRACE_ATTR` prints the record fields
+that were looked up most often (to find hot spots).
+
 ## Scenarios
 
 | Script                        | Checks                                                          |
 |-------------------------------|-----------------------------------------------------------------|
-| `01_tour`                     | create a world, help screen, looking, walking, inventory        |
-| `02_break_build_craft`        | break blocks with cracks, pick up drops, place, hand crafting   |
-| `03_cow_and_furnace`          | kill a cow for beef, place a furnace facing the player          |
-| `04_texture_stats`            | how many rectangles each texture is drawn with                  |
+| `01_tour`                     | create a world, spawn in the house, look, walk, inventory       |
+| `02_crafting_and_tools`       | planks and a crafting table in the 2 x 2 grid, place the table, sticks and a pickaxe in its 3 x 3 grid; stone drops nothing by hand and cobblestone with the pickaxe, which wears |
+| `03_cow_and_furnace`          | kill a cow with a sword, place a furnace facing the player      |
+| `04_texture_stats`            | how many rectangles each texture and sprite is drawn with       |
 | `05_cooking_and_save`         | cook beef through the furnace screen, eat, save                 |
 | `06_load_fall_respawn`        | load the world from 05, fall damage, death and respawn          |
-| `07_scenery`                  | swimming, forests, hills, debug info                            |
+| `07_scenery`                  | biome and terrain statistics; the house, water, forest, desert, meadow, cave and hills |
 | `08_crack_and_underwater`     | crack overlay on stone, the underwater view                     |
 | `09_help_screen`              | the help panel                                                  |
+| `10_settings`                 | the settings panel from the menu and in game, the - / = keys    |
+| `11_save_and_load`            | items, tool wear, a furnace and block edits survive save and load |
 
-Hooks use block and item numbers directly (11 is a furnace, 21 raw beef), so
-update `hooks.cpp` if those change in `src/blocks.4dm`.
+Hooks use the macro's own constants (`ITEM_STONE_SWORD`, `BLOCK_STONE`, ...),
+so they follow changes to `src/blocks.4dm`.

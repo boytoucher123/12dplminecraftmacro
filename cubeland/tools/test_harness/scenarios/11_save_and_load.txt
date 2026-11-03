@@ -1,0 +1,28 @@
+# Save a world with items, a worn tool, a furnace and a broken block, then load it back
+input New world name|Round Trip
+input Seed (blank for random)|8080
+button create
+wait 2
+click 430 300
+wait 2
+call clear_front
+call give_tools
+call give_furnace
+call aim_block_front
+wait 2
+caprclick
+wait 2
+call hold_pickaxe
+call stone_eye
+wait 2
+capclick
+capclick
+capclick
+wait 30
+call dump
+button quit
+select 1
+button play
+wait 2
+call dump
+quit

@@ -12,6 +12,8 @@
 #include "../include/cows.h"
 #include "../include/drops.h"
 #include "../include/furnace.h"
+#include "../include/records.h"
+#include "../include/settings.h"
 #include "../include/render.h"
 
 // ---------------------------------------------------------------- set up
@@ -35,25 +37,54 @@ void render_init()
 
 void render_set_detail(Integer level)
 // ----------------------------------------------------------------
-// 1 = low (short view, textures only up close), 2 = normal,
-// 3 = high (long view, textures further out)
+// Texture detail: 1 = low (textures only up close), 2 = normal,
+// 3 = high (all 16 x 16 pixels from further out). Faces smaller
+// on screen than these sizes get fewer texture rectangles.
 // ----------------------------------------------------------------
 {
-  g_detail_level = clamp_integer(level, 1, 3);
-
-  if (g_detail_level == 1) {
-    g_render_distance  = 12;
-    g_lod_full_pixels  = 160.0;
-    g_lod_major_pixels = 70.0;
-  } else if (g_detail_level == 2) {
-    g_render_distance  = 18;
-    g_lod_full_pixels  = 110.0;
-    g_lod_major_pixels = 44.0;
+  if (level <= 1) {
+    g_lod_full_pixels  = 150.0;
+    g_lod_major_pixels = 64.0;
+    g_view_plant_range = 10;
+  } else if (level == 2) {
+    g_lod_full_pixels  = 96.0;
+    g_lod_major_pixels = 40.0;
+    g_view_plant_range = 16;
   } else {
-    g_render_distance  = 26;
-    g_lod_full_pixels  = 70.0;
-    g_lod_major_pixels = 30.0;
+    g_lod_full_pixels  = 48.0;
+    g_lod_major_pixels = 24.0;
+    g_view_plant_range = 24;
   }
+}
+
+void render_view_from(Attributes &player, Attributes &settings, Real now)
+// ----------------------------------------------------------------
+// Copy what this frame needs from the player and settings records
+// into the renderer's frame globals (the only place they're set)
+// ----------------------------------------------------------------
+{
+  g_render_distance   = settings_render_distance(settings);
+  g_view_plants       = settings_flag(settings, ATTR_SET_PLANTS);
+  g_view_shading      = settings_flag(settings, ATTR_SET_SHADING);
+  g_view_eye_in_water = player_eye_in_water(player);
+  g_view_target_kind  = player_target_kind(player);
+  g_view_break_stage  = player_break_stage(player, now);
+  g_view_break_x      = record_integer(player, ATTR_BREAK_X);
+  g_view_break_y      = record_integer(player, ATTR_BREAK_Y);
+  g_view_break_z      = record_integer(player, ATTR_BREAK_Z);
+  player_target_cell(player, g_view_target_x, g_view_target_y, g_view_target_z);
+  render_set_detail(settings_detail(settings));
+
+  // Spread the squared distances out over the buckets
+  g_bucket_scale = (MAX_BUCKETS - 1.0) / (g_render_distance * g_render_distance + 60.0);
+}
+
+Text render_stats_text()
+// ----------------------------------------------------------------
+// One line of drawing statistics for the last frame
+// ----------------------------------------------------------------
+{
+  return "faces " + To_text(g_stat_faces) + "   polygons " + To_text(g_stat_polygons) + "   sections " + To_text(g_stat_sections);
 }
 
 // ---------------------------------------------------------------- 2D helpers
@@ -114,16 +145,18 @@ void render_line(Draw_Box box, Real x0, Real y0, Real x1, Real y1)
 
 // ---------------------------------------------------------------- camera
 
-void render_setup_camera(Real w, Real h, Real view_bottom)
+void render_setup_camera(Real w, Real h, Real view_bottom, Real eye_x, Real eye_y, Real eye_z,
+                         Real yaw, Real pitch, Real field_of_view)
 // ----------------------------------------------------------------
-// Camera at the player's eyes for a w x h view whose bottom
-// view_bottom pixels are covered by the status strip
+// Camera at (eye_x, eye_y, eye_z) looking along yaw and pitch, for
+// a w x h view whose bottom view_bottom pixels are covered by the
+// status strip; field_of_view is horizontal, in radians
 // ----------------------------------------------------------------
 {
-  Real cos_yaw   = Cos(g_player_yaw);
-  Real sin_yaw   = Sin(g_player_yaw);
-  Real cos_pitch = Cos(g_player_pitch);
-  Real sin_pitch = Sin(g_player_pitch);
+  Real cos_yaw   = Cos(yaw);
+  Real sin_yaw   = Sin(yaw);
+  Real cos_pitch = Cos(pitch);
+  Real sin_pitch = Sin(pitch);
   Real tan_x     = 0.0;
   Real tan_y     = 0.0;
 
@@ -132,11 +165,12 @@ void render_setup_camera(Real w, Real h, Real view_bottom)
   g_view_bottom = view_bottom;
   g_centre_x    = w / 2.0;
   g_centre_y    = view_bottom + (h - view_bottom) / 2.0;
-  g_focal       = (w / 2.0) * Cos(FIELD_OF_VIEW / 2.0) / Sin(FIELD_OF_VIEW / 2.0);
+  g_focal       = (w / 2.0) * Cos(field_of_view / 2.0) / Sin(field_of_view / 2.0);
+  g_view_pitch  = pitch;
 
-  g_cam_x = g_player_x;
-  g_cam_y = player_eye_y();
-  g_cam_z = g_player_z;
+  g_cam_x = eye_x;
+  g_cam_y = eye_y;
+  g_cam_z = eye_z;
 
   g_fwd_x   =  cos_pitch * cos_yaw;
   g_fwd_y   =  sin_pitch;
@@ -161,7 +195,7 @@ void render_setup_camera(Real w, Real h, Real view_bottom)
   g_fog_r     = 170.0;
   g_fog_g     = 205.0;
   g_fog_b     = 245.0;
-  if (g_player_eye_in_water) {
+  if (g_view_eye_in_water) {
     g_fog_start = 2.0;
     g_fog_end   = min_real(16.0, g_fog_end);
     g_fog_r     = 30.0;
@@ -247,16 +281,18 @@ void render_add_face(Real c0x, Real c0y, Real c0z, Real e1x, Real e1y, Real e1z,
   if (pixels > g_lod_full_pixels ) g_df_detail[face] = DETAIL_FULL;
   g_df_front [face] = c0z >= NEAR_PLANE && z1 >= NEAR_PLANE && z2 >= NEAR_PLANE && z3 >= NEAR_PLANE;
 
-  bucket = Floor(distance_squared * BUCKETS_PER_UNIT) + 1;
+  bucket = Floor(distance_squared * g_bucket_scale) + 1;
   if (bucket > MAX_BUCKETS) bucket = MAX_BUCKETS;
   if (bucket < 1) bucket = 1;
   g_df_next[face]       = g_bucket_head[bucket];
   g_bucket_head[bucket] = face;
 }
 
-void render_add_block_face(Integer x, Integer y, Integer z, Integer direction, Integer block, Real distance_squared, Integer crack)
+void render_add_block_face(Attributes &furnaces, Integer x, Integer y, Integer z, Integer direction, Integer block,
+                           Real distance_squared, Integer crack, Real light)
 // ----------------------------------------------------------------
-// Queue one face of the block at cell (x, y, z)
+// Queue one face of the block at cell (x, y, z), lit by light
+// (0..1, from the mesh)
 // The face corners are built from the camera space images of the
 // three world axes, so each corner is just a few additions
 // ----------------------------------------------------------------
@@ -278,11 +314,14 @@ void render_add_block_face(Integer x, Integer y, Integer z, Integer direction, I
   Real    oz    = rel_x * ax_z + rel_y * ay_z + rel_z * az_z;
   Real    top   = 1.0;
   Integer tex   = block_face_texture(block, direction);
-  Real    shade = block_face_shade(direction);
+  Real    shade = block_face_shade(direction) * light;
 
   if (block == BLOCK_WATER) top = WATER_TOP;
   if (tex == TEX_FURNACE_FRONT) {
-    if (furnace_is_lit(x, y, z)) tex = TEX_FURNACE_FRONT_LIT;
+    if (furnace_is_lit(furnaces, x, y, z)) {
+      tex   = TEX_FURNACE_FRONT_LIT;
+      shade = block_face_shade(direction);
+    }
   }
 
   if (direction == DIR_PX) {
@@ -312,7 +351,24 @@ void render_add_block_face(Integer x, Integer y, Integer z, Integer direction, I
   }
 }
 
-void render_collect_blocks()
+void render_add_sprite(Real rel_x, Real rel_y, Real rel_z, Real half_width, Real height, Integer tex,
+                       Real shade, Real distance_squared)
+// ----------------------------------------------------------------
+// Queue a picture standing upright at (rel_x, rel_y, rel_z)
+// (bottom centre, relative to the eye) that turns to face the
+// camera: plants and dropped items that aren't blocks
+// ----------------------------------------------------------------
+{
+  render_to_camera(rel_x, rel_y, rel_z);
+  if (g_tc_z < NEAR_PLANE) return;
+
+  render_add_face(g_tc_x - half_width, g_tc_y, g_tc_z,
+                  half_width * 2.0, 0.0, 0.0,
+                  0.0, g_up_y * height, g_fwd_y * height,
+                  tex, shade, distance_squared, half_width * 2.0, 0.0, 0);
+}
+
+void render_collect_blocks(Attributes &furnaces)
 // ----------------------------------------------------------------
 // Walk the cached face lists of the sections in view and queue the
 // faces that point towards the eye, are within the view distance
@@ -341,7 +397,10 @@ void render_collect_blocks()
   Integer group     = 0;
   Integer block     = 0;
   Integer crack     = 0;
-  Integer stage     = player_break_stage();
+  Integer stage     = g_view_break_stage;
+  Integer plant_sq  = g_view_plant_range * g_view_plant_range;
+  Integer entry_tex = 0;
+  Real    light     = 1.0;
   Real    centre_x  = 0.0;
   Real    centre_y  = 0.0;
   Real    centre_z  = 0.0;
@@ -369,21 +428,23 @@ void render_collect_blocks()
         if (g_section_count[section] == 0) continue;
         ++g_stat_sections;
 
-        for (group = 1; group <= 6; ++group) {
+        for (group = 1; group <= NUM_FACE_GROUPS; ++group) {
           // Skip a direction whose faces all point away from the eye
           if (group == DIR_PX && g_cam_x <= sx * SECTION_SIZE + 1.0 ) continue;
           if (group == DIR_NX && g_cam_x >= sx * SECTION_SIZE + 15.0) continue;
-          if (group == DIR_PY && g_cam_y <= sy * SECTION_SIZE + 1.0 && !g_player_eye_in_water) continue;
+          if (group == DIR_PY && g_cam_y <= sy * SECTION_SIZE + 1.0 && !g_view_eye_in_water) continue;
           if (group == DIR_NY && g_cam_y >= sy * SECTION_SIZE + 15.0) continue;
           if (group == DIR_PZ && g_cam_z <= sz * SECTION_SIZE + 1.0 ) continue;
           if (group == DIR_NZ && g_cam_z >= sz * SECTION_SIZE + 15.0) continue;
 
-          start = (section - 1) * SECTION_FACE_CAP + g_section_dir_start[(section - 1) * 6 + group];
-          last  = start + g_section_dir_count[(section - 1) * 6 + group] - 1;
+          if (group == DIR_PLANT && !g_view_plants) continue;
+
+          start = (section - 1) * SECTION_FACE_CAP + g_section_dir_start[(section - 1) * NUM_FACE_GROUPS + group];
+          last  = start + g_section_dir_count[(section - 1) * NUM_FACE_GROUPS + group] - 1;
           for (entry = start; entry <= last; ++entry) {
             direction = g_face_dir[entry];
             if (direction > DIR_WET_FLAG) {
-              if (!g_player_eye_in_water) continue;
+              if (!g_view_eye_in_water) continue;
               direction = direction - DIR_WET_FLAG;
             }
             x = g_face_x[entry];
@@ -392,6 +453,18 @@ void render_collect_blocks()
             rel_x = x - g_cam_x;
             rel_y = y - g_cam_y;
             rel_z = z - g_cam_z;
+            light = 1.0;
+            if (g_view_shading) light = g_face_light[entry] / 100.0;
+
+            // Plants: a picture facing the camera, only fairly close
+            if (direction == DIR_PLANT) {
+              dist_sq = (rel_x + 0.5) * (rel_x + 0.5) + (rel_y + 0.5) * (rel_y + 0.5) + (rel_z + 0.5) * (rel_z + 0.5);
+              if (dist_sq > plant_sq || dist_sq > range_sq) continue;
+              if (!render_sphere_visible(rel_x + 0.5, rel_y + 0.5, rel_z + 0.5, 0.72)) continue;
+              entry_tex = block_plant_texture(g_world[world_index(x, y, z)]);
+              if (entry_tex > 0) render_add_sprite(rel_x + 0.5, rel_y, rel_z + 0.5, PLANT_HALF_WIDTH, 0.9, entry_tex, light, dist_sq);
+              continue;
+            }
 
             // Only faces that point towards the eye (water surfaces
             // can be seen from either side)
@@ -406,7 +479,7 @@ void render_collect_blocks()
               normal_x = -1.0;
             } else if (direction == DIR_PY) {
               if (rel_y + 1.0 >= 0.0) {
-                if (!g_player_eye_in_water) continue;
+                if (!g_view_eye_in_water) continue;
                 if (g_world[world_index(x, y, z)] != BLOCK_WATER) continue;
               }
               normal_y = 1.0;
@@ -428,9 +501,9 @@ void render_collect_blocks()
             block = g_world[world_index(x, y, z)];
             crack = 0;
             if (stage > 0) {
-              if (x == g_break_x && y == g_break_y && z == g_break_z) crack = stage;
+              if (x == g_view_break_x && y == g_view_break_y && z == g_view_break_z) crack = stage;
             }
-            render_add_block_face(x, y, z, direction, block, dist_sq, crack);
+            render_add_block_face(furnaces, x, y, z, direction, block, dist_sq, crack, light);
           }
         }
       }
@@ -529,23 +602,22 @@ void render_add_box(Real centre_x, Real centre_y, Real centre_z, Real yaw, Real 
   }
 }
 
-void render_cow_part(Integer cow, Real along, Real up, Real across, Real half_f, Real half_y, Real half_s,
-                     Integer tex_front, Real tint)
+void render_cow_part(Real cow_x, Real cow_y, Real cow_z, Real yaw, Real along, Real up, Real across,
+                     Real half_f, Real half_y, Real half_s, Integer tex_front, Real tint)
 // ----------------------------------------------------------------
 // One box of a cow, placed relative to the cow's feet and facing
 // ----------------------------------------------------------------
 {
-  Real yaw      = g_cow_yaw[cow];
   Real facing_x = Cos(yaw);
   Real facing_z = Sin(yaw);
 
-  render_add_box(g_cow_x[cow] + facing_x * along - facing_z * across,
-                 g_cow_y[cow] + up,
-                 g_cow_z[cow] + facing_z * along + facing_x * across,
+  render_add_box(cow_x + facing_x * along - facing_z * across,
+                 cow_y + up,
+                 cow_z + facing_z * along + facing_x * across,
                  yaw, half_f, half_y, half_s, TEX_COW_HIDE, TEX_COW_HIDE, tex_front, tint);
 }
 
-void render_collect_cows()
+void render_collect_cows(Attributes &cows)
 // ----------------------------------------------------------------
 // Queue every cow in view: body, head and four swinging legs
 // ----------------------------------------------------------------
@@ -553,43 +625,61 @@ void render_collect_cows()
   Integer cow   = 0;
   Real    tint  = 0.0;
   Real    swing = 0.0;
-  Real    dx    = 0.0;
-  Real    dz    = 0.0;
+  Real    x     = 0.0;
+  Real    y     = 0.0;
+  Real    z     = 0.0;
+  Real    yaw   = 0.0;
 
   for (cow = 1; cow <= MAX_COWS; ++cow) {
-    if (!g_cow_alive[cow]) continue;
-    dx = g_cow_x[cow] - g_cam_x;
-    dz = g_cow_z[cow] - g_cam_z;
-    if (dx * dx + dz * dz > (g_render_distance + 2.0) * (g_render_distance + 2.0)) continue;
+    if (!cow_alive(cows, cow)) continue;
+    cow_position(cows, cow, x, y, z);
+    if ((x - g_cam_x) * (x - g_cam_x) + (z - g_cam_z) * (z - g_cam_z) > (g_render_distance + 2.0) * (g_render_distance + 2.0)) continue;
 
+    yaw  = cow_yaw(cows, cow);
     tint = 0.0;
-    if (g_cow_flash[cow] > 0.0) tint = 0.55;
-    swing = Sin(g_cow_step[cow]) * 0.09;
+    if (cow_flash(cows, cow) > 0.0) tint = 0.55;
+    swing = Sin(cow_step(cows, cow)) * 0.09;
 
-    render_cow_part(cow,  0.00        , 0.95, 0.00, 0.60, 0.30, 0.38, TEX_COW_HIDE, tint);
-    render_cow_part(cow,  0.80        , 1.12, 0.00, 0.20, 0.22, 0.25, TEX_COW_FACE, tint);
-    render_cow_part(cow,  0.42 + swing, 0.33, 0.22, 0.10, 0.33, 0.10, TEX_COW_HIDE, tint);
-    render_cow_part(cow,  0.42 - swing, 0.33,-0.22, 0.10, 0.33, 0.10, TEX_COW_HIDE, tint);
-    render_cow_part(cow, -0.42 - swing, 0.33, 0.22, 0.10, 0.33, 0.10, TEX_COW_HIDE, tint);
-    render_cow_part(cow, -0.42 + swing, 0.33,-0.22, 0.10, 0.33, 0.10, TEX_COW_HIDE, tint);
+    render_cow_part(x, y, z, yaw,  0.00        , 0.95, 0.00, 0.60, 0.30, 0.38, TEX_COW_HIDE, tint);
+    render_cow_part(x, y, z, yaw,  0.80        , 1.12, 0.00, 0.20, 0.22, 0.25, TEX_COW_FACE, tint);
+    render_cow_part(x, y, z, yaw,  0.42 + swing, 0.33, 0.22, 0.10, 0.33, 0.10, TEX_COW_HIDE, tint);
+    render_cow_part(x, y, z, yaw,  0.42 - swing, 0.33,-0.22, 0.10, 0.33, 0.10, TEX_COW_HIDE, tint);
+    render_cow_part(x, y, z, yaw, -0.42 - swing, 0.33, 0.22, 0.10, 0.33, 0.10, TEX_COW_HIDE, tint);
+    render_cow_part(x, y, z, yaw, -0.42 + swing, 0.33,-0.22, 0.10, 0.33, 0.10, TEX_COW_HIDE, tint);
   }
 }
 
-void render_collect_drops()
+void render_collect_drops(Attributes &drops)
 // ----------------------------------------------------------------
-// Queue dropped items as small spinning, bobbing cubes
+// Queue dropped items: blocks as small spinning, bobbing cubes,
+// everything else as its picture facing the camera
 // ----------------------------------------------------------------
 {
-  Integer drop = 0;
-  Real    bob  = 0.0;
+  Integer drop    = 0;
+  Integer item    = 0;
+  Real    bob     = 0.0;
+  Real    age     = 0.0;
+  Real    x       = 0.0;
+  Real    y       = 0.0;
+  Real    z       = 0.0;
+  Real    dist_sq = 0.0;
 
   for (drop = 1; drop <= MAX_DROPS; ++drop) {
-    if (!g_drop_used[drop]) continue;
-    bob = 0.06 + Sin(g_drop_age[drop] * 3.0) * 0.05;
-    render_add_box(g_drop_x[drop], g_drop_y[drop] + DROP_HALF_SIZE + bob, g_drop_z[drop],
-                   g_drop_age[drop] * 1.8, DROP_HALF_SIZE, DROP_HALF_SIZE, DROP_HALF_SIZE,
-                   item_side_texture(g_drop_item[drop]), item_top_texture(g_drop_item[drop]),
-                   item_side_texture(g_drop_item[drop]), 0.0);
+    if (!drop_used(drops, drop)) continue;
+    item = drop_item(drops, drop);
+    age  = drop_age (drops, drop);
+    drop_position(drops, drop, x, y, z);
+    bob = 0.06 + Sin(age * 3.0) * 0.05;
+
+    if (item_is_block(item)) {
+      render_add_box(x, y + DROP_HALF_SIZE + bob, z, age * 1.8, DROP_HALF_SIZE, DROP_HALF_SIZE, DROP_HALF_SIZE,
+                     item_side_texture(item), item_top_texture(item), item_side_texture(item), 0.0);
+    } else {
+      dist_sq = (x - g_cam_x) * (x - g_cam_x) + (y - g_cam_y) * (y - g_cam_y) + (z - g_cam_z) * (z - g_cam_z);
+      if (dist_sq > g_render_distance * g_render_distance) continue;
+      if (!render_sphere_visible(x - g_cam_x, y + 0.2 - g_cam_y, z - g_cam_z, 0.3)) continue;
+      render_add_sprite(x - g_cam_x, y + bob - g_cam_y, z - g_cam_z, 0.2, 0.4, item_sprite_texture(item), 0.95, dist_sq);
+    }
   }
 }
 
@@ -885,14 +975,20 @@ void render_draw_face(Draw_Box box, Integer face)
   g_q_add_g = fog * g_fog_g + lit * tint * 40.0;
   g_q_add_b = fog * g_fog_b + lit * tint * 30.0;
 
+  // Pictures have no base colour: never draw them as one block of
+  // colour, at least their larger patches
+  if (g_tex_is_sprite[tex] && detail == DETAIL_FLAT) detail = DETAIL_MAJOR;
+
   if (detail == DETAIL_FLAT) {
     render_set_face_colour(box, g_tex_avg_r[tex] * g_q_keep + g_q_add_r,
                            g_tex_avg_g[tex] * g_q_keep + g_q_add_g,
                            g_tex_avg_b[tex] * g_q_keep + g_q_add_b);
     render_quad(box, 0.0, 0.0, 1.0, 1.0);
   } else {
-    render_palette_colour(box, tex, g_tex_base[tex]);
-    render_quad(box, 0.0, 0.0, 1.0, 1.0);
+    if (g_tex_base[tex] > 0) {
+      render_palette_colour(box, tex, g_tex_base[tex]);
+      render_quad(box, 0.0, 0.0, 1.0, 1.0);
+    }
 
     first = g_tex_rect_first[tex];
     last  = first + g_tex_rect_count[tex] - 1;
@@ -942,7 +1038,7 @@ void render_sky(Draw_Box box)
 // below the horizon and the sun. Under water: murky blue.
 // ----------------------------------------------------------------
 {
-  Real    horizon  = g_centre_y - g_focal * Sin(g_player_pitch) / Cos(g_player_pitch);
+  Real    horizon  = g_centre_y - g_focal * Sin(g_view_pitch) / Cos(g_view_pitch);
   Real    band_h   = (g_screen_h - g_view_bottom) / 16.0;
   Real    y0       = 0.0;
   Real    y1       = 0.0;
@@ -956,7 +1052,7 @@ void render_sky(Draw_Box box)
   Real    py       = 0.0;
   Integer band     = 0;
 
-  if (g_player_eye_in_water) {
+  if (g_view_eye_in_water) {
     render_set_colour(box, g_fog_r, g_fog_g, g_fog_b);
     render_fill_rect(box, 0.0, g_view_bottom, g_screen_w, g_screen_h);
     return;
@@ -1001,11 +1097,11 @@ void render_target_outline(Draw_Box box)
   Real    grow  = 0.004;
   Integer face  = 0;
 
-  if (g_target_kind != TARGET_BLOCK) return;
+  if (g_view_target_kind != TARGET_BLOCK) return;
 
-  rel_x = g_target_x - grow - g_cam_x;
-  rel_y = g_target_y - grow - g_cam_y;
-  rel_z = g_target_z - grow - g_cam_z;
+  rel_x = g_view_target_x - grow - g_cam_x;
+  rel_y = g_view_target_y - grow - g_cam_y;
+  rel_z = g_view_target_z - grow - g_cam_z;
   g_q_front = FALSE;
   render_set_colour(box, 16.0, 16.0, 16.0);
 
@@ -1056,15 +1152,25 @@ void render_target_outline(Draw_Box box)
   }
 }
 
-void render_world(Draw_Box box, Real w, Real h, Real view_bottom)
+void render_world(Draw_Box box, Real w, Real h, Real view_bottom, Attributes &player, Attributes &cows,
+                  Attributes &drops, Attributes &furnaces, Attributes &settings, Real now)
 // ----------------------------------------------------------------
-// Draw the 3D view: sky, then every face far to near, then the
-// outline of the targeted block. Must be inside a batch draw.
+// Draw the 3D view from the player's eyes: sky, then every face far
+// to near, then the outline of the targeted block. Must be inside a
+// batch draw.
 // ----------------------------------------------------------------
 {
   Integer bucket = 0;
+  Real    x      = 0.0;
+  Real    y      = 0.0;
+  Real    z      = 0.0;
+  Real    yaw    = 0.0;
+  Real    pitch  = 0.0;
 
-  render_setup_camera(w, h, view_bottom);
+  render_view_from(player, settings, now);
+  player_position (player, x, y, z);
+  player_look     (player, yaw, pitch);
+  render_setup_camera(w, h, view_bottom, x, player_eye_y(player), z, yaw, pitch, settings_fov_radians(settings));
 
   g_face_total     = 0;
   g_stat_faces     = 0;
@@ -1073,9 +1179,9 @@ void render_world(Draw_Box box, Real w, Real h, Real view_bottom)
   for (bucket = 1; bucket <= MAX_BUCKETS; ++bucket) g_bucket_head[bucket] = 0;
 
   render_sky(box);
-  render_collect_blocks();
-  render_collect_cows();
-  render_collect_drops();
+  render_collect_blocks(furnaces);
+  render_collect_cows  (cows);
+  render_collect_drops (drops);
   g_stat_faces = g_face_total;
 
   render_draw_faces(box);

@@ -128,3 +128,35 @@ inline int List_files_in_folder(const Text&folder,const Text&pat,int&count,Dynam
   closedir(d); return 0; }
 inline int Get_number_of_command_arguments(){ return 0; }
 inline int Get_command_argument(int,Text&t){ t=""; return 0; }
+
+// ---------------------------------------------------------------- attributes
+// Value semantics (copying an Attributes copies its fields) and
+// strict types (reading a field as the wrong type fails and is
+// reported), so code that only works with 12d's handle behaviour or
+// mixes field types shows up in testing.
+struct AttrValue { int type=0; long long i=0; double r=0; Text t; };
+struct Attributes { std::map<Text,AttrValue> fields; std::vector<Text> order; };
+extern long long g_attribute_calls;
+extern long long g_attribute_type_errors;
+extern std::map<Text,long long> g_attribute_by_name;
+inline AttrValue* attr_find(Attributes&a,const Text&n){ ++g_attribute_calls; if(getenv("TRACE_ATTR")) ++g_attribute_by_name[n]; auto it=a.fields.find(n); return it==a.fields.end()?nullptr:&it->second; }
+inline void attr_type_error(const Text&n,int want,int have){ if(++g_attribute_type_errors<=20) printf("ERROR: attribute %s read as type %d but is type %d\n",n.c_str(),want,have); }
+inline int attr_put(Attributes&a,const Text&n,int type,AttrValue v){ ++g_attribute_calls; auto it=a.fields.find(n);
+  if(it!=a.fields.end()&&it->second.type!=type){ if(++g_attribute_type_errors<=20) printf("ERROR: attribute %s set as type %d but is type %d\n",n.c_str(),type,it->second.type); return 1; }
+  if(it==a.fields.end()) a.order.push_back(n); v.type=type; a.fields[n]=v; return 0; }
+inline int Set_attribute(Attributes&a,const Text&n,int v){ AttrValue x; x.i=v; return attr_put(a,n,1,x); }
+inline int Set_attribute(Attributes&a,const Text&n,double v){ AttrValue x; x.r=v; return attr_put(a,n,2,x); }
+inline int Set_attribute(Attributes&a,const Text&n,const Text&v){ AttrValue x; x.t=v; return attr_put(a,n,3,x); }
+inline int Set_attribute(Attributes&a,const Text&n,const char*v){ return Set_attribute(a,n,Text(v)); }
+inline int Get_attribute(Attributes&a,const Text&n,int&v){ AttrValue*x=attr_find(a,n); if(!x) return 1; if(x->type!=1){ attr_type_error(n,1,x->type); return 2; } v=(int)x->i; return 0; }
+inline int Get_attribute(Attributes&a,const Text&n,double&v){ AttrValue*x=attr_find(a,n); if(!x) return 1; if(x->type!=2){ attr_type_error(n,2,x->type); return 2; } v=x->r; return 0; }
+inline int Get_attribute(Attributes&a,const Text&n,Text&v){ AttrValue*x=attr_find(a,n); if(!x) return 1; if(x->type!=3){ attr_type_error(n,3,x->type); return 2; } v=x->t; return 0; }
+inline int Attribute_exists(Attributes&a,const Text&n){ return attr_find(a,n)?1:0; }
+inline int Attribute_delete(Attributes&a,const Text&n){ a.fields.erase(n); a.order.erase(std::remove(a.order.begin(),a.order.end(),n),a.order.end()); return 0; }
+inline int Attribute_delete_all(Attributes&a){ a.fields.clear(); a.order.clear(); return 0; }
+inline int Get_number_of_attributes(Attributes&a,int&n){ n=(int)a.fields.size(); return 0; }
+inline const Text* attr_name_at(Attributes&a,int no){ if(no<1||no>(int)a.order.size()) return nullptr; return &a.order[no-1]; }
+inline int Get_attribute_name(Attributes&a,int no,Text&n){ const Text*p=attr_name_at(a,no); if(!p) return 1; n=*p; return 0; }
+inline int Get_attribute(Attributes&a,int no,int&v){ const Text*p=attr_name_at(a,no); if(!p) return 1; AttrValue&x=a.fields[*p]; if(x.type!=1) return 2; v=(int)x.i; return 0; }
+inline int Get_attribute(Attributes&a,int no,double&v){ const Text*p=attr_name_at(a,no); if(!p) return 1; AttrValue&x=a.fields[*p]; if(x.type!=2) return 2; v=x.r; return 0; }
+inline int Get_attribute(Attributes&a,int no,Text&v){ const Text*p=attr_name_at(a,no); if(!p) return 1; AttrValue&x=a.fields[*p]; if(x.type!=3) return 2; v=x.t; return 0; }

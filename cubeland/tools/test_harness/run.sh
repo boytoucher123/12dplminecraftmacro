@@ -1,7 +1,7 @@
 #!/bin/bash
 # Run scenario scripts against build/game (run ./build.sh first).
 #
-#   ./run.sh scenarios/02_break_build_craft.txt   one scenario, fresh worlds
+#   ./run.sh scenarios/02_crafting_and_tools.txt   one scenario, fresh worlds
 #   ./run.sh --keep scenarios/06_*.txt            keep the saved worlds
 #   ./run.sh --all                                every scenario, in order
 #

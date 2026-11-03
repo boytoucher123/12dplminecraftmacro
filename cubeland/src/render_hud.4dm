@@ -10,25 +10,30 @@
 #include "../include/world.h"
 #include "../include/inventory.h"
 #include "../include/player.h"
+#include "../include/records.h"
+#include "../include/settings.h"
 #include "../include/render.h"
 #include "../include/hud.h"
 
 // ---------------------------------------------------------------- messages
 
-void hud_clear()
+void hud_clear(Attributes &hud)
 // ----------------------------------------------------------------
-// Remove every message
+// Remove every message; the help shows until the player starts
 // ----------------------------------------------------------------
 {
   Integer toast = 0;
 
+  record_clear(hud, DATATYPE_HUD);
   for (toast = 1; toast <= MAX_TOASTS; ++toast) {
-    g_toast_text [toast] = "";
-    g_toast_until[toast] = 0.0;
+    record_set_text_at(hud, ATTR_TEXT,      toast, "");
+    record_set_real_at(hud, ATTR_HUD_UNTIL, toast, 0.0);
   }
+  record_set_integer(hud, ATTR_HUD_HELP,       TRUE);
+  record_set_real   (hud, ATTR_HUD_NAME_UNTIL, 0.0);
 }
 
-void hud_toast(Text text)
+void hud_toast(Attributes &hud, Text text, Real now)
 // ----------------------------------------------------------------
 // Show a short message above the hotbar; newest on top
 // ----------------------------------------------------------------
@@ -36,28 +41,56 @@ void hud_toast(Text text)
   Integer toast = 0;
 
   for (toast = MAX_TOASTS; toast >= 2; --toast) {
-    g_toast_text [toast] = g_toast_text [toast - 1];
-    g_toast_until[toast] = g_toast_until[toast - 1];
+    record_set_text_at(hud, ATTR_TEXT,      toast, record_text_at(hud, ATTR_TEXT,      toast - 1));
+    record_set_real_at(hud, ATTR_HUD_UNTIL, toast, record_real_at(hud, ATTR_HUD_UNTIL, toast - 1));
   }
-  g_toast_text [1] = text;
-  g_toast_until[1] = g_hud_now + TOAST_SECONDS;
+  record_set_text_at(hud, ATTR_TEXT,      1, text);
+  record_set_real_at(hud, ATTR_HUD_UNTIL, 1, now + TOAST_SECONDS);
 }
 
-void hud_on_event()
+void hud_show_name(Attributes &hud, Real now)
+// ----------------------------------------------------------------
+// Show the selected item's name for a moment (after changing slot)
+// ----------------------------------------------------------------
+{
+  record_set_real(hud, ATTR_HUD_NAME_UNTIL, now + 1.6);
+}
+
+Integer hud_help_shown(Attributes &hud)
+// ----------------------------------------------------------------
+// TRUE while the help panel is showing
+// ----------------------------------------------------------------
+{
+  return record_integer(hud, ATTR_HUD_HELP);
+}
+
+void hud_set_help(Attributes &hud, Integer shown)
+// ----------------------------------------------------------------
+// Show or hide the help panel
+// ----------------------------------------------------------------
+{
+  record_set_integer(hud, ATTR_HUD_HELP, shown);
+}
+
+void hud_on_event(Attributes &event, Attributes &hud, Real now)
 // ----------------------------------------------------------------
 // Event handler: turn things that happened into messages
 // ----------------------------------------------------------------
 {
-  if (g_ev_type == EVT_ITEM_PICKED_UP) {
-    hud_toast("+" + To_text(g_ev_i2) + " " + item_name(g_ev_i1));
-  } else if (g_ev_type == EVT_ITEM_CRAFTED) {
-    hud_toast("Crafted " + To_text(g_ev_i2) + " " + item_name(g_ev_i1));
-  } else if (g_ev_type == EVT_PLAYER_ATE) {
-    hud_toast("Ate " + item_name(g_ev_i1) + "  (+" + To_text(g_ev_i2) + " health)");
-  } else if (g_ev_type == EVT_TOAST) {
-    hud_toast(g_ev_text);
-  } else if (g_ev_type == EVT_WORLD_SAVED) {
-    hud_toast("Saved world " + g_ev_text);
+  Integer type  = event_type(event);
+  Integer item  = event_integer(event, 1);
+  Integer count = event_integer(event, 2);
+
+  if (type == EVT_ITEM_PICKED_UP) {
+    hud_toast(hud, "+" + To_text(count) + " " + item_name(item), now);
+  } else if (type == EVT_ITEM_CRAFTED) {
+    hud_toast(hud, "Crafted " + To_text(count) + " " + item_name(item), now);
+  } else if (type == EVT_PLAYER_ATE) {
+    hud_toast(hud, "Ate " + item_name(item) + "  (+" + To_text(count) + " health)", now);
+  } else if (type == EVT_TOAST) {
+    hud_toast(hud, event_text(event), now);
+  } else if (type == EVT_WORLD_SAVED) {
+    hud_toast(hud, "Saved world " + event_text(event), now);
   }
 }
 
@@ -94,49 +127,94 @@ void hud_frame(Draw_Box box, Real x0, Real y0, Real x1, Real y1)
   render_line(box, x0, y1, x0, y0);
 }
 
-void hud_icon_face(Draw_Box box, Integer tex, Real shade, Real origin_x, Real origin_y, Real u_x, Real u_y, Real v_x, Real v_y)
+void hud_texture_face(Draw_Box box, Integer tex, Real shade, Integer quick,
+                      Real origin_x, Real origin_y, Real u_x, Real u_y, Real v_x, Real v_y)
 // ----------------------------------------------------------------
-// One face of an icon cube, split 2 x 2 using the texture's
-// quadrant colours; the face is origin + u * (u_x, u_y) + v * (...)
-// with v running up the texture
+// Draw a texture on the parallelogram origin + u * (u_x, u_y) +
+// v * (v_x, v_y), with u running left to right and v up the
+// texture. quick draws a block face as its 2 x 2 quadrant colours;
+// otherwise the base colour and every rectangle are drawn, giving
+// all 16 x 16 pixels. Sprites always draw their rectangles.
 // ----------------------------------------------------------------
 {
   Integer quadrant = 0;
   Integer slot     = 0;
+  Integer rect     = 0;
+  Integer last     = 0;
+  Integer colour   = 0;
+  Integer current  = -1;
   Real    u0       = 0.0;
   Real    v0       = 0.0;
+  Real    u1       = 0.0;
+  Real    v1       = 0.0;
 
-  for (quadrant = 1; quadrant <= 4; ++quadrant) {
-    // quadrant 1 top left, 2 top right, 3 bottom left, 4 bottom right
-    u0 = 0.0;
-    v0 = 0.5;
-    if (quadrant == 2 || quadrant == 4) u0 = 0.5;
-    if (quadrant >= 3) v0 = 0.0;
-    slot = (tex - 1) * 4 + quadrant;
-    render_set_colour(box, g_tex_quad_r[slot] * shade, g_tex_quad_g[slot] * shade, g_tex_quad_b[slot] * shade);
+  if (quick && !g_tex_is_sprite[tex]) {
+    for (quadrant = 1; quadrant <= 4; ++quadrant) {
+      // quadrant 1 top left, 2 top right, 3 bottom left, 4 bottom right
+      u0 = 0.0;
+      v0 = 0.5;
+      if (quadrant == 2 || quadrant == 4) u0 = 0.5;
+      if (quadrant >= 3) v0 = 0.0;
+      slot = (tex - 1) * 4 + quadrant;
+      render_set_colour(box, g_tex_quad_r[slot] * shade, g_tex_quad_g[slot] * shade, g_tex_quad_b[slot] * shade);
 
-    g_icon_x[1] = origin_x + u0 * u_x + v0 * v_x;
-    g_icon_y[1] = origin_y + u0 * u_y + v0 * v_y;
-    g_icon_x[2] = origin_x + (u0 + 0.5) * u_x + v0 * v_x;
-    g_icon_y[2] = origin_y + (u0 + 0.5) * u_y + v0 * v_y;
-    g_icon_x[3] = origin_x + (u0 + 0.5) * u_x + (v0 + 0.5) * v_x;
-    g_icon_y[3] = origin_y + (u0 + 0.5) * u_y + (v0 + 0.5) * v_y;
-    g_icon_x[4] = origin_x + u0 * u_x + (v0 + 0.5) * v_x;
-    g_icon_y[4] = origin_y + u0 * u_y + (v0 + 0.5) * v_y;
+      g_icon_x[1] = origin_x + u0 * u_x + v0 * v_x;
+      g_icon_y[1] = origin_y + u0 * u_y + v0 * v_y;
+      g_icon_x[2] = origin_x + (u0 + 0.5) * u_x + v0 * v_x;
+      g_icon_y[2] = origin_y + (u0 + 0.5) * u_y + v0 * v_y;
+      g_icon_x[3] = origin_x + (u0 + 0.5) * u_x + (v0 + 0.5) * v_x;
+      g_icon_y[3] = origin_y + (u0 + 0.5) * u_y + (v0 + 0.5) * v_y;
+      g_icon_x[4] = origin_x + u0 * u_x + (v0 + 0.5) * v_x;
+      g_icon_y[4] = origin_y + u0 * u_y + (v0 + 0.5) * v_y;
+      Draw_polygon(box, 4, g_icon_x, g_icon_y);
+    }
+    return;
+  }
+
+  if (g_tex_base[tex] > 0) {
+    slot = texture_palette_index(tex, g_tex_base[tex]);
+    render_set_colour(box, g_tex_pal_r[slot] * shade, g_tex_pal_g[slot] * shade, g_tex_pal_b[slot] * shade);
+    g_icon_x[1] = origin_x;                    g_icon_y[1] = origin_y;
+    g_icon_x[2] = origin_x + u_x;              g_icon_y[2] = origin_y + u_y;
+    g_icon_x[3] = origin_x + u_x + v_x;        g_icon_y[3] = origin_y + u_y + v_y;
+    g_icon_x[4] = origin_x + v_x;              g_icon_y[4] = origin_y + v_y;
+    Draw_polygon(box, 4, g_icon_x, g_icon_y);
+  }
+
+  last = g_tex_rect_first[tex] + g_tex_rect_count[tex] - 1;
+  for (rect = g_tex_rect_first[tex]; rect <= last; ++rect) {
+    colour = g_rect_pal[rect];
+    if (colour != current) {
+      slot = texture_palette_index(tex, colour);
+      render_set_colour(box, g_tex_pal_r[slot] * shade, g_tex_pal_g[slot] * shade, g_tex_pal_b[slot] * shade);
+      current = colour;
+    }
+    u0 = g_rect_u0[rect];
+    u1 = g_rect_u1[rect];
+    v0 = g_rect_v0[rect];
+    v1 = g_rect_v1[rect];
+    g_icon_x[1] = origin_x + u0 * u_x + v0 * v_x;  g_icon_y[1] = origin_y + u0 * u_y + v0 * v_y;
+    g_icon_x[2] = origin_x + u1 * u_x + v0 * v_x;  g_icon_y[2] = origin_y + u1 * u_y + v0 * v_y;
+    g_icon_x[3] = origin_x + u1 * u_x + v1 * v_x;  g_icon_y[3] = origin_y + u1 * u_y + v1 * v_y;
+    g_icon_x[4] = origin_x + u0 * u_x + v1 * v_x;  g_icon_y[4] = origin_y + u0 * u_y + v1 * v_y;
     Draw_polygon(box, 4, g_icon_x, g_icon_y);
   }
 }
 
-void hud_draw_item_icon(Draw_Box box, Integer item, Real centre_x, Real centre_y, Real size)
+void hud_draw_item_icon(Draw_Box box, Integer item, Real centre_x, Real centre_y, Real size, Integer detail)
 // ----------------------------------------------------------------
 // Picture of an item about size pixels across, centred on a point
-// Blocks are little isometric cubes; other items are flat shapes
+// Blocks are little isometric cubes (ICON_FULL draws every texture
+// pixel, ICON_QUICK just 2 x 2 colours per face); every other item
+// is its own 16 x 16 pixel-art sprite
 // ----------------------------------------------------------------
 {
   Real    a       = size * 0.5;
   Real    w       = a * 0.87;
   Integer top_tex = 0;
   Integer side    = 0;
+  Integer quick   = detail == ICON_QUICK;
+  Integer sprite  = 0;
 
   if (item == ITEM_NONE) return;
 
@@ -144,64 +222,26 @@ void hud_draw_item_icon(Draw_Box box, Integer item, Real centre_x, Real centre_y
     top_tex = item_top_texture(item);
     side    = item_side_texture(item);
     // top: L, T, R, C   left: LB, B, C, L   right: B, RB, R, C
-    hud_icon_face(box, top_tex, 1.0 , centre_x - w, centre_y + a * 0.5,  w,  a * 0.5,  w, -a * 0.5);
-    hud_icon_face(box, side   , 0.80, centre_x - w, centre_y - a * 0.5,  w, -a * 0.5,  0.0, a);
-    hud_icon_face(box, side   , 0.62, centre_x    , centre_y - a      ,  w,  a * 0.5,  0.0, a);
+    hud_texture_face(box, top_tex, 1.0 , quick, centre_x - w, centre_y + a * 0.5,  w, -a * 0.5,  w,  a * 0.5);
+    hud_texture_face(box, side   , 0.80, quick, centre_x - w, centre_y - a * 0.5,  w, -a * 0.5,  0.0, a);
+    hud_texture_face(box, side   , 0.62, quick, centre_x    , centre_y - a      ,  w,  a * 0.5,  0.0, a);
     return;
   }
 
-  if (item == ITEM_STICK) {
-    render_set_colour(box, 104.0, 76.0, 44.0);
-    g_icon_x[1] = centre_x - a * 0.80;  g_icon_y[1] = centre_y - a * 0.62;
-    g_icon_x[2] = centre_x - a * 0.62;  g_icon_y[2] = centre_y - a * 0.80;
-    g_icon_x[3] = centre_x + a * 0.80;  g_icon_y[3] = centre_y + a * 0.62;
-    g_icon_x[4] = centre_x + a * 0.62;  g_icon_y[4] = centre_y + a * 0.80;
-    Draw_polygon(box, 4, g_icon_x, g_icon_y);
-    render_set_colour(box, 150.0, 114.0, 68.0);
-    g_icon_x[1] = centre_x - a * 0.70;  g_icon_y[1] = centre_y - a * 0.62;
-    g_icon_x[2] = centre_x - a * 0.62;  g_icon_y[2] = centre_y - a * 0.70;
-    g_icon_x[3] = centre_x + a * 0.70;  g_icon_y[3] = centre_y + a * 0.62;
-    g_icon_x[4] = centre_x + a * 0.62;  g_icon_y[4] = centre_y + a * 0.70;
-    Draw_polygon(box, 4, g_icon_x, g_icon_y);
-    return;
-  }
-
-  // Beef: a rounded slab of meat with a stripe of fat or char
-  if (item == ITEM_RAW_BEEF) {
-    render_set_colour(box, 192.0, 56.0, 52.0);
-  } else {
-    render_set_colour(box, 132.0, 80.0, 46.0);
-  }
-  g_icon_x[1] = centre_x - a * 0.85;  g_icon_y[1] = centre_y + a * 0.10;
-  g_icon_x[2] = centre_x - a * 0.55;  g_icon_y[2] = centre_y + a * 0.62;
-  g_icon_x[3] = centre_x + a * 0.10;  g_icon_y[3] = centre_y + a * 0.78;
-  g_icon_x[4] = centre_x + a * 0.75;  g_icon_y[4] = centre_y + a * 0.45;
-  g_icon_x[5] = centre_x + a * 0.88;  g_icon_y[5] = centre_y - a * 0.15;
-  g_icon_x[6] = centre_x + a * 0.45;  g_icon_y[6] = centre_y - a * 0.70;
-  g_icon_x[7] = centre_x - a * 0.20;  g_icon_y[7] = centre_y - a * 0.78;
-  g_icon_x[8] = centre_x - a * 0.72;  g_icon_y[8] = centre_y - a * 0.45;
-  Draw_polygon(box, 8, g_icon_x, g_icon_y);
-
-  if (item == ITEM_RAW_BEEF) {
-    render_set_colour(box, 236.0, 178.0, 168.0);
-  } else {
-    render_set_colour(box, 84.0, 48.0, 28.0);
-  }
-  g_icon_x[1] = centre_x - a * 0.60;  g_icon_y[1] = centre_y + a * 0.30;
-  g_icon_x[2] = centre_x + a * 0.55;  g_icon_y[2] = centre_y - a * 0.10;
-  g_icon_x[3] = centre_x + a * 0.50;  g_icon_y[3] = centre_y - a * 0.28;
-  g_icon_x[4] = centre_x - a * 0.65;  g_icon_y[4] = centre_y + a * 0.12;
-  Draw_polygon(box, 4, g_icon_x, g_icon_y);
+  sprite = item_sprite_texture(item);
+  if (sprite > 0) hud_texture_face(box, sprite, 1.0, FALSE, centre_x - a, centre_y - a, size, 0.0, 0.0, size);
 }
 
-void hud_draw_slot(Draw_Box box, Real x0, Real y0, Real size, Integer item, Integer count, Integer highlight)
+void hud_draw_slot(Draw_Box box, Real x0, Real y0, Real size, Integer item, Integer count, Integer damage, Integer highlight)
 // ----------------------------------------------------------------
 // A square inventory slot with its bottom left at (x0, y0), the
-// item's icon and the stack size
+// item's icon, the stack size and, for a worn tool, a wear bar
 // ----------------------------------------------------------------
 {
-  Text count_text = "";
-  Real text_size  = clamp_real(size * 0.32, 9.0, 14.0);
+  Text    count_text = "";
+  Real    text_size  = clamp_real(size * 0.32, 9.0, 14.0);
+  Integer uses       = item_max_uses(item);
+  Real    left       = 0.0;
 
   render_set_colour(box, 26.0, 27.0, 32.0);
   render_fill_rect (box, x0, y0, x0 + size, y0 + size);
@@ -215,12 +255,20 @@ void hud_draw_slot(Draw_Box box, Real x0, Real y0, Real size, Integer item, Inte
 
   if (item == ITEM_NONE) return;
 
-  hud_draw_item_icon(box, item, x0 + size / 2.0, y0 + size / 2.0 + 1.0, size * 0.62);
+  hud_draw_item_icon(box, item, x0 + size / 2.0, y0 + size / 2.0 + 1.0, size * 0.62, ICON_QUICK);
 
   if (count > 1) {
     count_text = To_text(count);
     hud_shadow_text(box, x0 + size - 3.0 - Text_length(count_text) * text_size * 0.58, y0 + text_size + 2.0,
                     text_size, TEXT_ALIGN_LEFT, 255, 255, 255, count_text);
+  }
+
+  if (uses > 0 && damage > 0) {
+    left = clamp_real(1.0 - damage * 1.0 / uses, 0.0, 1.0);
+    render_set_colour(box, 20.0, 20.0, 20.0);
+    render_fill_rect (box, x0 + 4.0, y0 + 3.0, x0 + size - 4.0, y0 + 6.0);
+    render_set_colour(box, 255.0 * (1.0 - left), 220.0 * left, 40.0);
+    render_fill_rect (box, x0 + 4.0, y0 + 3.0, x0 + 4.0 + (size - 8.0) * left, y0 + 6.0);
   }
 }
 
@@ -291,25 +339,25 @@ void hud_draw_help(Draw_Box box, Real w, Real h)
   hud_help_line(box, x, y, "W A S D"        , "walk (hold one key at a time)");
   hud_help_line(box, x, y, "Space"          , "jump, swim up");
   hud_help_line(box, x, y, "1 - 9"          , "choose a hotbar slot");
-  hud_help_line(box, x, y, "E"              , "inventory and hand crafting");
+  hud_help_line(box, x, y, "E"              , "inventory and 2 x 2 crafting");
   hud_help_line(box, x, y, "Q"              , "pause and free the mouse, or close a screen");
   hud_help_line(box, x, y, "F / J"          , "auto-walk on/off, auto-jump on/off");
   hud_help_line(box, x, y, "- / ="          , "shorter / longer view distance");
-  hud_help_line(box, x, y, "I / H"          , "position info, this help");
+  hud_help_line(box, x, y, "I / H / O"      , "position info, this help, settings");
   hud_help_heading(box, x, y, "GETTING STARTED");
-  hud_text(box, x, y, 12.0, TEXT_ALIGN_LEFT, 228, 228, 228, "Punch a tree for logs, make planks and a crafting table, dig stone for cobblestone");
+  hud_text(box, x, y, 12.0, TEXT_ALIGN_LEFT, 228, 228, 228, "Your house has a crafting table and a furnace. Punch trees for logs, lay out planks");
   y = y - 15.0;
-  hud_text(box, x, y, 12.0, TEXT_ALIGN_LEFT, 228, 228, 228, "and build a furnace to cook beef from cows. Keys go to the Keys box below the view.");
+  hud_text(box, x, y, 12.0, TEXT_ALIGN_LEFT, 228, 228, 228, "and sticks in the grid for a pickaxe - stone only drops if you mine it with one.");
 
   hud_text(box, centre, middle - panel_h / 2.0 + 22.0, 13.0, TEXT_ALIGN_CENTRE, 250, 215, 90, "Click the view to play");
 }
 
-Text hud_facing_name()
+Text hud_facing_name(Real yaw)
 // ----------------------------------------------------------------
-// Compass direction the player faces (north is -z)
+// Compass direction for a yaw (north is -z)
 // ----------------------------------------------------------------
 {
-  Integer quarter = positive_mod(floor_integer(g_player_yaw / HALF_PI + 0.5), 4);
+  Integer quarter = positive_mod(floor_integer(yaw / HALF_PI + 0.5), 4);
 
   if (quarter == 0) return "east";
   if (quarter == 1) return "south";
@@ -317,21 +365,20 @@ Text hud_facing_name()
   return "north";
 }
 
-void hud_draw_hand(Draw_Box box, Real w, Real view_bottom, Real h)
+void hud_draw_hand(Draw_Box box, Real w, Real view_bottom, Real h, Integer item, Real bob, Real swing_time)
 // ----------------------------------------------------------------
-// The player's arm in the lower right, holding the selected item;
-// it bobs while walking and swings when used
+// The player's arm in the lower right, holding item; it bobs while
+// walking (bob is the walking phase) and swings when used
 // ----------------------------------------------------------------
 {
-  Real    swing   = 0.0;
-  Real    bob_x   = Sin(g_player_bob) * 6.0;
-  Real    bob_y   = Absolute(Cos(g_player_bob)) * 5.0;
-  Real    scale   = (h - view_bottom) / 480.0;
-  Real    base_x  = 0.0;
-  Real    base_y  = 0.0;
-  Integer item    = player_held_item();
+  Real swing  = 0.0;
+  Real bob_x  = Sin(bob) * 6.0;
+  Real bob_y  = Absolute(Cos(bob)) * 5.0;
+  Real scale  = (h - view_bottom) / 480.0;
+  Real base_x = 0.0;
+  Real base_y = 0.0;
 
-  if (g_player_swing > 0.0) swing = Sin(g_player_swing / 0.25 * PI);
+  if (swing_time > 0.0) swing = Sin(swing_time / 0.25 * PI);
 
   base_x = w * 0.80 + bob_x - swing * 60.0 * scale;
   base_y = view_bottom + bob_y + swing * 40.0 * scale;
@@ -351,11 +398,11 @@ void hud_draw_hand(Draw_Box box, Real w, Real view_bottom, Real h)
   Draw_polygon(box, 4, g_icon_x, g_icon_y);
 
   if (item != ITEM_NONE) {
-    hud_draw_item_icon(box, item, base_x + 4.0 * scale, base_y + 148.0 * scale, 82.0 * scale);
+    hud_draw_item_icon(box, item, base_x + 4.0 * scale, base_y + 148.0 * scale, 82.0 * scale, ICON_FULL);
   }
 }
 
-void hud_draw_health(Draw_Box box, Real x0, Real y0, Real width)
+void hud_draw_health(Draw_Box box, Real x0, Real y0, Real width, Integer health, Real now)
 // ----------------------------------------------------------------
 // Health bar of ten segments, each worth two points, flashing when
 // low
@@ -368,7 +415,7 @@ void hud_draw_health(Draw_Box box, Real x0, Real y0, Real width)
   Real    fill    = 0.0;
   Real    pulse   = 1.0;
 
-  if (g_player_health <= 6 && Floor(g_hud_now * 4.0) - 2.0 * Floor(g_hud_now * 2.0) > 0.5) pulse = 0.6;
+  if (health <= 6 && Floor(now * 4.0) - 2.0 * Floor(now * 2.0) > 0.5) pulse = 0.6;
 
   render_set_colour(box, 18.0, 16.0, 16.0);
   render_fill_rect (box, x0 - 2.0, y0 - 2.0, x0 + width + 2.0, y0 + 12.0);
@@ -377,7 +424,7 @@ void hud_draw_health(Draw_Box box, Real x0, Real y0, Real width)
     sx = x0 + (segment - 1) * (seg_w + gap);
     render_set_colour(box, 70.0, 36.0, 36.0);
     render_fill_rect (box, sx, y0, sx + seg_w, y0 + 10.0);
-    fill = clamp_real((g_player_health - (segment - 1) * 2.0) / 2.0, 0.0, 1.0);
+    fill = clamp_real((health - (segment - 1) * 2.0) / 2.0, 0.0, 1.0);
     if (fill > 0.0) {
       render_set_colour(box, 222.0 * pulse, 48.0 * pulse, 44.0 * pulse);
       render_fill_rect (box, sx, y0, sx + seg_w * fill, y0 + 10.0);
@@ -387,9 +434,12 @@ void hud_draw_health(Draw_Box box, Real x0, Real y0, Real width)
   }
 }
 
-void hud_draw(Draw_Box box, Real w, Real h, Integer captured, Integer screen_open)
+void hud_draw(Draw_Box box, Real w, Real h, Integer captured, Integer screen_open,
+              Attributes &hud, Attributes &player, Attributes &inventory, Attributes &settings,
+              Integer seed, Real frame_ms, Text render_stats, Real now)
 // ----------------------------------------------------------------
-// Draw the HUD over the 3D view (or behind an inventory screen)
+// Draw the HUD over the 3D view (or just the status strip behind an
+// inventory screen)
 // ----------------------------------------------------------------
 {
   Real    strip     = STATUS_STRIP_HEIGHT;
@@ -399,64 +449,75 @@ void hud_draw(Draw_Box box, Real w, Real h, Integer captured, Integer screen_ope
   Real    centre_y  = strip + (h - strip) / 2.0;
   Real    edge      = 0.0;
   Real    y         = 0.0;
+  Real    px        = 0.0;
+  Real    py        = 0.0;
+  Real    pz        = 0.0;
+  Real    yaw       = 0.0;
+  Real    pitch     = 0.0;
+  Real    hurt      = player_hurt_time(player);
+  Integer dead      = player_is_dead(player);
+  Integer held      = player_held_item(player, inventory);
   Integer slot      = 0;
   Integer toast     = 0;
   Text    info      = "";
+  Text    message   = "";
 
   // Status strip along the bottom (the mouse is parked here)
   render_set_colour(box, 22.0, 24.0, 28.0);
   render_fill_rect (box, 0.0, 0.0, w, strip);
   info = GAME_TITLE;
-  info = info + "   seed " + To_text(g_world_seed) + "   view " + To_text(g_render_distance)
-       + "   " + To_text(g_frame_ms, 1) + " ms";
-  if (g_auto_walk) info = info + "   AUTO-WALK";
-  if (!g_auto_jump) info = info + "   auto-jump off";
+  info = info + "   seed " + To_text(seed) + "   view " + To_text(settings_render_distance(settings))
+       + "   " + To_text(frame_ms, 1) + " ms";
+  if (player_auto_walk(player)) info = info + "   AUTO-WALK";
+  if (!settings_flag(settings, ATTR_SET_AUTO_JUMP)) info = info + "   auto-jump off";
   hud_text(box, 8.0, strip - 5.0, 11.0, TEXT_ALIGN_LEFT, 170, 176, 186, info);
 
   if (screen_open) return;
 
-  // Hand, crosshair, hotbar and health
-  if (!g_player_dead) hud_draw_hand(box, w, strip, h);
+  if (settings_flag(settings, ATTR_SET_SHOW_HUD)) {
+    // Hand, crosshair, hotbar and health
+    if (!dead) hud_draw_hand(box, w, strip, h, held, player_bob(player), player_swing_time(player));
 
-  render_set_colour(box, 240.0, 240.0, 240.0);
-  render_line(box, w / 2.0 - 9.0, centre_y, w / 2.0 - 3.0, centre_y);
-  render_line(box, w / 2.0 + 3.0, centre_y, w / 2.0 + 9.0, centre_y);
-  render_line(box, w / 2.0, centre_y - 9.0, w / 2.0, centre_y - 3.0);
-  render_line(box, w / 2.0, centre_y + 3.0, w / 2.0, centre_y + 9.0);
+    render_set_colour(box, 240.0, 240.0, 240.0);
+    render_line(box, w / 2.0 - 9.0, centre_y, w / 2.0 - 3.0, centre_y);
+    render_line(box, w / 2.0 + 3.0, centre_y, w / 2.0 + 9.0, centre_y);
+    render_line(box, w / 2.0, centre_y - 9.0, w / 2.0, centre_y - 3.0);
+    render_line(box, w / 2.0, centre_y + 3.0, w / 2.0, centre_y + 9.0);
 
-  for (slot = 1; slot <= HOTBAR_SLOTS; ++slot) {
-    hud_draw_slot(box, bar_x + (slot - 1) * slot_size, bar_y, slot_size, g_inv_item[slot], g_inv_count[slot],
-                  slot == g_player_selected);
-  }
-  hud_draw_health(box, bar_x, bar_y + slot_size + 8.0, slot_size * 4.5 - 4.0);
+    for (slot = 1; slot <= HOTBAR_SLOTS; ++slot) {
+      hud_draw_slot(box, bar_x + (slot - 1) * slot_size, bar_y, slot_size,
+                    slot_item(inventory, slot), slot_count(inventory, slot), slot_damage(inventory, slot),
+                    slot == player_selected(player));
+    }
+    hud_draw_health(box, bar_x, bar_y + slot_size + 8.0, slot_size * 4.5 - 4.0, player_health(player), now);
 
-  // Name of the item just selected
-  if (g_hud_now < g_held_name_until && player_held_item() != ITEM_NONE) {
-    hud_shadow_text(box, w / 2.0, bar_y + slot_size + 40.0, 14.0, TEXT_ALIGN_CENTRE, 255, 255, 255,
-                    item_name(player_held_item()));
+    // Name of the item just selected
+    if (now < record_real(hud, ATTR_HUD_NAME_UNTIL) && held != ITEM_NONE) {
+      hud_shadow_text(box, w / 2.0, bar_y + slot_size + 40.0, 14.0, TEXT_ALIGN_CENTRE, 255, 255, 255, item_name(held));
+    }
   }
 
   // Messages, newest at the bottom of the list
   y = bar_y + slot_size + 74.0;
   for (toast = MAX_TOASTS; toast >= 1; --toast) {
-    if (g_toast_text[toast] == "" || g_hud_now > g_toast_until[toast]) continue;
-    hud_shadow_text(box, 12.0, y, 13.0, TEXT_ALIGN_LEFT, 250, 238, 190, g_toast_text[toast]);
+    message = record_text_at(hud, ATTR_TEXT, toast);
+    if (message == "" || now > record_real_at(hud, ATTR_HUD_UNTIL, toast)) continue;
+    hud_shadow_text(box, 12.0, y, 13.0, TEXT_ALIGN_LEFT, 250, 238, 190, message);
     y = y + 17.0;
   }
 
   // Position read-out
-  if (g_show_debug) {
-    info = "x " + To_text(g_player_x, 1) + "   y " + To_text(g_player_y, 1) + "   z " + To_text(g_player_z, 1)
-         + "   facing " + hud_facing_name();
+  if (settings_flag(settings, ATTR_SET_SHOW_DEBUG)) {
+    player_position(player, px, py, pz);
+    player_look    (player, yaw, pitch);
+    info = "x " + To_text(px, 1) + "   y " + To_text(py, 1) + "   z " + To_text(pz, 1) + "   facing " + hud_facing_name(yaw);
     hud_shadow_text(box, 10.0, h - 8.0, 12.0, TEXT_ALIGN_LEFT, 255, 255, 255, info);
-    info = "faces " + To_text(g_stat_faces) + "   polygons " + To_text(g_stat_polygons)
-         + "   sections " + To_text(g_stat_sections);
-    hud_shadow_text(box, 10.0, h - 24.0, 12.0, TEXT_ALIGN_LEFT, 200, 200, 200, info);
+    hud_shadow_text(box, 10.0, h - 24.0, 12.0, TEXT_ALIGN_LEFT, 200, 200, 200, render_stats);
   }
 
   // Red edge when hurt
-  if (g_player_hurt > 0.0 && !g_player_dead) {
-    edge = 4.0 + g_player_hurt * 24.0;
+  if (hurt > 0.0 && !dead) {
+    edge = 4.0 + hurt * 24.0;
     render_set_colour(box, 200.0, 16.0, 16.0);
     render_fill_rect(box, 0.0, strip, w, strip + edge);
     render_fill_rect(box, 0.0, h - edge, w, h);
@@ -464,9 +525,9 @@ void hud_draw(Draw_Box box, Real w, Real h, Integer captured, Integer screen_ope
     render_fill_rect(box, w - edge, strip, w, h);
   }
 
-  if (g_player_dead) {
+  if (dead) {
     hud_banner(box, w / 2.0, centre_y, 210.0, 54.0, "You died", "Press R or click the view to respawn", 230, 60, 50);
-  } else if (g_show_help) {
+  } else if (hud_help_shown(hud)) {
     hud_draw_help(box, w, h);
   } else if (!captured) {
     hud_banner(box, w / 2.0, centre_y, 210.0, 54.0, "Paused", "Click the view to play  -  H for help", 250, 215, 90);

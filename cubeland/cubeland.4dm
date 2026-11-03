@@ -15,7 +15,9 @@
 //               table and furnace
 //   Player      1.8 blocks tall, 5 blocks of reach, gravity and
 //               collision, swimming, fall damage and a health bar
-//   Inventory   9 slot hotbar and 27 slot (9 x 3) inventory
+//   Inventory   9 slot hotbar and 27 slot (9 x 3) inventory, 2 x 2
+//               crafting in the inventory and 3 x 3 at a table,
+//               wooden and stone tools
 //   Worlds      saved in the "cubeland_worlds" folder of the 12d
 //               working folder, made from a seed you can type in
 //
@@ -30,6 +32,9 @@
 // Modules don't report to each other directly: they emit game
 // events (include/events.h) and game_dispatch_events() passes each
 // event to every module's *_on_event() handler.
+// Game state lives in records (12d Attributes used like structs)
+// that are passed to every function that uses them; see
+// CODING_RULES.md.
 //------------------------------------------------------------
 
 #ifdef CUBELAND_BASE_FILE_4DM_INCLUDED
@@ -44,18 +49,21 @@ void main()
 // Entry point: world menu, then the game, until Quit
 // --------------------------------------------------------
 {
-  Integer running = TRUE;
-  Integer result  = 0;
+  Integer running   = TRUE;
+  Integer result    = 0;
+  Integer time_seed = 0;
 
-  game_init_once();
+  Get_time(time_seed);
+  game_init_once(g_game, g_book, g_settings, g_random, time_seed);
 
   while (running) {
-    result = menu_panel_run();
+    result = menu_panel_run(g_game, g_random, g_settings);
 
     if (result == MENU_RESULT_QUIT || result == SHUTDOWN_CODE) {
       running = FALSE;
     } else {
-      result = game_panel_run(g_menu_world_name, result == MENU_RESULT_CREATE, g_menu_seed);
+      result = game_panel_run(record_text(g_game, ATTR_MENU_WORLD), result == MENU_RESULT_CREATE,
+                              record_integer(g_game, ATTR_MENU_SEED));
       if (result == SHUTDOWN_CODE) running = FALSE;
     }
   }

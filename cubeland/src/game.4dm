@@ -4,115 +4,151 @@
 #include "../include/common.h"
 #include "../include/config.h"
 #include "../include/util.h"
+#include "../include/records.h"
 #include "../include/events.h"
 #include "../include/blocks.h"
 #include "../include/textures.h"
 #include "../include/world.h"
 #include "../include/mesh.h"
+#include "../include/physics.h"
 #include "../include/inventory.h"
 #include "../include/crafting.h"
 #include "../include/furnace.h"
 #include "../include/cows.h"
 #include "../include/drops.h"
 #include "../include/player.h"
+#include "../include/settings.h"
 #include "../include/render.h"
 #include "../include/hud.h"
 #include "../include/ui.h"
 #include "../include/save.h"
 #include "../include/game.h"
 
-void game_init_once()
+void game_init_once(Attributes &game, Attributes &book, Attributes &settings, Attributes &random, Integer time_seed)
 // ----------------------------------------------------------------
-// Work done once per run of the macro: textures, recipes and
-// renderer tables
+// Work done once per run of the macro: textures, recipes, renderer
+// tables, the settings and the random sequence for gameplay
 // ----------------------------------------------------------------
 {
-  Integer seed = 0;
+  if (record_integer(game, ATTR_GAME_READY)) return;
 
-  if (g_game_initialised) return;
-
-  Get_time(seed);
-  Set_random_number(seed, 1);
+  record_clear(game, DATATYPE_GAME);
+  random_seed(random, time_seed);
 
   textures_init();
-  crafting_init();
+  crafting_init_book(book);
   render_init();
+  settings_load(settings, save_settings_path());
 
-  g_game_initialised = TRUE;
+  record_set_integer(game, ATTR_GAME_READY, TRUE);
 }
 
-void game_reset_state()
+void game_reset_state(Attributes &game, Attributes &player, Attributes &inventory, Attributes &grid,
+                      Attributes &furnaces, Attributes &cows, Attributes &drops, Attributes &events,
+                      Attributes &hud, Attributes &ui)
 // ----------------------------------------------------------------
-// Empty every module before a world is created or loaded
+// Empty every record before a world is created or loaded
 // ----------------------------------------------------------------
 {
-  events_clear();
+  events_clear    (events);
   save_clear_edits();
-  inventory_clear();
-  furnaces_clear();
-  cows_clear();
-  drops_clear();
-  hud_clear();
-  g_ui_screen       = SCREEN_NONE;
-  g_player_selected = 1;
-  g_autosave_timer  = 0.0;
-  g_show_help       = TRUE;
+  inventory_clear (inventory);
+  grid_clear      (grid, GRID_INVENTORY_WIDTH);
+  furnaces_clear  (furnaces);
+  cows_clear      (cows);
+  drops_clear     (drops);
+  hud_clear       (hud);
+  ui_clear        (ui);
+  player_reset    (player, 0.0, 0.0, 0.0);
+  record_set_real (game, ATTR_GAME_AUTOSAVE, 0.0);
 }
 
-Integer game_new_world(Text name, Integer seed)
+Text game_world_name(Attributes &game)
 // ----------------------------------------------------------------
-// Generate a fresh world from a seed, put the player at the spawn
-// point with some cows about, and save it straight away
+// Name of the world being played
 // ----------------------------------------------------------------
 {
-  Integer time_seed = 0;
+  return record_text(game, ATTR_GAME_WORLD_NAME);
+}
 
-  game_reset_state();
-  g_world_name = name;
+Integer game_new_world(Text name, Integer seed, Attributes &game, Attributes &info, Attributes &player,
+                       Attributes &inventory, Attributes &grid, Attributes &furnaces, Attributes &cows,
+                       Attributes &drops, Attributes &events, Attributes &hud, Attributes &ui)
+// ----------------------------------------------------------------
+// Generate a fresh world from a seed, put the player in the starter
+// house with some cows about, and save it straight away
+// ----------------------------------------------------------------
+{
+  Attributes cow_random;
+  Real       spawn_x = 0.0;
+  Real       spawn_y = 0.0;
+  Real       spawn_z = 0.0;
 
-  world_generate(seed);
+  game_reset_state(game, player, inventory, grid, furnaces, cows, drops, events, hud, ui);
+  record_set_text (game, ATTR_GAME_WORLD_NAME, name);
+
+  world_generate(info, seed);
   mesh_reset();
 
-  player_reset(g_spawn_x, g_spawn_y + COLLISION_EPSILON, g_spawn_z);
-  g_player_yaw   = 0.0;
-  g_player_pitch = -0.15;
+  world_info_spawn(info, spawn_x, spawn_y, spawn_z);
+  player_reset    (player, spawn_x, spawn_y + COLLISION_EPSILON, spawn_z);
+  player_set_look (player, HALF_PI * 3.0, -0.1);
 
   // Cows come from the seed too, so a seed always starts the same
-  Set_random_number(seed, 1);
-  cows_spawn_random(COW_TARGET_COUNT, 6.0);
-  Get_time(time_seed);
-  Set_random_number(time_seed, 1);
+  random_seed      (cow_random, seed);
+  cows_spawn_random(cows, cow_random, COW_TARGET_COUNT, spawn_x, spawn_z, 10.0);
 
-  if (save_world() != SUCCESS) return FAILURE;
-  events_clear();
+  if (game_save_world(game, info, player, inventory, furnaces, cows, drops, events) != SUCCESS) return FAILURE;
+  events_clear(events);
   return SUCCESS;
 }
 
-Integer game_load_world(Text name)
+Integer game_load_world(Text name, Attributes &game, Attributes &info, Attributes &player,
+                        Attributes &inventory, Attributes &grid, Attributes &furnaces, Attributes &cows,
+                        Attributes &drops, Attributes &events, Attributes &hud, Attributes &ui, Text &problem)
 // ----------------------------------------------------------------
-// Load a saved world
+// Load a saved world; problem says why if it fails
 // ----------------------------------------------------------------
 {
-  game_reset_state();
-  if (load_world(name) != SUCCESS) return FAILURE;
-  events_clear();
+  game_reset_state(game, player, inventory, grid, furnaces, cows, drops, events, hud, ui);
+  record_set_text (game, ATTR_GAME_WORLD_NAME, name);
+  if (load_world(name, info, player, inventory, furnaces, cows, drops, problem) != SUCCESS) return FAILURE;
+  events_clear(events);
   return SUCCESS;
 }
 
-void game_build_nearby()
+Integer game_save_world(Attributes &game, Attributes &info, Attributes &player, Attributes &inventory,
+                        Attributes &furnaces, Attributes &cows, Attributes &drops, Attributes &events)
 // ----------------------------------------------------------------
-// Build the face lists around the player up front, so the first
-// frame doesn't stall
+// Save the world being played
+// ----------------------------------------------------------------
+{
+  return save_world(game_world_name(game), info, player, inventory, furnaces, cows, drops, events);
+}
+
+void game_build_nearby(Attributes &player, Integer range)
+// ----------------------------------------------------------------
+// Build the face lists within range of the player up front, so the
+// first frame doesn't stall
 // ----------------------------------------------------------------
 {
   Integer sx    = 0;
   Integer sy    = 0;
   Integer sz    = 0;
-  Integer range = g_render_distance + SECTION_SIZE;
-  Integer sx0   = clamp_integer(floor_integer((g_player_x - range) / SECTION_SIZE), 0, SECTIONS_X - 1);
-  Integer sx1   = clamp_integer(floor_integer((g_player_x + range) / SECTION_SIZE), 0, SECTIONS_X - 1);
-  Integer sz0   = clamp_integer(floor_integer((g_player_z - range) / SECTION_SIZE), 0, SECTIONS_Z - 1);
-  Integer sz1   = clamp_integer(floor_integer((g_player_z + range) / SECTION_SIZE), 0, SECTIONS_Z - 1);
+  Integer reach = range + SECTION_SIZE;
+  Real    x     = 0.0;
+  Real    y     = 0.0;
+  Real    z     = 0.0;
+  Integer sx0   = 0;
+  Integer sx1   = 0;
+  Integer sz0   = 0;
+  Integer sz1   = 0;
+
+  player_position(player, x, y, z);
+  sx0 = clamp_integer(floor_integer((x - reach) / SECTION_SIZE), 0, SECTIONS_X - 1);
+  sx1 = clamp_integer(floor_integer((x + reach) / SECTION_SIZE), 0, SECTIONS_X - 1);
+  sz0 = clamp_integer(floor_integer((z - reach) / SECTION_SIZE), 0, SECTIONS_Z - 1);
+  sz1 = clamp_integer(floor_integer((z + reach) / SECTION_SIZE), 0, SECTIONS_Z - 1);
 
   for (sx = sx0; sx <= sx1; ++sx) {
     for (sz = sz0; sz <= sz1; ++sz) {
@@ -121,38 +157,54 @@ void game_build_nearby()
   }
 }
 
-void game_respawn()
+void game_respawn(Attributes &info, Attributes &player, Attributes &events)
 // ----------------------------------------------------------------
 // Back to the spawn point with full health (the inventory is kept)
 // ----------------------------------------------------------------
 {
-  player_reset(g_spawn_x, g_spawn_y + COLLISION_EPSILON, g_spawn_z);
-  g_player_pitch = -0.15;
-  emit_simple_event(EVT_PLAYER_RESPAWNED);
+  Real x = 0.0;
+  Real y = 0.0;
+  Real z = 0.0;
+
+  world_info_spawn(info, x, y, z);
+  player_reset    (player, x, y + COLLISION_EPSILON, z);
+  player_set_look (player, HALF_PI * 3.0, -0.1);
+  emit_simple_event(events, EVT_PLAYER_RESPAWNED);
 }
 
-void game_dispatch_events()
+void game_dispatch_events(Attributes &events, Attributes &event, Attributes &player, Attributes &inventory,
+                          Attributes &grid, Attributes &furnaces, Attributes &drops, Attributes &random,
+                          Attributes &hud, Attributes &ui, Real now)
 // ----------------------------------------------------------------
 // Hand every queued event to each module's handler. Handlers may
 // emit more events; those are dispatched in the same pass.
 // ----------------------------------------------------------------
 {
   Integer guard = 0;
+  Real    x     = 0.0;
+  Real    y     = 0.0;
+  Real    z     = 0.0;
 
-  while (next_event()) {
-    mesh_on_event();
-    save_on_event();
-    furnace_on_event();
-    drops_on_event();
-    hud_on_event();
-    ui_on_event();
+  player_position(player, x, y, z);
+
+  while (next_event(events, event)) {
+    mesh_on_event   (event);
+    save_on_event   (event);
+    furnace_on_event(event, furnaces, events);
+    drops_on_event  (event, drops, random);
+    hud_on_event    (event, hud, now);
+    ui_on_event     (event, ui, inventory, grid, furnaces, events, x, y + 1.3, z);
 
     ++guard;
     if (guard > EVENT_QUEUE_SIZE * 4) break;
   }
 }
 
-void game_update(Real dt, Real real_dt, Real now, Integer running)
+void game_update(Real dt, Real real_dt, Real now, Integer running,
+                 Attributes &game, Attributes &info, Attributes &player, Attributes &inventory,
+                 Attributes &grid, Attributes &furnaces, Attributes &cows, Attributes &drops,
+                 Attributes &events, Attributes &event, Attributes &random, Attributes &settings,
+                 Attributes &hud, Attributes &ui)
 // ----------------------------------------------------------------
 // Advance the game by dt seconds (capped so a slow frame can't make
 // things jump). running is FALSE while paused or in a screen; then
@@ -160,32 +212,37 @@ void game_update(Real dt, Real real_dt, Real now, Integer running)
 // since the last frame, so they cook while the game is paused too.
 // ----------------------------------------------------------------
 {
-  g_hud_now = now;
+  Real x        = 0.0;
+  Real y        = 0.0;
+  Real z        = 0.0;
+  Real autosave = record_real(game, ATTR_GAME_AUTOSAVE);
 
-  furnaces_update(real_dt);
+  furnaces_update(furnaces, real_dt);
 
   if (running) {
-    player_update(dt, now);
-    cows_update(dt);
-    drops_update(dt);
+    player_update(player, cows, events, settings_flag(settings, ATTR_SET_AUTO_JUMP), dt, now);
+    player_position(player, x, y, z);
+    cows_update (cows, random, x, z, dt);
+    drops_update(drops, inventory, events, x, y, z, player_is_dead(player), dt);
 
-    g_autosave_timer = g_autosave_timer + dt;
-    if (g_autosave_timer > AUTOSAVE_SECONDS) {
-      g_autosave_timer = 0.0;
-      save_world();
+    autosave = autosave + dt;
+    if (autosave > AUTOSAVE_SECONDS) {
+      autosave = 0.0;
+      game_save_world(game, info, player, inventory, furnaces, cows, drops, events);
     }
+    record_set_real(game, ATTR_GAME_AUTOSAVE, autosave);
   }
 
-  game_dispatch_events();
+  game_dispatch_events(events, event, player, inventory, grid, furnaces, drops, random, hud, ui, now);
 }
 
-void game_select_slot(Integer slot, Real now)
+void game_select_slot(Attributes &player, Attributes &hud, Integer slot, Real now)
 // ----------------------------------------------------------------
 // Choose a hotbar slot and briefly show the item's name
 // ----------------------------------------------------------------
 {
-  g_player_selected = clamp_integer(slot, 1, HOTBAR_SLOTS);
-  g_held_name_until = now + 1.5;
+  player_set_selected(player, slot);
+  hud_show_name      (hud, now);
 }
 
 #endif

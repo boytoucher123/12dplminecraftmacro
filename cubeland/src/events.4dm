@@ -2,114 +2,171 @@
 #define EVENTS_4DM_INCLUDED
 
 #include "../include/common.h"
+#include "../include/records.h"
 #include "../include/events.h"
 
-void events_clear()
+void events_clear(Attributes &events)
 // ----------------------------------------------------------------
-// Drop every queued event
+// Empty the queue
 // ----------------------------------------------------------------
 {
-  g_event_head  = 1;
-  g_event_count = 0;
-  g_ev_type     = EVT_NONE;
+  record_clear      (events, DATATYPE_EVENT_QUEUE);
+  record_set_integer(events, ATTR_EVENT_HEAD, 1);
+  record_set_integer(events, ATTR_COUNT,      0);
+  record_set_integer(events, ATTR_EVENT_LOST, 0);
 }
 
-void emit_event(Integer type, Integer i1, Integer i2, Integer i3, Integer i4, Real r1, Real r2, Real r3, Text text)
+void emit_event(Attributes &events, Integer type, Integer i1, Integer i2, Integer i3, Integer i4, Real r1, Real r2, Real r3, Text text)
 // ----------------------------------------------------------------
 // Add an event to the end of the queue
-// The queue is a ring buffer; if it is full the event is dropped
-// and counted in g_event_lost
+// The queue is a ring of EVENT_QUEUE_SIZE entries; if it is full
+// the event is dropped and counted in the "lost" field
 // ----------------------------------------------------------------
 {
-  Integer slot = 0;
+  Integer head  = record_integer(events, ATTR_EVENT_HEAD);
+  Integer count = record_integer(events, ATTR_COUNT);
+  Integer slot  = 0;
 
-  if (g_event_count >= EVENT_QUEUE_SIZE) {
-    ++g_event_lost;
+  if (count >= EVENT_QUEUE_SIZE) {
+    record_set_integer(events, ATTR_EVENT_LOST, record_integer(events, ATTR_EVENT_LOST) + 1);
     return;
   }
+  if (head < 1) head = 1;
 
-  slot = g_event_head + g_event_count;
+  slot = head + count;
   if (slot > EVENT_QUEUE_SIZE) slot = slot - EVENT_QUEUE_SIZE;
 
-  g_event_type[slot] = type;
-  g_event_i1  [slot] = i1;
-  g_event_i2  [slot] = i2;
-  g_event_i3  [slot] = i3;
-  g_event_i4  [slot] = i4;
-  g_event_r1  [slot] = r1;
-  g_event_r2  [slot] = r2;
-  g_event_r3  [slot] = r3;
-  g_event_text[slot] = text;
+  record_set_integer_at(events, ATTR_TYPE,     slot, type);
+  record_set_integer_at(events, ATTR_EVENT_I1, slot, i1);
+  record_set_integer_at(events, ATTR_EVENT_I2, slot, i2);
+  record_set_integer_at(events, ATTR_EVENT_I3, slot, i3);
+  record_set_integer_at(events, ATTR_EVENT_I4, slot, i4);
+  record_set_real_at   (events, ATTR_EVENT_R1, slot, r1);
+  record_set_real_at   (events, ATTR_EVENT_R2, slot, r2);
+  record_set_real_at   (events, ATTR_EVENT_R3, slot, r3);
+  record_set_text_at   (events, ATTR_TEXT,     slot, text);
 
-  ++g_event_count;
+  record_set_integer(events, ATTR_EVENT_HEAD, head);
+  record_set_integer(events, ATTR_COUNT,      count + 1);
 }
 
-void emit_simple_event(Integer type)
+void emit_simple_event(Attributes &events, Integer type)
 // ----------------------------------------------------------------
 // Event with no payload
 // ----------------------------------------------------------------
 {
-  emit_event(type, 0, 0, 0, 0, 0.0, 0.0, 0.0, "");
+  emit_event(events, type, 0, 0, 0, 0, 0.0, 0.0, 0.0, "");
 }
 
-void emit_cell_event(Integer type, Integer x, Integer y, Integer z, Integer block)
+void emit_cell_event(Attributes &events, Integer type, Integer x, Integer y, Integer z, Integer block)
 // ----------------------------------------------------------------
 // Event about a block cell
 // ----------------------------------------------------------------
 {
-  emit_event(type, x, y, z, block, 0.0, 0.0, 0.0, "");
+  emit_event(events, type, x, y, z, block, 0.0, 0.0, 0.0, "");
 }
 
-void emit_item_event(Integer type, Integer item, Integer count)
+void emit_item_event(Attributes &events, Integer type, Integer item, Integer count)
 // ----------------------------------------------------------------
 // Event about an item stack
 // ----------------------------------------------------------------
 {
-  emit_event(type, item, count, 0, 0, 0.0, 0.0, 0.0, "");
+  emit_event(events, type, item, count, 0, 0, 0.0, 0.0, 0.0, "");
 }
 
-void emit_drop_event(Integer item, Integer count, Real x, Real y, Real z)
+void emit_drop_event(Attributes &events, Integer item, Integer count, Integer damage, Real x, Real y, Real z)
 // ----------------------------------------------------------------
 // Ask for an item stack to be dropped into the world at (x, y, z)
+// damage is the wear of a tool (0 for other items)
 // ----------------------------------------------------------------
 {
-  emit_event(EVT_SPAWN_DROP, item, count, 0, 0, x, y, z, "");
+  emit_event(events, EVT_SPAWN_DROP, item, count, damage, 0, x, y, z, "");
 }
 
-void emit_toast(Text text)
+void emit_toast(Attributes &events, Text text)
 // ----------------------------------------------------------------
 // Ask the HUD to show a short message
 // ----------------------------------------------------------------
 {
-  emit_event(EVT_TOAST, 0, 0, 0, 0, 0.0, 0.0, 0.0, text);
+  emit_event(events, EVT_TOAST, 0, 0, 0, 0, 0.0, 0.0, 0.0, text);
 }
 
-Integer next_event()
+Integer events_pending(Attributes &events)
 // ----------------------------------------------------------------
-// Take the oldest event off the queue into the g_ev_* globals
+// Number of events waiting in the queue
+// ----------------------------------------------------------------
+{
+  return record_integer(events, ATTR_COUNT);
+}
+
+Integer next_event(Attributes &events, Attributes &event)
+// ----------------------------------------------------------------
+// Move the oldest event off the queue into the event record
 // Returns TRUE if there was one, FALSE if the queue was empty
 // ----------------------------------------------------------------
 {
-  if (g_event_count <= 0) {
-    g_ev_type = EVT_NONE;
+  Integer head  = record_integer(events, ATTR_EVENT_HEAD);
+  Integer count = record_integer(events, ATTR_COUNT);
+
+  record_clear(event, DATATYPE_EVENT);
+  if (count <= 0) {
+    record_set_integer(event, ATTR_TYPE, EVT_NONE);
     return FALSE;
   }
 
-  g_ev_type = g_event_type[g_event_head];
-  g_ev_i1   = g_event_i1  [g_event_head];
-  g_ev_i2   = g_event_i2  [g_event_head];
-  g_ev_i3   = g_event_i3  [g_event_head];
-  g_ev_i4   = g_event_i4  [g_event_head];
-  g_ev_r1   = g_event_r1  [g_event_head];
-  g_ev_r2   = g_event_r2  [g_event_head];
-  g_ev_r3   = g_event_r3  [g_event_head];
-  g_ev_text = g_event_text[g_event_head];
+  record_set_integer(event, ATTR_TYPE,     record_integer_at(events, ATTR_TYPE,     head));
+  record_set_integer(event, ATTR_EVENT_I1, record_integer_at(events, ATTR_EVENT_I1, head));
+  record_set_integer(event, ATTR_EVENT_I2, record_integer_at(events, ATTR_EVENT_I2, head));
+  record_set_integer(event, ATTR_EVENT_I3, record_integer_at(events, ATTR_EVENT_I3, head));
+  record_set_integer(event, ATTR_EVENT_I4, record_integer_at(events, ATTR_EVENT_I4, head));
+  record_set_real   (event, ATTR_EVENT_R1, record_real_at   (events, ATTR_EVENT_R1, head));
+  record_set_real   (event, ATTR_EVENT_R2, record_real_at   (events, ATTR_EVENT_R2, head));
+  record_set_real   (event, ATTR_EVENT_R3, record_real_at   (events, ATTR_EVENT_R3, head));
+  record_set_text   (event, ATTR_TEXT,     record_text_at   (events, ATTR_TEXT,     head));
 
-  ++g_event_head;
-  if (g_event_head > EVENT_QUEUE_SIZE) g_event_head = 1;
-  --g_event_count;
+  ++head;
+  if (head > EVENT_QUEUE_SIZE) head = 1;
+  record_set_integer(events, ATTR_EVENT_HEAD, head);
+  record_set_integer(events, ATTR_COUNT,      count - 1);
 
   return TRUE;
+}
+
+Integer event_type(Attributes &event)
+// ----------------------------------------------------------------
+// EVT_* type of an event record
+// ----------------------------------------------------------------
+{
+  return record_integer(event, ATTR_TYPE);
+}
+
+Integer event_integer(Attributes &event, Integer which)
+// ----------------------------------------------------------------
+// Integer payload number which (1..4) of an event record
+// ----------------------------------------------------------------
+{
+  if (which == 1) return record_integer(event, ATTR_EVENT_I1);
+  if (which == 2) return record_integer(event, ATTR_EVENT_I2);
+  if (which == 3) return record_integer(event, ATTR_EVENT_I3);
+  return record_integer(event, ATTR_EVENT_I4);
+}
+
+Real event_real(Attributes &event, Integer which)
+// ----------------------------------------------------------------
+// Real payload number which (1..3) of an event record
+// ----------------------------------------------------------------
+{
+  if (which == 1) return record_real(event, ATTR_EVENT_R1);
+  if (which == 2) return record_real(event, ATTR_EVENT_R2);
+  return record_real(event, ATTR_EVENT_R3);
+}
+
+Text event_text(Attributes &event)
+// ----------------------------------------------------------------
+// Text payload of an event record
+// ----------------------------------------------------------------
+{
+  return record_text(event, ATTR_TEXT);
 }
 
 #endif

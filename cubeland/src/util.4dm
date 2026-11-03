@@ -113,28 +113,6 @@ Real hash_real(Real first, Real second, Real third)
   return value - Floor(value);
 }
 
-Real random_real()
-// ----------------------------------------------------------------
-// Random number in [0, 1] from the 12d random number generator
-// Set_random_number(seed, 1) must have been called first
-// ----------------------------------------------------------------
-{
-  Real value = Get_random_number_closed();
-  return value;
-}
-
-Integer random_integer(Integer low, Integer high)
-// ----------------------------------------------------------------
-// Random Integer in [low, high]
-// ----------------------------------------------------------------
-{
-  Integer value = low + Floor(random_real() * (high - low + 1));
-
-  if (value > high) value = high;
-
-  return value;
-}
-
 Real wrap_angle(Real angle)
 // ----------------------------------------------------------------
 // Bring an angle into the range [0, 2 pi)

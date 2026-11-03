@@ -4,10 +4,13 @@
 #include "../include/common.h"
 #include "../include/config.h"
 #include "../include/util.h"
+#include "../include/records.h"
 #include "../include/events.h"
 #include "../include/blocks.h"
 #include "../include/inventory.h"
 #include "../include/player.h"
+#include "../include/settings.h"
+#include "../include/crafting.h"
 #include "../include/render.h"
 #include "../include/hud.h"
 #include "../include/ui.h"
@@ -27,6 +30,10 @@
 // input box, which keeps the keyboard focus. The mouse is released
 // with Q, when a screen opens, when 12d loses focus, or after a
 // minute without input.
+//
+// This is the controller: it is the only place (with the menu and
+// settings panels) that names the game's global records, and it
+// passes them to the model and view functions it calls.
 // ----------------------------------------------------------------
 
 Integer game_panel_split_xy(Text msg, Real &x, Real &y)
@@ -96,7 +103,36 @@ void game_panel_notice(Draw_Box box, Text title, Text line)
   End_batch_draw(box);
 }
 
-void game_panel_render(Draw_Box box, Integer captured)
+void game_panel_dispatch(Real now)
+// ----------------------------------------------------------------
+// Dispatch the events an action caused, straight away
+// ----------------------------------------------------------------
+{
+  game_dispatch_events(g_events, g_event, g_player, g_inventory, g_grid, g_furnaces, g_drops, g_random, g_hud, g_ui, now);
+}
+
+Integer game_panel_save()
+// ----------------------------------------------------------------
+// Save the world being played
+// ----------------------------------------------------------------
+{
+  return game_save_world(g_game, g_info, g_player, g_inventory, g_furnaces, g_cows, g_drops, g_events);
+}
+
+void game_panel_close_screen()
+// ----------------------------------------------------------------
+// Close the open screen, returning carried and grid items
+// ----------------------------------------------------------------
+{
+  Real x = 0.0;
+  Real y = 0.0;
+  Real z = 0.0;
+
+  player_position(g_player, x, y, z);
+  if (ui_screen(g_ui) != SCREEN_NONE) ui_close(g_ui, g_inventory, g_grid, g_events, x, y + 1.3, z);
+}
+
+void game_panel_render(Draw_Box box, Integer captured, Real frame_ms, Real now)
 // ----------------------------------------------------------------
 // Draw one frame: the 3D view and HUD, or the open screen
 // ----------------------------------------------------------------
@@ -111,12 +147,14 @@ void game_panel_render(Draw_Box box, Integer captured)
   h = height;
 
   Start_batch_draw(box);
-  if (g_ui_screen != SCREEN_NONE) {
-    hud_draw(box, w, h, captured, TRUE);
-    ui_draw (box, w, h);
+  if (ui_screen(g_ui) != SCREEN_NONE) {
+    hud_draw(box, w, h, captured, TRUE, g_hud, g_player, g_inventory, g_settings, world_info_seed(g_info),
+             frame_ms, render_stats_text(), now);
+    ui_draw (box, w, h, g_ui, g_inventory, g_grid, g_furnaces, g_book);
   } else {
-    render_world(box, w, h, STATUS_STRIP_HEIGHT);
-    hud_draw    (box, w, h, captured, FALSE);
+    render_world(box, w, h, STATUS_STRIP_HEIGHT, g_player, g_cows, g_drops, g_furnaces, g_settings, now);
+    hud_draw    (box, w, h, captured, FALSE, g_hud, g_player, g_inventory, g_settings, world_info_seed(g_info),
+                 frame_ms, render_stats_text(), now);
   }
   End_batch_draw(box);
 }
@@ -137,6 +175,7 @@ Integer game_panel_run(Text world_name, Integer create, Integer seed)
   Input_Box          key_box        = Create_input_box("Keys (click here if the keys stop working)", message);
   Horizontal_Group   buttons        = Create_button_group();
   Button             save_button    = Create_button("&Save", "save");
+  Button             settings_button= Create_button("Se&ttings", "game_settings");
   Button             quit_button    = Create_button("Save and &quit to menu", "quit");
 
   Integer   result          = 0;
@@ -185,9 +224,13 @@ Integer game_panel_run(Text world_name, Integer create, Integer seed)
   Integer   confirmed       = FALSE;
   Integer   leaves          = 0;
   Integer   calibration     = 0;
+  Real      frame_ms        = 0.0;
+  Integer   open_settings   = FALSE;
+  Text      problem         = "";
 
-  Append(save_button, buttons);
-  Append(quit_button, buttons);
+  Append(save_button    , buttons);
+  Append(settings_button, buttons);
+  Append(quit_button    , buttons);
   Append(draw_box   , vgroup);
   Append(key_box    , vgroup);
   Append(buttons    , vgroup);
@@ -205,16 +248,19 @@ Integer game_panel_run(Text world_name, Integer create, Integer seed)
   if (create) {
     Set_data(message, "Generating " + world_name + " from seed " + To_text(seed) + " ...");
     game_panel_notice(draw_box, "Generating world", "Seed " + To_text(seed) + " - this takes a few seconds");
-    loaded = game_new_world(world_name, seed);
+    loaded = game_new_world(world_name, seed, g_game, g_info, g_player, g_inventory, g_grid, g_furnaces, g_cows,
+                            g_drops, g_events, g_hud, g_ui);
+    problem = "it could not be saved";
   } else {
     Set_data(message, "Loading " + world_name + " ...");
     game_panel_notice(draw_box, "Loading world", world_name);
-    loaded = game_load_world(world_name);
+    loaded = game_load_world(world_name, g_game, g_info, g_player, g_inventory, g_grid, g_furnaces, g_cows,
+                             g_drops, g_events, g_hud, g_ui, problem);
   }
 
   if (loaded != SUCCESS) {
-    Set_data(message, "Couldn't open the world " + world_name + ". Close this panel to go back to the menu.");
-    game_panel_notice(draw_box, "Something went wrong", "The world could not be opened or saved");
+    Set_data(message, "Couldn't open the world " + world_name + ": " + problem + ". Close this panel to go back to the menu.");
+    game_panel_notice(draw_box, "Something went wrong", "The world could not be opened: " + problem);
     while (running) {
       id = 0;
       cmd = "";
@@ -232,7 +278,7 @@ Integer game_panel_run(Text world_name, Integer create, Integer seed)
   }
 
   game_panel_notice(draw_box, "Building the view", "Nearly there");
-  game_build_nearby();
+  game_build_nearby(g_player, settings_render_distance(g_settings));
 
   Set_data(message, "Click the view to play. Press H for help.");
   Get_size(draw_box, last_w, last_h);
@@ -250,22 +296,23 @@ Integer game_panel_run(Text world_name, Integer create, Integer seed)
       if (dt > MAX_FRAME_DT) dt = MAX_FRAME_DT;
       last_frame = frame_start;
 
-      playing = captured && g_ui_screen == SCREEN_NONE && !g_show_help && !g_player_dead;
-      game_update(dt, real_dt, frame_start, playing);
+      playing = captured && ui_screen(g_ui) == SCREEN_NONE && !hud_help_shown(g_hud) && !player_is_dead(g_player);
+      game_update(dt, real_dt, frame_start, playing, g_game, g_info, g_player, g_inventory, g_grid, g_furnaces,
+                  g_cows, g_drops, g_events, g_event, g_random, g_settings, g_hud, g_ui);
 
       // A screen is open (crafting table, furnace): free the mouse
-      if (g_ui_screen != SCREEN_NONE && captured) {
+      if (ui_screen(g_ui) != SCREEN_NONE && captured) {
         captured = FALSE;
-        Set_data(message, "Click slots to move items, click a recipe to craft. E or Q closes the screen.");
+        Set_data(message, "Click slots to move items; lay items out in the grid and click the result to craft. E or Q closes the screen.");
       }
-      if (g_player_dead && captured) {
+      if (player_is_dead(g_player) && captured) {
         captured = FALSE;
         Set_data(message, "You died. Press R or click the view to respawn.");
       }
 
-      game_panel_render(draw_box, captured);
+      game_panel_render(draw_box, captured, frame_ms, frame_start);
       Get_time(frame_end);
-      g_frame_ms = (frame_end - frame_start) * 1000.0;
+      frame_ms = (frame_end - frame_start) * 1000.0;
       want_frame = FALSE;
     }
 
@@ -277,14 +324,15 @@ Integer game_panel_run(Text world_name, Integer create, Integer seed)
     Get_time(now);
 
     if (cmd == "CodeShutdown") {
-      save_world();
+      game_panel_close_screen();
+      game_panel_save();
       Set_exit_code(cmd);
       Hide_widget(panel);
       return SHUTDOWN_CODE;
     }
     if (cmd == "Panel Quit") {
-      ui_close();
-      save_world();
+      game_panel_close_screen();
+      game_panel_save();
       running = FALSE;
       continue;
     }
@@ -325,7 +373,7 @@ Integer game_panel_run(Text world_name, Integer create, Integer seed)
         move_y = box_y - warp_y;
         if (Absolute(move_x) < 3.0 && Absolute(move_y) < 3.0) confirmed = TRUE;
         if (Absolute(move_x) >= 1.0 || Absolute(move_y) >= 1.0) {
-          player_turn(move_x * MOUSE_SENSITIVITY, move_y * MOUSE_SENSITIVITY);
+          player_turn(g_player, move_x * settings_mouse_scale(g_settings), move_y * settings_mouse_scale(g_settings));
           last_input = now;
         }
         // Park the cursor again, even if a quick move took it just
@@ -342,10 +390,9 @@ Integer game_panel_run(Text world_name, Integer create, Integer seed)
           seen_y    = request_y;
           have_seen = TRUE;
         }
-        if (g_ui_screen != SCREEN_NONE) {
-          g_ui_mouse_x = box_x;
-          g_ui_mouse_y = box_y;
-          want_frame   = TRUE;
+        if (ui_screen(g_ui) != SCREEN_NONE) {
+          ui_set_mouse(g_ui, box_x, box_y);
+          want_frame = TRUE;
         } else if (now - last_frame > PAUSED_FRAME_GAP) {
           want_frame = TRUE;
         }
@@ -366,30 +413,28 @@ Integer game_panel_run(Text world_name, Integer create, Integer seed)
         }
 
       } else if (captured && (cmd == "click_lb_down" || cmd == "double_click_lb")) {
-        player_primary_action(now);
-        game_dispatch_events();
+        player_primary_action(g_player, g_inventory, g_cows, g_events, g_random, now);
+        game_panel_dispatch(now);
         last_input = now;
         want_frame = TRUE;
 
       } else if (captured && (cmd == "click_rb" || cmd == "double_click_rb")) {
-        player_secondary_action(now);
-        game_dispatch_events();
-        if (g_ui_screen != SCREEN_NONE) release = TRUE;
+        player_secondary_action(g_player, g_inventory, g_cows, g_events, now);
+        game_panel_dispatch(now);
+        if (ui_screen(g_ui) != SCREEN_NONE) release = TRUE;
         last_input = now;
         want_frame = TRUE;
 
-      } else if (!captured && g_ui_screen != SCREEN_NONE && has_xy) {
+      } else if (!captured && ui_screen(g_ui) != SCREEN_NONE && has_xy) {
         if (cmd == "click_lb" || cmd == "double_click_lb") {
-          g_ui_mouse_x = box_x;
-          g_ui_mouse_y = box_y;
-          ui_click(box_x, box_y, FALSE, width, height);
-          game_dispatch_events();
+          ui_set_mouse(g_ui, box_x, box_y);
+          ui_click(g_ui, g_inventory, g_grid, g_furnaces, g_book, g_events, box_x, box_y, FALSE, width, height);
+          game_panel_dispatch(now);
           want_frame = TRUE;
         } else if (cmd == "click_rb" || cmd == "double_click_rb") {
-          g_ui_mouse_x = box_x;
-          g_ui_mouse_y = box_y;
-          ui_click(box_x, box_y, TRUE, width, height);
-          game_dispatch_events();
+          ui_set_mouse(g_ui, box_x, box_y);
+          ui_click(g_ui, g_inventory, g_grid, g_furnaces, g_book, g_events, box_x, box_y, TRUE, width, height);
+          game_panel_dispatch(now);
           want_frame = TRUE;
         }
 
@@ -401,7 +446,7 @@ Integer game_panel_run(Text world_name, Integer create, Integer seed)
         } else if (calibration == 2) {
           Set_data(message, "Couldn't grab the mouse - try moving the panel, then click again.");
         } else {
-          if (g_player_dead) game_respawn();
+          if (player_is_dead(g_player)) game_respawn(g_info, g_player, g_events);
           start_request  = TRUE;
           start_by_click = TRUE;
         }
@@ -414,45 +459,55 @@ Integer game_panel_run(Text world_name, Integer create, Integer seed)
         key = Text_lower(msg);
         last_input = now;
 
-        if (g_ui_screen != SCREEN_NONE) {
+        if (ui_screen(g_ui) != SCREEN_NONE) {
           if (key == "e" || key == "q") {
-            ui_close();
+            game_panel_close_screen();
+            game_panel_dispatch(now);
             if (have_origin || have_seen) start_request = TRUE;
           }
-        } else if (g_player_dead) {
+        } else if (player_is_dead(g_player)) {
           if (key == "r") {
-            game_respawn();
+            game_respawn(g_info, g_player, g_events);
             if (have_origin || have_seen) start_request = TRUE;
           }
         } else {
           if (key == "w" || key == "a" || key == "s" || key == "d" || key == " ") {
-            player_key_pressed(key, now);
-            if (!captured && g_show_help && (have_origin || have_seen)) start_request = TRUE;
+            player_key_pressed(g_player, key, now);
+            if (!captured && hud_help_shown(g_hud) && (have_origin || have_seen)) start_request = TRUE;
           }
           if (Text_length(key) == 1 && Find_text("123456789", key) > 0) {
-            game_select_slot(Find_text("123456789", key), now);
+            game_select_slot(g_player, g_hud, Find_text("123456789", key), now);
           }
           if (key == "e") {
-            ui_open(SCREEN_INVENTORY, 0, 0, 0);
+            emit_event(g_events, EVT_OPEN_SCREEN, SCREEN_INVENTORY, 0, 0, 0, 0.0, 0.0, 0.0, "");
+            game_panel_dispatch(now);
             if (captured) release = TRUE;
           }
           if (key == "q" && captured) release = TRUE;
           if (key == "h") {
-            g_show_help = !g_show_help;
-            if (g_show_help && captured) release = TRUE;
+            hud_set_help(g_hud, !hud_help_shown(g_hud));
+            if (hud_help_shown(g_hud) && captured) release = TRUE;
           }
-          if (key == "f") g_auto_walk = !g_auto_walk;
+          if (key == "f") player_set_auto_walk(g_player, !player_auto_walk(g_player));
           if (key == "j") {
-            g_auto_jump = !g_auto_jump;
-            if (g_auto_jump) {
-              emit_toast("Auto-jump on");
-            } else {
-              emit_toast("Auto-jump off");
-            }
+            settings_toggle(g_settings, ATTR_SET_AUTO_JUMP);
+            hud_toast(g_hud, settings_describe(g_settings, ATTR_SET_AUTO_JUMP), now);
+            settings_save(g_settings, save_settings_path());
           }
-          if (key == "i") g_show_debug = !g_show_debug;
-          if (key == "-") render_set_detail(g_detail_level - 1);
-          if (key == "=" || key == "+") render_set_detail(g_detail_level + 1);
+          if (key == "i") {
+            settings_toggle(g_settings, ATTR_SET_SHOW_DEBUG);
+            settings_save(g_settings, save_settings_path());
+          }
+          if (key == "-" || key == "=" || key == "+") {
+            if (key == "-") {
+              settings_change(g_settings, ATTR_SET_RENDER_DISTANCE, -1);
+            } else {
+              settings_change(g_settings, ATTR_SET_RENDER_DISTANCE, 1);
+            }
+            hud_toast(g_hud, settings_describe(g_settings, ATTR_SET_RENDER_DISTANCE), now);
+            settings_save(g_settings, save_settings_path());
+          }
+          if (key == "o") open_settings = TRUE;
         }
 
         Set_data(key_box, "");
@@ -468,20 +523,42 @@ Integer game_panel_run(Text world_name, Integer create, Integer seed)
       }
 
     } else if (cmd == "save") {
-      if (save_world() == SUCCESS) {
+      if (game_panel_save() == SUCCESS) {
         Set_data(message, "Saved " + world_name + ".");
       } else {
         Set_data(message, "Couldn't save " + world_name + ".");
       }
-      game_dispatch_events();
+      game_panel_dispatch(now);
       Set_focus(key_box);
       want_frame = TRUE;
 
+    } else if (cmd == "game_settings") {
+      open_settings = TRUE;
+
     } else if (cmd == "quit") {
-      ui_close();
-      save_world();
+      game_panel_close_screen();
+      game_panel_save();
       running = FALSE;
       continue;
+    }
+
+    // ------------------------------------------------ settings
+    if (open_settings) {
+      open_settings = FALSE;
+      if (captured) {
+        captured    = FALSE;
+        have_origin = FALSE;
+      }
+      if (settings_panel_run(g_settings) == SHUTDOWN_CODE) {
+        game_panel_save();
+        Set_exit_code("CodeShutdown");
+        Hide_widget(panel);
+        return SHUTDOWN_CODE;
+      }
+      game_build_nearby(g_player, settings_render_distance(g_settings));
+      Set_data(message, "Settings saved. Click the view to carry on.");
+      Set_focus(key_box);
+      want_frame = TRUE;
     }
 
     // ------------------------------------------------ grab / free the mouse
@@ -506,11 +583,11 @@ Integer game_panel_run(Text world_name, Integer create, Integer seed)
       confirmed   = FALSE;
       leaves      = 0;
       captured    = TRUE;
-      g_show_help = FALSE;
+      hud_set_help(g_hud, FALSE);
       last_input  = now;
       Set_cursor_position(origin_x + warp_x, origin_y - warp_y);
       Set_focus(key_box);
-      Set_data(message, "Playing " + world_name + ". Q frees the mouse, E opens the inventory, H shows help.");
+      Set_data(message, "Playing " + world_name + ". Q frees the mouse, E opens the inventory, O settings, H help.");
       want_frame = TRUE;
     }
 
