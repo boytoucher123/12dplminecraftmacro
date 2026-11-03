@@ -1,0 +1,52 @@
+#ifndef SETTINGS_H_INCLUDED
+#define SETTINGS_H_INCLUDED
+
+#include "records.h"
+
+// ----------------------------------------------------------------
+// Player settings: one record, changed from the settings panel (and
+// a few keys in game), saved to SETTINGS_FILE between sessions
+// ----------------------------------------------------------------
+
+#define DATATYPE_SETTINGS        ("settings")
+#define ATTR_SET_RENDER_DISTANCE ("render_distance")
+#define ATTR_SET_DETAIL          ("texture_detail")
+#define ATTR_SET_PLANTS          ("plants")
+#define ATTR_SET_SHADING         ("shading")
+#define ATTR_SET_AUTO_JUMP       ("auto_jump")
+#define ATTR_SET_FOV             ("field_of_view")
+#define ATTR_SET_SENSITIVITY     ("mouse_sensitivity")
+#define ATTR_SET_SHOW_HUD        ("show_hud")
+#define ATTR_SET_SHOW_DEBUG      ("show_debug")
+
+#define RENDER_DISTANCE_MIN      8
+#define RENDER_DISTANCE_MAX      64
+#define RENDER_DISTANCE_STEP     4
+#define RENDER_DISTANCE_DEFAULT  20
+#define DETAIL_LOW               1
+#define DETAIL_NORMAL            2
+#define DETAIL_HIGH              3
+#define FOV_MIN                  50
+#define FOV_MAX                  100
+#define FOV_STEP                 5
+#define FOV_DEFAULT              70
+#define SENSITIVITY_MIN          1
+#define SENSITIVITY_MAX          10
+#define SENSITIVITY_DEFAULT      5
+#define SETTINGS_FILE            "cubeland_settings.txt"
+
+void    settings_defaults       (Attributes &settings);
+Integer settings_render_distance(Attributes &settings);
+Integer settings_detail         (Attributes &settings);
+Integer settings_flag           (Attributes &settings, Text field);
+Integer settings_fov_degrees    (Attributes &settings);
+Real    settings_fov_radians    (Attributes &settings);
+Real    settings_mouse_scale    (Attributes &settings);
+void    settings_change         (Attributes &settings, Text field, Integer direction);
+void    settings_toggle         (Attributes &settings, Text field);
+Text    settings_describe       (Attributes &settings, Text field);
+Text    settings_line           (Text name, Integer value);
+Integer settings_save           (Attributes &settings, Text path);
+Integer settings_load           (Attributes &settings, Text path);
+
+#endif

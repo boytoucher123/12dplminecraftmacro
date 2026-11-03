@@ -6,9 +6,16 @@
 // Each texture is a grid of palette indices. For drawing, the most
 // common index is the base colour and every other colour is merged
 // into rectangles, so a face is one base polygon plus a few rects.
+// Sprites (plants and item pictures) use index 0 for see-through
+// pixels: they have no base polygon, only rectangles.
+//
+// Table functions: everything here reads or writes the g_tex_*
+// and g_rect_* tables. They are filled once by textures_init and
+// are read-only afterwards.
 // ----------------------------------------------------------------
 
 #define TEX_SIZE               16
+#define TEX_TRANSPARENT        0      // palette index of see-through pixels
 #define TEX_BEDROCK            1
 #define TEX_STONE              2
 #define TEX_COBBLESTONE        3
@@ -29,23 +36,43 @@
 #define TEX_SAND               18
 #define TEX_COW_HIDE           19
 #define TEX_COW_FACE           20
-#define TEX_STICK              21
-#define TEX_RAW_BEEF           22
-#define TEX_COOKED_BEEF        23
-#define NUM_TEXTURES           23
+#define TEX_SANDSTONE_TOP      21
+#define TEX_SANDSTONE_SIDE     22
+#define TEX_CACTUS_TOP         23
+#define TEX_CACTUS_SIDE        24
+#define TEX_COAL_ORE           25
+#define TEX_GRAVEL             26
+#define TEX_PLANT_GRASS        27     // plants and items are sprites:
+#define TEX_PLANT_POPPY        28     // they have see-through pixels and
+#define TEX_PLANT_DANDELION    29     // no base colour
+#define TEX_PLANT_DEAD_BUSH    30
+#define TEX_ITEM_STICK         31
+#define TEX_ITEM_RAW_BEEF      32
+#define TEX_ITEM_COOKED_BEEF   33
+#define TEX_ITEM_COAL          34
+#define TEX_ITEM_WOODEN_PICKAXE 35
+#define TEX_ITEM_STONE_PICKAXE 36
+#define TEX_ITEM_WOODEN_AXE    37
+#define TEX_ITEM_STONE_AXE     38
+#define TEX_ITEM_WOODEN_SHOVEL 39
+#define TEX_ITEM_STONE_SHOVEL  40
+#define TEX_ITEM_WOODEN_SWORD  41
+#define TEX_ITEM_STONE_SWORD   42
+#define NUM_TEXTURES           42
 
-#define TEXTURE_PIXELS         5888   // NUM_TEXTURES * 256
+#define TEXTURE_PIXELS         10752  // NUM_TEXTURES * 256
 #define PALETTE_SIZE           8      // colours per texture
-#define TEXTURE_PALETTES       184    // NUM_TEXTURES * PALETTE_SIZE
-#define TEXTURE_QUADRANTS      92     // NUM_TEXTURES * 4
-#define MAX_TEXTURE_RECTS      3072
+#define TEXTURE_PALETTES       336    // NUM_TEXTURES * PALETTE_SIZE
+#define TEXTURE_QUADRANTS      168    // NUM_TEXTURES * 4
+#define MAX_TEXTURE_RECTS      6000
 
 /*Global variables*/ {
   Integer g_tex_pixel     [TEXTURE_PIXELS];
   Integer g_tex_pal_r     [TEXTURE_PALETTES];
   Integer g_tex_pal_g     [TEXTURE_PALETTES];
   Integer g_tex_pal_b     [TEXTURE_PALETTES];
-  Integer g_tex_base      [NUM_TEXTURES];
+  Integer g_tex_base      [NUM_TEXTURES];   // 0 for sprites (no base polygon)
+  Integer g_tex_is_sprite [NUM_TEXTURES];
   Real    g_tex_avg_r     [NUM_TEXTURES];
   Real    g_tex_avg_g     [NUM_TEXTURES];
   Real    g_tex_avg_b     [NUM_TEXTURES];
@@ -69,6 +96,7 @@
   Real    g_tex_sum_r[4];
   Real    g_tex_sum_g[4];
   Real    g_tex_sum_b[4];
+  Integer g_tex_sum_n[4];
   Real    g_cobble_u [9];
   Real    g_cobble_v [9];
 }
@@ -82,6 +110,7 @@ void    texture_fill_rect      (Integer tex, Integer u0, Integer v0, Integer u1,
 Real    texture_random         (Integer tex, Integer u, Integer v, Integer salt);
 Real    texture_noise          (Integer tex, Integer u, Integer v, Integer cell, Integer salt);
 void    texture_copy           (Integer from_tex, Integer to_tex);
+void    texture_row            (Integer tex, Integer v, Text pixels);
 void    texture_finish         (Integer tex);
 Integer texture_palette_index  (Integer tex, Integer index);
 

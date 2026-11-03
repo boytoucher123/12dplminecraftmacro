@@ -62,13 +62,15 @@ for k,l in enumerate(lines):
         if op in t: problems.append(f'{k+1}: compound assignment {op}: {l.strip()}')
     if re.search(r'\?[^:]*:',t) : problems.append(f'{k+1}: ternary?: {l.strip()}')
     if re.search(r'for\s*\(\s*(Integer|Real)\b',t): problems.append(f'{k+1}: declaration in for header: {l.strip()}')
-    if re.search(r'"(?:\\.|[^"\\])*"\s*\+\s*"',l): problems.append(f'{k+1}: literal+literal: {l.strip()}')
+    lits=list(re.finditer(r'"(?:\\.|[^"\\])*"',l))
+    for a,b in zip(lits,lits[1:]):
+        if re.fullmatch(r'\s*\+\s*',l[a.end():b.start()]): problems.append(f'{k+1}: literal+literal: {l.strip()}')
 
 # per-function duplicate declarations and names clashing with functions
 func_re=re.compile(r'^(?:void|Integer|Real|Text|Integer64)\s+(\w+)\s*\(([^)]*)\)\s*$',re.M)
 funcs=set(m.group(1) for m in func_re.finditer(code))
 builtin_used=set(re.findall(r'\b([A-Z][a-z]+(?:_[a-z0-9]+)*)\s*\(',code))
-decl_re=re.compile(r'\b(Integer|Real|Text|Integer64|File|Dynamic_Text|Draw_Box|Panel|Button|Input_Box|List_Box|Vertical_Group|Horizontal_Group|Colour_Message_Box)\s+&?\s*(\w+)\s*(?:=|;|\[|,|\))')
+decl_re=re.compile(r'\b(Integer|Real|Text|Integer64|File|Dynamic_Text|Attributes|Draw_Box|Panel|Button|Input_Box|List_Box|Vertical_Group|Horizontal_Group|Colour_Message_Box)\s+&?\s*(\w+)\s*(?:=|;|\[|,|\))')
 # split into function bodies
 pos=0
 for m in func_re.finditer(code):

@@ -3,6 +3,8 @@
 
 #include "../include/common.h"
 #include "../include/util.h"
+#include "../include/records.h"
+#include "../include/settings.h"
 #include "../include/save.h"
 #include "../include/panels.h"
 
@@ -30,12 +32,12 @@ Integer menu_refresh_worlds(List_Box world_list)
   return count;
 }
 
-Integer menu_panel_run()
+Integer menu_panel_run(Attributes &game, Attributes &random, Attributes &settings)
 // ----------------------------------------------------------------
-// The world menu: pick a saved world to play, delete one, or make
-// a new one with a name and an optional seed
+// The world menu: pick a saved world to play, delete one, make a
+// new one with a name and an optional seed, or change the settings
 // Returns a MENU_RESULT_* code (or SHUTDOWN_CODE) and leaves the
-// chosen world in g_menu_world_name / g_menu_seed
+// chosen world in the game record (ATTR_MENU_WORLD, ATTR_MENU_SEED)
 // ----------------------------------------------------------------
 {
   Text               title          = GAME_TITLE;
@@ -49,6 +51,7 @@ Integer menu_panel_run()
   Button             play_button    = Create_button("&Play selected", "play");
   Button             create_button  = Create_button("&Create new world", "create");
   Button             delete_button  = Create_button("&Delete selected", "delete");
+  Button             settings_button= Create_button("&Settings", "menu_settings");
   Button             quit_button    = Create_finish_button("Quit", "quit");
   Integer            result         = MENU_RESULT_QUIT;
   Integer            doit           = TRUE;
@@ -64,6 +67,7 @@ Integer menu_panel_run()
   Append(play_button  , buttons);
   Append(create_button, buttons);
   Append(delete_button, buttons);
+  Append(settings_button, buttons);
   Append(quit_button  , buttons);
 
   Append(world_list, vgroup);
@@ -105,7 +109,7 @@ Integer menu_panel_run()
         Set_data(message, "Select a world in the list first.");
       } else {
         Get_item(world_list, selected, name);
-        g_menu_world_name = name;
+        record_set_text(game, ATTR_MENU_WORLD, name);
         result = MENU_RESULT_PLAY;
         doit   = FALSE;
       }
@@ -119,14 +123,21 @@ Integer menu_panel_run()
       } else if (save_world_exists(name)) {
         Set_data(message, "There is already a world called " + name + ".");
       } else {
-        g_menu_world_name = name;
+        record_set_text(game, ATTR_MENU_WORLD, name);
         if (seed_text == "") {
-          g_menu_seed = random_integer(1, 999999999);
+          record_set_integer(game, ATTR_MENU_SEED, random_range(random, 1, 999999999));
         } else {
-          g_menu_seed = text_to_seed(seed_text);
+          record_set_integer(game, ATTR_MENU_SEED, text_to_seed(seed_text));
         }
         result = MENU_RESULT_CREATE;
         doit   = FALSE;
+      }
+    } else if (cmd == "menu_settings") {
+      if (settings_panel_run(settings) == SHUTDOWN_CODE) {
+        result = SHUTDOWN_CODE;
+        doit   = FALSE;
+      } else {
+        Set_data(message, "Settings saved.");
       }
     } else if (cmd == "delete") {
       selected = 0;

@@ -24,6 +24,8 @@
 // Source files (each includes the headers it needs, so the order
 // here doesn't matter)
 #include "util.4dm"
+#include "records.4dm"
+#include "settings.4dm"
 #include "events.4dm"
 #include "blocks.4dm"
 #include "textures.4dm"
@@ -42,6 +44,7 @@
 #include "save.4dm"
 #include "game.4dm"
 #include "menu_panel.4dm"
+#include "settings_panel.4dm"
 #include "game_panel.4dm"
 
 

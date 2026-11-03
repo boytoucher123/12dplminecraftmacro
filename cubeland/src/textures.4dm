@@ -3,6 +3,7 @@
 
 #include "../include/common.h"
 #include "../include/util.h"
+#include "../include/blocks.h"
 #include "../include/textures.h"
 
 // ---------------------------------------------------------------- texture access
@@ -90,6 +91,22 @@ void texture_copy(Integer from_tex, Integer to_tex)
   }
 }
 
+void texture_row(Integer tex, Integer v, Text pixels)
+// ----------------------------------------------------------------
+// Set row v of a texture from 16 characters: "." is see-through,
+// "1".."8" are palette colours. Used to draw sprites as pixel art.
+// ----------------------------------------------------------------
+{
+  Text    digits    = "12345678";
+  Text    character = "";
+  Integer u         = 0;
+
+  for (u = 1; u <= TEX_SIZE; ++u) {
+    character = Get_subtext(pixels, u, u);
+    texture_set(tex, u, v, Find_text(digits, character));
+  }
+}
+
 Real texture_random(Integer tex, Integer u, Integer v, Integer salt)
 // ----------------------------------------------------------------
 // Repeatable random number in [0, 1) for one pixel
@@ -133,8 +150,10 @@ Real texture_noise(Integer tex, Integer u, Integer v, Integer cell, Integer salt
 void texture_finish(Integer tex)
 // ----------------------------------------------------------------
 // Work out the drawing data for a finished texture:
-//  - the base (most common) colour and the average colour
-//  - the 2 x 2 quadrant colours used by item icons
+//  - the base (most common) colour and the average colour; a
+//    texture with see-through pixels (index 0) is a sprite and has
+//    no base colour
+//  - the 2 x 2 quadrant colours
 //  - rectangles covering every non-base pixel, grown greedily
 //    right then down so that runs of one colour share a polygon
 // ----------------------------------------------------------------
@@ -154,19 +173,27 @@ void texture_finish(Integer tex)
   Real    sum_r     = 0.0;
   Real    sum_g     = 0.0;
   Real    sum_b     = 0.0;
+  Integer opaque    = 0;
 
   for (index = 1; index <= PALETTE_SIZE; ++index) g_tex_count[index] = 0;
   for (quadrant = 1; quadrant <= 4; ++quadrant) {
     g_tex_sum_r[quadrant] = 0.0;
     g_tex_sum_g[quadrant] = 0.0;
     g_tex_sum_b[quadrant] = 0.0;
+    g_tex_sum_n[quadrant] = 0;
   }
+  g_tex_is_sprite[tex] = FALSE;
 
   for (v = 1; v <= TEX_SIZE; ++v) {
     for (u = 1; u <= TEX_SIZE; ++u) {
       colour = texture_get(tex, u, v);
+      if (colour == TEX_TRANSPARENT) {
+        g_tex_is_sprite[tex] = TRUE;
+        continue;
+      }
       if (colour < 1 || colour > PALETTE_SIZE) colour = 1;
       g_tex_count[colour] = g_tex_count[colour] + 1;
+      ++opaque;
 
       slot  = texture_palette_index(tex, colour);
       sum_r = sum_r + g_tex_pal_r[slot];
@@ -180,20 +207,24 @@ void texture_finish(Integer tex)
       g_tex_sum_r[quadrant] = g_tex_sum_r[quadrant] + g_tex_pal_r[slot];
       g_tex_sum_g[quadrant] = g_tex_sum_g[quadrant] + g_tex_pal_g[slot];
       g_tex_sum_b[quadrant] = g_tex_sum_b[quadrant] + g_tex_pal_b[slot];
+      g_tex_sum_n[quadrant] = g_tex_sum_n[quadrant] + 1;
     }
   }
+  if (opaque < 1) opaque = 1;
 
   for (index = 1; index <= PALETTE_SIZE; ++index) {
     if (g_tex_count[index] > g_tex_count[base]) base = index;
   }
+  if (g_tex_is_sprite[tex]) base = 0;
   g_tex_base [tex] = base;
-  g_tex_avg_r[tex] = sum_r / 256.0;
-  g_tex_avg_g[tex] = sum_g / 256.0;
-  g_tex_avg_b[tex] = sum_b / 256.0;
+  g_tex_avg_r[tex] = sum_r / opaque;
+  g_tex_avg_g[tex] = sum_g / opaque;
+  g_tex_avg_b[tex] = sum_b / opaque;
   for (quadrant = 1; quadrant <= 4; ++quadrant) {
-    g_tex_quad_r[(tex - 1) * 4 + quadrant] = g_tex_sum_r[quadrant] / 64.0;
-    g_tex_quad_g[(tex - 1) * 4 + quadrant] = g_tex_sum_g[quadrant] / 64.0;
-    g_tex_quad_b[(tex - 1) * 4 + quadrant] = g_tex_sum_b[quadrant] / 64.0;
+    if (g_tex_sum_n[quadrant] < 1) g_tex_sum_n[quadrant] = 1;
+    g_tex_quad_r[(tex - 1) * 4 + quadrant] = g_tex_sum_r[quadrant] / g_tex_sum_n[quadrant];
+    g_tex_quad_g[(tex - 1) * 4 + quadrant] = g_tex_sum_g[quadrant] / g_tex_sum_n[quadrant];
+    g_tex_quad_b[(tex - 1) * 4 + quadrant] = g_tex_sum_b[quadrant] / g_tex_sum_n[quadrant];
   }
 
   // Rectangles
@@ -697,45 +728,373 @@ void make_texture_cow_face(Integer tex)
   texture_fill_rect(tex, 11, 12, 12, 13, 5);
 }
 
-void make_texture_stick(Integer tex)
+void make_texture_sandstone_side(Integer tex)
 // ----------------------------------------------------------------
-// Pale wood with a darker grain
+// Sandy rock in layers, with a smooth band along the top
 // ----------------------------------------------------------------
 {
-  texture_set_palette(tex, 1, 140, 106, 62);
-  texture_set_palette(tex, 2, 104, 76 , 44);
-  texture_fill   (tex, 1);
-  texture_speckle(tex, 2, 0.12, 26);
+  texture_set_palette(tex, 1, 216, 202, 150);
+  texture_set_palette(tex, 2, 196, 180, 128);
+  texture_set_palette(tex, 3, 230, 220, 172);
+  texture_fill     (tex, 1);
+  texture_fill_rect(tex, 1, 1 , TEX_SIZE, 3 , 3);
+  texture_fill_rect(tex, 1, 4 , TEX_SIZE, 4 , 2);
+  texture_fill_rect(tex, 1, 10, TEX_SIZE, 10, 2);
+  texture_blotch   (tex, 2, 4, 0.0, 0.18, 41);
 }
 
-void make_texture_raw_beef(Integer tex)
+void make_texture_sandstone_top(Integer tex)
 // ----------------------------------------------------------------
-// Red meat marbled with fat
+// Smooth sandstone with a few darker grains
 // ----------------------------------------------------------------
 {
-  texture_set_palette(tex, 1, 196, 58 , 54 );
-  texture_set_palette(tex, 2, 232, 160, 150);
-  texture_set_palette(tex, 3, 156, 38 , 36 );
+  texture_set_palette(tex, 1, 224, 212, 162);
+  texture_set_palette(tex, 2, 204, 190, 140);
   texture_fill   (tex, 1);
-  texture_blotch (tex, 2, 4, 0.0, 0.22, 27);
-  texture_speckle(tex, 3, 0.08, 28);
+  texture_speckle(tex, 2, 0.05, 42);
 }
 
-void make_texture_cooked_beef(Integer tex)
+void make_texture_cactus_side(Integer tex)
 // ----------------------------------------------------------------
-// Browned meat with grill marks
+// Green ribs with pale spines
 // ----------------------------------------------------------------
 {
-  Integer line = 0;
+  Integer u = 0;
 
-  texture_set_palette(tex, 1, 136, 82 , 48);
-  texture_set_palette(tex, 2, 92 , 54 , 32);
-  texture_set_palette(tex, 3, 172, 114, 70);
+  texture_set_palette(tex, 1, 58 , 128, 48 );
+  texture_set_palette(tex, 2, 38 , 96 , 34 );
+  texture_set_palette(tex, 3, 214, 226, 170);
+  texture_fill(tex, 1);
+  for (u = 2; u <= TEX_SIZE; u = u + 4) texture_fill_rect(tex, u, 1, u, TEX_SIZE, 2);
+  texture_speckle(tex, 3, 0.05, 43);
+}
+
+void make_texture_cactus_top(Integer tex)
+// ----------------------------------------------------------------
+// Top of a cactus: lighter centre with a dark rim
+// ----------------------------------------------------------------
+{
+  texture_set_palette(tex, 1, 76 , 146, 62);
+  texture_set_palette(tex, 2, 38 , 96 , 34);
+  texture_set_palette(tex, 3, 110, 170, 84);
+  texture_fill     (tex, 2);
+  texture_fill_rect(tex, 2, 2, 15, 15, 1);
+  texture_fill_rect(tex, 6, 6, 11, 11, 3);
+}
+
+void make_texture_coal_ore(Integer tex)
+// ----------------------------------------------------------------
+// Stone with black lumps of coal
+// ----------------------------------------------------------------
+{
+  make_texture_stone(tex);
+  texture_set_palette(tex, 4, 34, 34, 36);
+  texture_set_palette(tex, 5, 64, 64, 68);
+  texture_fill_rect(tex, 3 , 3 , 5 , 4 , 4);
+  texture_fill_rect(tex, 4 , 5 , 5 , 5 , 5);
+  texture_fill_rect(tex, 10, 5 , 13, 7 , 4);
+  texture_fill_rect(tex, 11, 8 , 12, 8 , 5);
+  texture_fill_rect(tex, 5 , 11, 7 , 13, 4);
+  texture_fill_rect(tex, 12, 12, 13, 14, 4);
+}
+
+void make_texture_gravel(Integer tex)
+// ----------------------------------------------------------------
+// Loose grey and brown pebbles
+// ----------------------------------------------------------------
+{
+  texture_set_palette(tex, 1, 132, 126, 124);
+  texture_set_palette(tex, 2, 96 , 90 , 88 );
+  texture_set_palette(tex, 3, 168, 160, 156);
+  texture_set_palette(tex, 4, 120, 100, 86 );
   texture_fill  (tex, 1);
-  texture_blotch(tex, 3, 4, 0.75, 1.0, 29);
-  for (line = 0; line <= 3; ++line) {
-    texture_fill_rect(tex, 1, 3 + line * 4, TEX_SIZE, 3 + line * 4, 2);
+  texture_blotch(tex, 2, 2, 0.0 , 0.25, 44);
+  texture_blotch(tex, 3, 2, 0.78, 1.0 , 45);
+  texture_speckle(tex, 4, 0.08, 46);
+}
+
+void make_texture_plant_grass(Integer tex)
+// ----------------------------------------------------------------
+// A tuft of grass blades (sprite)
+// ----------------------------------------------------------------
+{
+  texture_set_palette(tex, 2, 82 , 150, 56);
+  texture_set_palette(tex, 3, 120, 186, 80);
+  texture_row(tex,  1, "................");
+  texture_row(tex,  2, "................");
+  texture_row(tex,  3, "................");
+  texture_row(tex,  4, "................");
+  texture_row(tex,  5, "......2.....2...");
+  texture_row(tex,  6, "..2...2....23...");
+  texture_row(tex,  7, "..23..32...2....");
+  texture_row(tex,  8, "...2..2...32..2.");
+  texture_row(tex,  9, "...32.2..2...32.");
+  texture_row(tex, 10, "....2.32.2..2...");
+  texture_row(tex, 11, ".2..2..2.2.32...");
+  texture_row(tex, 12, ".32..2.2.2.2....");
+  texture_row(tex, 13, "..2..2.22.2.....");
+  texture_row(tex, 14, "..32.22.2.2.....");
+  texture_row(tex, 15, "...2.2.222......");
+  texture_row(tex, 16, "...2222222......");
+}
+
+void make_texture_plant_flower(Integer tex, Integer red, Integer green, Integer blue)
+// ----------------------------------------------------------------
+// A flower on a stem (sprite) with petals of the given colour
+// ----------------------------------------------------------------
+{
+  Integer dark_red     = Floor(red   * 0.55);
+  Integer dark_green   = Floor(green * 0.55);
+  Integer dark_blue    = Floor(blue  * 0.55);
+  Integer light_red    = Floor(red   * 0.75 + 60.0);
+  Integer light_green  = Floor(green * 0.75 + 60.0);
+  Integer light_blue   = Floor(blue  * 0.75 + 60.0);
+
+  texture_set_palette(tex, 1, dark_red , dark_green , dark_blue );
+  texture_set_palette(tex, 2, red      , green      , blue      );
+  texture_set_palette(tex, 3, light_red, light_green, light_blue);
+  texture_set_palette(tex, 4, 60 , 44 , 20 );
+  texture_set_palette(tex, 5, 70 , 136, 50 );
+  texture_row(tex,  1, "................");
+  texture_row(tex,  2, "................");
+  texture_row(tex,  3, ".....1111.......");
+  texture_row(tex,  4, "....122221......");
+  texture_row(tex,  5, "...12233221.....");
+  texture_row(tex,  6, "...12234321.....");
+  texture_row(tex,  7, "...12233221.....");
+  texture_row(tex,  8, "....122221......");
+  texture_row(tex,  9, ".....1551.......");
+  texture_row(tex, 10, "......5.........");
+  texture_row(tex, 11, "......5..55.....");
+  texture_row(tex, 12, ".....55.555.....");
+  texture_row(tex, 13, "..55..5.55......");
+  texture_row(tex, 14, "...55.555.......");
+  texture_row(tex, 15, "....5555........");
+  texture_row(tex, 16, "......5.........");
+}
+
+void make_texture_plant_dead_bush(Integer tex)
+// ----------------------------------------------------------------
+// Dry twigs for the desert (sprite)
+// ----------------------------------------------------------------
+{
+  texture_set_palette(tex, 1, 128, 86, 40);
+  texture_row(tex,  1, "................");
+  texture_row(tex,  2, "................");
+  texture_row(tex,  3, "..1.......1.....");
+  texture_row(tex,  4, "...1..1..1...1..");
+  texture_row(tex,  5, "...1..1.1...1...");
+  texture_row(tex,  6, "1...1.1.1..1....");
+  texture_row(tex,  7, ".1..1..11.1..1..");
+  texture_row(tex,  8, "..1..1.1.11.1...");
+  texture_row(tex,  9, "...1.1.1.1.1....");
+  texture_row(tex, 10, "....11.111......");
+  texture_row(tex, 11, ".....1.11.......");
+  texture_row(tex, 12, "......111.......");
+  texture_row(tex, 13, "......11........");
+  texture_row(tex, 14, "......1.........");
+  texture_row(tex, 15, "......1.........");
+  texture_row(tex, 16, "......1.........");
+}
+
+void make_texture_item_stick(Integer tex)
+// ----------------------------------------------------------------
+// Item picture: a stick (sprite)
+// ----------------------------------------------------------------
+{
+  texture_set_palette(tex, 1, 40 , 28 , 12);
+  texture_set_palette(tex, 4, 104, 76 , 44);
+  texture_set_palette(tex, 5, 150, 112, 66);
+  texture_row(tex,  1, "................");
+  texture_row(tex,  2, "................");
+  texture_row(tex,  3, "............11..");
+  texture_row(tex,  4, "...........1551.");
+  texture_row(tex,  5, "..........15541.");
+  texture_row(tex,  6, ".........15441..");
+  texture_row(tex,  7, "........15441...");
+  texture_row(tex,  8, ".......15441....");
+  texture_row(tex,  9, "......15441.....");
+  texture_row(tex, 10, ".....15441......");
+  texture_row(tex, 11, "....15441.......");
+  texture_row(tex, 12, "...15441........");
+  texture_row(tex, 13, "..15441.........");
+  texture_row(tex, 14, ".1441...........");
+  texture_row(tex, 15, ".111............");
+  texture_row(tex, 16, "................");
+}
+
+void make_texture_item_beef(Integer tex, Integer cooked)
+// ----------------------------------------------------------------
+// Item picture: a steak, red when raw and brown when cooked
+// ----------------------------------------------------------------
+{
+  texture_set_palette(tex, 1, 60 , 20 , 16 );
+  texture_set_palette(tex, 2, 196, 58 , 54 );
+  texture_set_palette(tex, 3, 232, 160, 150);
+  texture_set_palette(tex, 4, 156, 38 , 36 );
+  if (cooked) {
+    texture_set_palette(tex, 1, 50 , 28 , 14 );
+    texture_set_palette(tex, 2, 136, 82 , 48 );
+    texture_set_palette(tex, 3, 176, 120, 74 );
+    texture_set_palette(tex, 4, 92 , 54 , 32 );
   }
+  texture_row(tex,  1, "................");
+  texture_row(tex,  2, "................");
+  texture_row(tex,  3, "......1111......");
+  texture_row(tex,  4, "....11222211....");
+  texture_row(tex,  5, "...1223322221...");
+  texture_row(tex,  6, "..122333222221..");
+  texture_row(tex,  7, "..123322244221..");
+  texture_row(tex,  8, ".12222224442221.");
+  texture_row(tex,  9, ".12244222222221.");
+  texture_row(tex, 10, ".12244222233321.");
+  texture_row(tex, 11, "..1222222333221.");
+  texture_row(tex, 12, "..112222222211..");
+  texture_row(tex, 13, "....11122111....");
+  texture_row(tex, 14, ".......11.......");
+  texture_row(tex, 15, "................");
+  texture_row(tex, 16, "................");
+}
+
+void make_texture_item_coal(Integer tex)
+// ----------------------------------------------------------------
+// Item picture: a lump of coal
+// ----------------------------------------------------------------
+{
+  texture_set_palette(tex, 1, 14 , 14 , 16 );
+  texture_set_palette(tex, 2, 46 , 46 , 50 );
+  texture_set_palette(tex, 3, 90 , 90 , 98 );
+  texture_set_palette(tex, 4, 30 , 30 , 34 );
+  texture_row(tex,  1, "................");
+  texture_row(tex,  2, "................");
+  texture_row(tex,  3, "................");
+  texture_row(tex,  4, ".......111......");
+  texture_row(tex,  5, ".....1122211....");
+  texture_row(tex,  6, "....122332221...");
+  texture_row(tex,  7, "...12233222221..");
+  texture_row(tex,  8, "...12322222221..");
+  texture_row(tex,  9, "..122222222221..");
+  texture_row(tex, 10, "..122224222221..");
+  texture_row(tex, 11, "..112222222211..");
+  texture_row(tex, 12, "...1122222211...");
+  texture_row(tex, 13, ".....111111.....");
+  texture_row(tex, 14, "................");
+  texture_row(tex, 15, "................");
+  texture_row(tex, 16, "................");
+}
+
+void make_tool_palette(Integer tex, Integer tier)
+// ----------------------------------------------------------------
+// Colours of a tool picture: 1 outline, 2 and 3 the head (wood or
+// stone), 4 and 5 the wooden handle
+// ----------------------------------------------------------------
+{
+  texture_set_palette(tex, 1, 40 , 28 , 12 );
+  texture_set_palette(tex, 4, 104, 76 , 44 );
+  texture_set_palette(tex, 5, 150, 112, 66 );
+  if (tier == TIER_STONE) {
+    texture_set_palette(tex, 2, 118, 118, 118);
+    texture_set_palette(tex, 3, 170, 170, 170);
+  } else {
+    texture_set_palette(tex, 2, 150, 112, 66 );
+    texture_set_palette(tex, 3, 188, 152, 98 );
+  }
+}
+
+void make_texture_item_pickaxe(Integer tex, Integer tier)
+// ----------------------------------------------------------------
+// Item picture: a pickaxe
+// ----------------------------------------------------------------
+{
+  make_tool_palette(tex, tier);
+  texture_row(tex,  1, "................");
+  texture_row(tex,  2, "....111111......");
+  texture_row(tex,  3, "...12333321.....");
+  texture_row(tex,  4, "....1112222.1...");
+  texture_row(tex,  5, "........11221...");
+  texture_row(tex,  6, "........154121..");
+  texture_row(tex,  7, ".......1541.121.");
+  texture_row(tex,  8, "......15441..11.");
+  texture_row(tex,  9, ".....15441......");
+  texture_row(tex, 10, "....15441.......");
+  texture_row(tex, 11, "...15441........");
+  texture_row(tex, 12, "..15441.........");
+  texture_row(tex, 13, ".15441..........");
+  texture_row(tex, 14, ".1441...........");
+  texture_row(tex, 15, ".111............");
+  texture_row(tex, 16, "................");
+}
+
+void make_texture_item_axe(Integer tex, Integer tier)
+// ----------------------------------------------------------------
+// Item picture: an axe
+// ----------------------------------------------------------------
+{
+  make_tool_palette(tex, tier);
+  texture_row(tex,  1, "................");
+  texture_row(tex,  2, "........111.....");
+  texture_row(tex,  3, ".......12331....");
+  texture_row(tex,  4, "......1233331...");
+  texture_row(tex,  5, "......12333331..");
+  texture_row(tex,  6, ".......1223331..");
+  texture_row(tex,  7, "........15411...");
+  texture_row(tex,  8, ".......15441....");
+  texture_row(tex,  9, "......15441.....");
+  texture_row(tex, 10, ".....15441......");
+  texture_row(tex, 11, "....15441.......");
+  texture_row(tex, 12, "...15441........");
+  texture_row(tex, 13, "..15441.........");
+  texture_row(tex, 14, ".1441...........");
+  texture_row(tex, 15, ".111............");
+  texture_row(tex, 16, "................");
+}
+
+void make_texture_item_shovel(Integer tex, Integer tier)
+// ----------------------------------------------------------------
+// Item picture: a shovel
+// ----------------------------------------------------------------
+{
+  make_tool_palette(tex, tier);
+  texture_row(tex,  1, "................");
+  texture_row(tex,  2, "...........111..");
+  texture_row(tex,  3, "..........12331.");
+  texture_row(tex,  4, ".........123321.");
+  texture_row(tex,  5, ".........122321.");
+  texture_row(tex,  6, "..........1221..");
+  texture_row(tex,  7, ".........1541...");
+  texture_row(tex,  8, "........15441...");
+  texture_row(tex,  9, ".......15441....");
+  texture_row(tex, 10, "......15441.....");
+  texture_row(tex, 11, ".....15441......");
+  texture_row(tex, 12, "....15441.......");
+  texture_row(tex, 13, "...15441........");
+  texture_row(tex, 14, "..1441..........");
+  texture_row(tex, 15, "..111...........");
+  texture_row(tex, 16, "................");
+}
+
+void make_texture_item_sword(Integer tex, Integer tier)
+// ----------------------------------------------------------------
+// Item picture: a sword
+// ----------------------------------------------------------------
+{
+  make_tool_palette(tex, tier);
+  texture_row(tex,  1, "................");
+  texture_row(tex,  2, "............111.");
+  texture_row(tex,  3, "...........13321");
+  texture_row(tex,  4, "..........133321");
+  texture_row(tex,  5, ".........133321.");
+  texture_row(tex,  6, "........133321..");
+  texture_row(tex,  7, ".......133321...");
+  texture_row(tex,  8, "..1...133321....");
+  texture_row(tex,  9, "..11.133321.....");
+  texture_row(tex, 10, "...113321.......");
+  texture_row(tex, 11, "...11321........");
+  texture_row(tex, 12, "..15411.........");
+  texture_row(tex, 13, ".1541.11........");
+  texture_row(tex, 14, ".141...1........");
+  texture_row(tex, 15, ".11.............");
+  texture_row(tex, 16, "................");
 }
 
 void textures_init()
@@ -768,9 +1127,28 @@ void textures_init()
   make_texture_sand         (TEX_SAND);
   make_texture_cow_hide     (TEX_COW_HIDE);
   make_texture_cow_face     (TEX_COW_FACE);
-  make_texture_stick        (TEX_STICK);
-  make_texture_raw_beef     (TEX_RAW_BEEF);
-  make_texture_cooked_beef  (TEX_COOKED_BEEF);
+  make_texture_sandstone_top (TEX_SANDSTONE_TOP);
+  make_texture_sandstone_side(TEX_SANDSTONE_SIDE);
+  make_texture_cactus_top    (TEX_CACTUS_TOP);
+  make_texture_cactus_side   (TEX_CACTUS_SIDE);
+  make_texture_coal_ore      (TEX_COAL_ORE);
+  make_texture_gravel        (TEX_GRAVEL);
+  make_texture_plant_grass   (TEX_PLANT_GRASS);
+  make_texture_plant_flower  (TEX_PLANT_POPPY, 214, 40, 34);
+  make_texture_plant_flower  (TEX_PLANT_DANDELION, 240, 214, 40);
+  make_texture_plant_dead_bush(TEX_PLANT_DEAD_BUSH);
+  make_texture_item_stick    (TEX_ITEM_STICK);
+  make_texture_item_beef     (TEX_ITEM_RAW_BEEF, FALSE);
+  make_texture_item_beef     (TEX_ITEM_COOKED_BEEF, TRUE);
+  make_texture_item_coal     (TEX_ITEM_COAL);
+  make_texture_item_pickaxe  (TEX_ITEM_WOODEN_PICKAXE, TIER_WOOD);
+  make_texture_item_pickaxe  (TEX_ITEM_STONE_PICKAXE, TIER_STONE);
+  make_texture_item_axe      (TEX_ITEM_WOODEN_AXE, TIER_WOOD);
+  make_texture_item_axe      (TEX_ITEM_STONE_AXE, TIER_STONE);
+  make_texture_item_shovel   (TEX_ITEM_WOODEN_SHOVEL, TIER_WOOD);
+  make_texture_item_shovel   (TEX_ITEM_STONE_SHOVEL, TIER_STONE);
+  make_texture_item_sword    (TEX_ITEM_WOODEN_SWORD, TIER_WOOD);
+  make_texture_item_sword    (TEX_ITEM_STONE_SWORD, TIER_STONE);
 
   for (tex = 1; tex <= NUM_TEXTURES; ++tex) texture_finish(tex);
 }

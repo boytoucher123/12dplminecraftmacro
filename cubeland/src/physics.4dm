@@ -33,33 +33,35 @@ Integer physics_box_collides(Real min_x, Real min_y, Real min_z, Real max_x, Rea
   return FALSE;
 }
 
-void physics_move_box(Real &x, Real &y, Real &z, Real half_width, Real height, Real dx, Real dy, Real dz)
+void physics_move_box(Real &x, Real &y, Real &z, Real half_width, Real height, Real dx, Real dy, Real dz,
+                      Integer &hit_x, Integer &hit_z, Integer &hit_down, Integer &hit_up)
 // ----------------------------------------------------------------
 // Move a box by (dx, dy, dz), one axis at a time (y, then x, then
 // z) so it slides along walls. When an axis is blocked the box is
 // pushed back to touch the blocking cell. Each step must be under
 // one block; callers split long moves into steps of MAX_MOVE_STEP.
-// Sets g_hit_x, g_hit_z, g_hit_down and g_hit_up.
+// Reports which way it was blocked in hit_x, hit_z, hit_down and
+// hit_up.
 // ----------------------------------------------------------------
 {
   Real new_x = x;
   Real new_y = y;
   Real new_z = z;
 
-  g_hit_x    = FALSE;
-  g_hit_z    = FALSE;
-  g_hit_down = FALSE;
-  g_hit_up   = FALSE;
+  hit_x    = FALSE;
+  hit_z    = FALSE;
+  hit_down = FALSE;
+  hit_up   = FALSE;
 
   if (dy != 0.0) {
     new_y = y + dy;
     if (physics_box_collides(x - half_width, new_y, z - half_width, x + half_width, new_y + height, z + half_width)) {
       if (dy < 0.0) {
         new_y      = Floor(new_y) + 1.0 + COLLISION_EPSILON;
-        g_hit_down = TRUE;
+        hit_down = TRUE;
       } else {
         new_y    = Floor(new_y + height) - height - COLLISION_EPSILON;
-        g_hit_up = TRUE;
+        hit_up = TRUE;
       }
       if (physics_box_collides(x - half_width, new_y, z - half_width, x + half_width, new_y + height, z + half_width)) {
         new_y = y;
@@ -79,7 +81,7 @@ void physics_move_box(Real &x, Real &y, Real &z, Real half_width, Real height, R
       if (physics_box_collides(new_x - half_width, y, z - half_width, new_x + half_width, y + height, z + half_width)) {
         new_x = x;
       }
-      g_hit_x = TRUE;
+      hit_x = TRUE;
     }
     x = new_x;
   }
@@ -95,7 +97,7 @@ void physics_move_box(Real &x, Real &y, Real &z, Real half_width, Real height, R
       if (physics_box_collides(x - half_width, y, new_z - half_width, x + half_width, y + height, new_z + half_width)) {
         new_z = z;
       }
-      g_hit_z = TRUE;
+      hit_z = TRUE;
     }
     z = new_z;
   }
@@ -114,13 +116,15 @@ Integer physics_box_in_water(Real x, Real y, Real z, Real half_width, Real heigh
   return FALSE;
 }
 
-Integer physics_raycast_blocks(Real origin_x, Real origin_y, Real origin_z, Real dir_x, Real dir_y, Real dir_z, Real max_distance)
+Integer physics_raycast_blocks(Real origin_x, Real origin_y, Real origin_z, Real dir_x, Real dir_y, Real dir_z, Real max_distance,
+                               Integer &hit_x, Integer &hit_y, Integer &hit_z,
+                               Integer &normal_x, Integer &normal_y, Integer &normal_z, Real &distance)
 // ----------------------------------------------------------------
 // Walk a ray through the grid cell by cell (3D DDA) and stop at the
-// first block that is neither air nor water. dir must be a unit
-// vector. Returns TRUE on a hit within max_distance and sets
-// g_ray_x/y/z (the cell), g_ray_normal_* (the face that was hit)
-// and g_ray_distance.
+// first block that is neither air nor water (plants count, so they
+// can be broken). dir must be a unit vector. Returns TRUE on a hit
+// within max_distance and sets hit_x/y/z (the cell), normal_* (the
+// face that was hit) and distance.
 // ----------------------------------------------------------------
 {
   Integer cell_x     = Floor(origin_x);
@@ -136,11 +140,13 @@ Integer physics_raycast_blocks(Real origin_x, Real origin_y, Real origin_z, Real
   Real    next_y     = 1000000.0;
   Real    next_z     = 1000000.0;
   Real    travelled  = 0.0;
-  Integer normal_x   = 0;
-  Integer normal_y   = 0;
-  Integer normal_z   = 0;
   Integer block      = 0;
   Integer guard      = 0;
+
+  normal_x = 0;
+  normal_y = 0;
+  normal_z = 0;
+  distance = 0.0;
 
   if (dir_x != 0.0) delta_x = Absolute(1.0 / dir_x);
   if (dir_y != 0.0) delta_y = Absolute(1.0 / dir_y);
@@ -170,13 +176,10 @@ Integer physics_raycast_blocks(Real origin_x, Real origin_y, Real origin_z, Real
 
     block = world_get_block(cell_x, cell_y, cell_z);
     if (block != BLOCK_AIR && block != BLOCK_WATER && world_in_bounds(cell_x, cell_y, cell_z)) {
-      g_ray_x        = cell_x;
-      g_ray_y        = cell_y;
-      g_ray_z        = cell_z;
-      g_ray_normal_x = normal_x;
-      g_ray_normal_y = normal_y;
-      g_ray_normal_z = normal_z;
-      g_ray_distance = travelled;
+      hit_x    = cell_x;
+      hit_y    = cell_y;
+      hit_z    = cell_z;
+      distance = travelled;
       return TRUE;
     }
 

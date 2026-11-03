@@ -4,6 +4,9 @@
 #include <deque>
 double g_sim_time = 13300000000.0;
 long long g_next_id = 0;
+long long g_attribute_calls = 0;
+long long g_attribute_type_errors = 0;
+std::map<Text,long long> g_attribute_by_name;
 std::map<Text,long long> g_widget_by_title;
 std::map<long long,Text> g_input_value;
 std::map<long long,std::vector<Text>> g_list_items;
@@ -69,7 +72,8 @@ static void load_script(const char*path){ std::ifstream in(path); Text line; whi
   else if(k=="quit"){ script.push_back({"quit",""}); }
 }}
 std::map<Text,std::function<void()>> g_calls;
-static void print_frames(){ printf("[frames] %lld polygons %lld\n", g_frames, g_polygons); }
+static void print_attr_top(){ std::vector<std::pair<long long,Text>> v; for(auto&p:g_attribute_by_name) v.push_back({p.second,p.first}); std::sort(v.rbegin(),v.rend()); for(size_t i=0;i<v.size()&&i<15;i++) printf("[attr] %lld %s\n",v[i].first,v[i].second.c_str()); }
+static void print_frames(){ if(getenv("TRACE_ATTR")) print_attr_top(); printf("[frames] %lld polygons %lld attribute calls %lld type errors %lld\n", g_frames, g_polygons, g_attribute_calls, g_attribute_type_errors); }
 struct FrameAtExit{ FrameAtExit(){ atexit(print_frames);} } frame_at_exit;
 void push_front_click(const char*kind,double x,double y){ script.push_front({kind,"",x,y}); }
 int Wait_on_events(long long&id,Text&cmd,Text&msg){
@@ -79,6 +83,7 @@ int Wait_on_events(long long&id,Text&cmd,Text&msg){
     Ev e=script.front(); script.pop_front();
     long long box=g_widget_by_title["drawbox"];
     long long keys=g_widget_by_title["Keys (click here if the keys stop working)"];
+    if(getenv("TRACE")) printf("[event] %s %s %g %g\n",e.kind.c_str(),e.a.c_str(),e.x,e.y);
     if(e.kind=="tick"||e.kind=="look"){ // mouse move from current cursor
       double bx=g_cursor_x-100+e.x, by=100+g_box_h-g_cursor_y-e.y; id=box; cmd="mouse_move"; char b[64]; snprintf(b,64,"%g %g",bx,by); msg=b; return 0; }
     if(e.kind=="key"){ id=keys; cmd="keystroke"; msg=e.a; return 0; }

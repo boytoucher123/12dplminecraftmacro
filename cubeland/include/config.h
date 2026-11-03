@@ -23,8 +23,8 @@
 #define SECTIONS_Y           6         // WORLD_HEIGHT / SECTION_SIZE
 #define SECTIONS_Z           8         // WORLD_SIZE_Z / SECTION_SIZE
 #define NUM_SECTIONS         384       // SECTIONS_X * SECTIONS_Y * SECTIONS_Z
-#define SECTION_FACE_CAP     1024      // faces one section can hold
-#define FACE_POOL_SIZE       393216    // NUM_SECTIONS * SECTION_FACE_CAP
+#define SECTION_FACE_CAP     2048      // faces one section can hold (dense forest needs ~1300)
+#define FACE_POOL_SIZE       786432    // NUM_SECTIONS * SECTION_FACE_CAP
 
 // ---------------------------------------------------------------- player
 #define PLAYER_HALF_WIDTH    0.3

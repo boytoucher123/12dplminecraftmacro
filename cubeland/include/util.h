@@ -2,7 +2,8 @@
 #define UTIL_H_INCLUDED
 
 // ----------------------------------------------------------------
-// Small maths, random number and text helpers
+// Small maths, hashing and text helpers (all honest: they only use
+// their arguments). Random sequences are in records.h.
 // ----------------------------------------------------------------
 
 Real    clamp_real          (Real value, Real low, Real high);
@@ -16,8 +17,6 @@ Integer to_byte             (Real value);
 Real    lerp_real           (Real from, Real to, Real amount);
 Real    smooth_curve        (Real amount);
 Real    hash_real           (Real first, Real second, Real third);
-Real    random_real         ();
-Integer random_integer      (Integer low, Integer high);
 Real    wrap_angle          (Real angle);
 Integer text_to_seed        (Text text);
 Text    file_title_from_path(Text path);

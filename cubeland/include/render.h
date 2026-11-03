@@ -1,6 +1,8 @@
 #ifndef RENDER_H_INCLUDED
 #define RENDER_H_INCLUDED
 
+#include "records.h"
+
 // ----------------------------------------------------------------
 // First person 3D view drawn with Draw_Box polygons
 //
@@ -12,15 +14,22 @@
 //
 // Close faces are drawn with their full 16 x 16 texture (base
 // colour plus merged rectangles), faces a little further away with
-// just the larger patches, distant faces as one average colour. Colours are shaded per face direction and fade into the
-// sky with distance.
+// just the larger patches, distant faces as one average colour.
+// Colours are shaded per face direction and by the light level the
+// mesh stored for the face, and fade into the sky with distance.
+// Plants and dropped non-block items are pictures that always face
+// the camera.
+//
+// Table functions: everything in this module works on the frame
+// scratch tables below. render_world copies what it needs from the
+// records it is given (player, settings, ...) into the g_view_*
+// globals at the start of a frame; nothing else writes them.
 // ----------------------------------------------------------------
 
-#define MAX_DRAW_FACES     7000
-#define MAX_BUCKETS        2048
-#define BUCKETS_PER_UNIT   2.0     // buckets per unit of squared distance
+#define MAX_DRAW_FACES     20000
+#define MAX_BUCKETS        4096
+#define PLANT_HALF_WIDTH   0.45
 #define NEAR_PLANE         0.05
-#define FIELD_OF_VIEW      1.22    // horizontal, radians (about 70 degrees)
 #define GUARD_BAND         3000.0  // screen clipping only past this many pixels
 #define MAX_POLY_POINTS    24
 #define WATER_TOP          0.875   // height of a water surface in its cell
@@ -32,11 +41,24 @@
 #define MAJOR_RECT_AREA    3       // patches of fewer pixels are left out at DETAIL_MAJOR
 
 /*Global variables*/ {
-  // Settings
-  Integer g_render_distance  = 18;
+  // Copied from the settings and the player at the start of a frame
+  Integer g_render_distance  = 20;
   Real    g_lod_full_pixels  = 110.0;  // faces bigger than this get the whole texture
   Real    g_lod_major_pixels = 44.0;   // faces bigger than this get its larger patches
-  Integer g_detail_level     = 2;      // 1 low, 2 normal, 3 high
+  Real    g_bucket_scale     = 1.0;    // buckets per unit of squared distance
+  Integer g_view_eye_in_water = 0;
+  Integer g_view_plants       = 1;
+  Integer g_view_shading      = 1;
+  Integer g_view_plant_range  = 16;
+  Real    g_view_pitch        = 0.0;
+  Integer g_view_break_stage  = 0;
+  Integer g_view_break_x      = 0;
+  Integer g_view_break_y      = -1;
+  Integer g_view_break_z      = 0;
+  Integer g_view_target_kind  = 0;
+  Integer g_view_target_x     = 0;
+  Integer g_view_target_y     = 0;
+  Integer g_view_target_z     = 0;
 
   // Camera, rebuilt every frame
   Real    g_cam_x = 0.0;
@@ -140,23 +162,30 @@ void    render_set_colour      (Draw_Box box, Real red, Real green, Real blue);
 void    render_set_face_colour (Draw_Box box, Real red, Real green, Real blue);
 void    render_fill_rect       (Draw_Box box, Real x0, Real y0, Real x1, Real y1);
 void    render_line            (Draw_Box box, Real x0, Real y0, Real x1, Real y1);
-void    render_setup_camera    (Real w, Real h, Real view_bottom);
+void    render_setup_camera    (Real w, Real h, Real view_bottom, Real eye_x, Real eye_y, Real eye_z,
+                                Real yaw, Real pitch, Real field_of_view);
 void    render_to_camera       (Real rel_x, Real rel_y, Real rel_z);
 Integer render_sphere_visible  (Real rel_x, Real rel_y, Real rel_z, Real radius);
 void    render_add_face        (Real c0x, Real c0y, Real c0z, Real e1x, Real e1y, Real e1z, Real e2x, Real e2y, Real e2z,
                                 Integer tex, Real shade, Real distance_squared, Real size, Real tint, Integer crack);
-void    render_add_block_face  (Integer x, Integer y, Integer z, Integer direction, Integer block, Real distance_squared, Integer crack);
-void    render_collect_blocks  ();
+void    render_add_block_face  (Attributes &furnaces, Integer x, Integer y, Integer z, Integer direction, Integer block,
+                                Real distance_squared, Integer crack, Real light);
+void    render_add_sprite      (Real rel_x, Real rel_y, Real rel_z, Real half_width, Real height, Integer tex,
+                                Real shade, Real distance_squared);
+void    render_collect_blocks  (Attributes &furnaces);
 void    render_add_box         (Real centre_x, Real centre_y, Real centre_z, Real yaw, Real half_f, Real half_y, Real half_s,
                                 Integer tex_side, Integer tex_top, Integer tex_front, Real tint);
-void    render_collect_cows    ();
-void    render_collect_drops   ();
+void    render_collect_cows    (Attributes &cows);
+void    render_collect_drops   (Attributes &drops);
 Integer render_clip_and_draw   (Draw_Box box);
 void    render_quad            (Draw_Box box, Real u0, Real v0, Real u1, Real v1);
 void    render_draw_face       (Draw_Box box, Integer face);
 void    render_draw_faces      (Draw_Box box);
 void    render_sky             (Draw_Box box);
 void    render_target_outline  (Draw_Box box);
-void    render_world           (Draw_Box box, Real w, Real h, Real view_bottom);
+void    render_view_from       (Attributes &player, Attributes &settings, Real now);
+Text    render_stats_text      ();
+void    render_world           (Draw_Box box, Real w, Real h, Real view_bottom, Attributes &player, Attributes &cows,
+                                Attributes &drops, Attributes &furnaces, Attributes &settings, Real now);
 
 #endif
