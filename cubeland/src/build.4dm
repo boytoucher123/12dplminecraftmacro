@@ -1,6 +1,10 @@
 #ifndef INCLUDE_BUILD_4DM
 #define INCLUDE_BUILD_4DM
 
+// Safety first: blocks every dangerous library call for all the
+// source files below (see the header). Keep it the first include.
+#include "../include/safety.h"
+
 // Build settings
 
 #define RELEASE

@@ -25,6 +25,7 @@
 #define WORLD_FOLDER        "cubeland_worlds"
 #define WORLD_EXTENSION     ".cubeworld"
 #define WORLD_FILE_TAG      "CUBELAND_WORLD"
+#define WORLD_DELETED_TAG   "CUBELAND_DELETED_WORLD"
 #define WORLD_FILE_VERSION  2
 #define EDITS_PER_LINE      16
 
@@ -48,6 +49,7 @@ void    save_on_event     (Attributes &p_event);
 Text    save_world_path   (Text p_name);
 Text    save_settings_path();
 void    save_ensure_folder();
+Integer save_file_is_deleted(Text p_path);
 Integer save_world_exists (Text p_name);
 Integer save_list_worlds  (Dynamic_Text &p_names);
 Integer save_delete_world (Text p_name);

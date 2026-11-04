@@ -101,13 +101,35 @@ void save_ensure_folder()
   if (!Directory_exists(WORLD_FOLDER)) Directory_create(WORLD_FOLDER);
 }
 
-Integer save_world_exists(Text p_name)
+Integer save_file_is_deleted(Text p_path)
 // ----------------------------------------------------------------
-// TRUE if a world of this name has been saved
+// TRUE if a world file only holds the "deleted" marker that
+// save_delete_world() leaves behind (safety.h forbids deleting
+// files, so a deleted world is emptied instead)
 // ----------------------------------------------------------------
 {
-  if (File_exists(save_world_path(p_name))) return TRUE;
-  return FALSE;
+  File    l_file;
+  Text    l_line    = "";
+  Integer l_deleted = FALSE;
+
+  if (safe_file_open(p_path, "r", l_file) != 0) return FALSE;
+  if (File_read_line(l_file, l_line) == 0) {
+    if (l_line == WORLD_DELETED_TAG) l_deleted = TRUE;
+  }
+  File_close(l_file);
+  return l_deleted;
+}
+
+Integer save_world_exists(Text p_name)
+// ----------------------------------------------------------------
+// TRUE if a world of this name has been saved (and not deleted)
+// ----------------------------------------------------------------
+{
+  Text l_path = save_world_path(p_name);
+
+  if (!File_exists(l_path))         return FALSE;
+  if (save_file_is_deleted(l_path)) return FALSE;
+  return TRUE;
 }
 
 Integer save_list_worlds(Dynamic_Text &p_names)
@@ -133,6 +155,7 @@ Integer save_list_worlds(Dynamic_Text &p_names)
     Get_item(l_files, l_file, l_path);
     l_title = file_title_from_path(l_path);
     if (l_title == "") continue;
+    if (!save_world_exists(l_title)) continue;
     Append(l_title, p_names);
     ++l_found;
   }
@@ -141,11 +164,18 @@ Integer save_list_worlds(Dynamic_Text &p_names)
 
 Integer save_delete_world(Text p_name)
 // ----------------------------------------------------------------
-// Delete a saved world's file
+// Delete a saved world. Deleting files is blocked by safety.h, so
+// the file is overwritten with WORLD_DELETED_TAG instead: the menu
+// no longer lists it and a new world can reuse the name. The empty
+// file can be removed by hand from the worlds folder.
 // ----------------------------------------------------------------
 {
+  File l_file;
+
   if (!save_world_exists(p_name)) return FAILURE;
-  if (Delete_files(save_world_path(p_name)) != 0) return FAILURE;
+  if (safe_file_open(save_world_path(p_name), "w", l_file) != 0) return FAILURE;
+  File_write_line(l_file, WORLD_DELETED_TAG);
+  File_close(l_file);
   return SUCCESS;
 }
 
@@ -278,7 +308,7 @@ Integer save_world(Text p_name, Attributes &p_info, Attributes &p_player, Attrib
   if (p_name == "") return FAILURE;
 
   save_ensure_folder();
-  if (File_open(save_world_path(p_name), "w", "", l_file) != 0) return FAILURE;
+  if (safe_file_open(save_world_path(p_name), "w", l_file) != 0) return FAILURE;
 
   l_line = WORLD_FILE_TAG;
   File_write_line(l_file, l_line + " " + To_text(WORLD_FILE_VERSION));
@@ -374,7 +404,7 @@ Integer load_world(Text p_name, Attributes &p_info, Attributes &p_player, Attrib
     p_problem = "there is no saved world called " + p_name;
     return FAILURE;
   }
-  if (File_open(save_world_path(p_name), "r", "", l_file) != 0) {
+  if (safe_file_open(save_world_path(p_name), "r", l_file) != 0) {
     p_problem = "the world file couldn't be opened";
     return FAILURE;
   }

@@ -144,7 +144,7 @@ Integer settings_save(Attributes &p_settings, Text p_path)
 {
   File l_file;
 
-  if (File_open(p_path, "w", "", l_file) != 0) return FAILURE;
+  if (safe_file_open(p_path, "w", l_file) != 0) return FAILURE;
 
   File_write_line(l_file, settings_line(ATTR_SET_RENDER_DISTANCE, settings_render_distance(p_settings)));
   File_write_line(l_file, settings_line(ATTR_SET_DETAIL, settings_detail(p_settings)));
@@ -177,7 +177,7 @@ Integer settings_load(Attributes &p_settings, Text p_path)
 
   settings_defaults(p_settings);
   if (!File_exists(p_path)) return FAILURE;
-  if (File_open(p_path, "r", "", l_file) != 0) return FAILURE;
+  if (safe_file_open(p_path, "r", l_file) != 0) return FAILURE;
 
   while (File_read_line(l_file, l_line) == 0) {
     Null(l_words);
