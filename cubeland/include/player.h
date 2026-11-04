@@ -50,49 +50,49 @@
 #define ATTR_BREAK_NEEDED        ("break_needed")
 
 // ---------------------------------------------------------------- accessors
-void    player_reset           (Attributes &player, Real x, Real y, Real z);
-void    player_position        (Attributes &player, Real &x, Real &y, Real &z);
-void    player_set_position    (Attributes &player, Real x, Real y, Real z);
-void    player_velocity        (Attributes &player, Real &vx, Real &vy, Real &vz);
-void    player_set_velocity    (Attributes &player, Real vx, Real vy, Real vz);
-void    player_look            (Attributes &player, Real &yaw, Real &pitch);
-void    player_set_look        (Attributes &player, Real yaw, Real pitch);
-Real    player_eye_y           (Attributes &player);
-void    player_look_direction  (Attributes &player, Real &dir_x, Real &dir_y, Real &dir_z);
-Integer player_health          (Attributes &player);
-void    player_set_health      (Attributes &player, Integer health);
-Integer player_is_dead         (Attributes &player);
-Integer player_on_ground       (Attributes &player);
-Integer player_in_water        (Attributes &player);
-Integer player_eye_in_water    (Attributes &player);
-Real    player_hurt_time       (Attributes &player);
-Real    player_swing_time      (Attributes &player);
-Real    player_bob             (Attributes &player);
-Real    player_fall_peak       (Attributes &player);
-void    player_set_fall_peak   (Attributes &player, Real peak);
-Integer player_selected        (Attributes &player);
-void    player_set_selected    (Attributes &player, Integer slot);
-Integer player_auto_walk       (Attributes &player);
-void    player_set_auto_walk   (Attributes &player, Integer on);
-Integer player_held_item       (Attributes &player, Attributes &inventory);
-Integer player_target_kind     (Attributes &player);
-void    player_target_cell     (Attributes &player, Integer &x, Integer &y, Integer &z);
-void    player_target_normal   (Attributes &player, Integer &x, Integer &y, Integer &z);
-Integer player_target_cow      (Attributes &player);
-Integer player_break_stage     (Attributes &player, Real now);
+void    player_reset           (Attributes &p_player, Real p_x, Real p_y, Real p_z);
+void    player_position        (Attributes &p_player, Real &p_x, Real &p_y, Real &p_z);
+void    player_set_position    (Attributes &p_player, Real p_x, Real p_y, Real p_z);
+void    player_velocity        (Attributes &p_player, Real &p_vx, Real &p_vy, Real &p_vz);
+void    player_set_velocity    (Attributes &p_player, Real p_vx, Real p_vy, Real p_vz);
+void    player_look            (Attributes &p_player, Real &p_yaw, Real &p_pitch);
+void    player_set_look        (Attributes &p_player, Real p_yaw, Real p_pitch);
+Real    player_eye_y           (Attributes &p_player);
+void    player_look_direction  (Attributes &p_player, Real &p_dir_x, Real &p_dir_y, Real &p_dir_z);
+Integer player_health          (Attributes &p_player);
+void    player_set_health      (Attributes &p_player, Integer p_health);
+Integer player_is_dead         (Attributes &p_player);
+Integer player_on_ground       (Attributes &p_player);
+Integer player_in_water        (Attributes &p_player);
+Integer player_eye_in_water    (Attributes &p_player);
+Real    player_hurt_time       (Attributes &p_player);
+Real    player_swing_time      (Attributes &p_player);
+Real    player_bob             (Attributes &p_player);
+Real    player_fall_peak       (Attributes &p_player);
+void    player_set_fall_peak   (Attributes &p_player, Real p_peak);
+Integer player_selected        (Attributes &p_player);
+void    player_set_selected    (Attributes &p_player, Integer p_slot);
+Integer player_auto_walk       (Attributes &p_player);
+void    player_set_auto_walk   (Attributes &p_player, Integer p_on);
+Integer player_held_item       (Attributes &p_player, Attributes &p_inventory);
+Integer player_target_kind     (Attributes &p_player);
+void    player_target_cell     (Attributes &p_player, Integer &p_x, Integer &p_y, Integer &p_z);
+void    player_target_normal   (Attributes &p_player, Integer &p_x, Integer &p_y, Integer &p_z);
+Integer player_target_cow      (Attributes &p_player);
+Integer player_break_stage     (Attributes &p_player, Real p_now);
 
 // ---------------------------------------------------------------- behaviour
-void    player_turn            (Attributes &player, Real yaw_change, Real pitch_change);
-void    player_key_pressed     (Attributes &player, Text key, Real now);
-Integer player_key_active      (Attributes &player, Text key, Real now);
-void    player_damage          (Attributes &player, Attributes &events, Integer amount);
-void    player_update          (Attributes &player, Attributes &cows, Attributes &events, Integer auto_jump, Real dt, Real now);
-void    player_update_target   (Attributes &player, Attributes &cows);
-Integer player_overlaps_cell   (Attributes &player, Integer x, Integer y, Integer z);
-void    player_wear_tool       (Attributes &player, Attributes &inventory, Attributes &events);
-void    player_primary_action  (Attributes &player, Attributes &inventory, Attributes &cows, Attributes &events,
-                                Attributes &random, Real now);
-void    player_secondary_action(Attributes &player, Attributes &inventory, Attributes &cows, Attributes &events, Real now);
-Integer player_furnace_facing  (Real player_x, Real player_z, Integer cell_x, Integer cell_z);
+void    player_turn            (Attributes &p_player, Real p_yaw_change, Real p_pitch_change);
+void    player_key_pressed     (Attributes &p_player, Text p_key, Real p_now);
+Integer player_key_active      (Attributes &p_player, Text p_key, Real p_now);
+void    player_damage          (Attributes &p_player, Attributes &p_events, Integer p_amount);
+void    player_update          (Attributes &p_player, Attributes &p_cows, Attributes &p_events, Integer p_auto_jump, Real p_dt, Real p_now);
+void    player_update_target   (Attributes &p_player, Attributes &p_cows);
+Integer player_overlaps_cell   (Attributes &p_player, Integer p_x, Integer p_y, Integer p_z);
+void    player_wear_tool       (Attributes &p_player, Attributes &p_inventory, Attributes &p_events);
+void    player_primary_action  (Attributes &p_player, Attributes &p_inventory, Attributes &p_cows, Attributes &p_events,
+                                Attributes &p_random, Real p_now);
+void    player_secondary_action(Attributes &p_player, Attributes &p_inventory, Attributes &p_cows, Attributes &p_events, Real p_now);
+Integer player_furnace_facing  (Real p_player_x, Real p_player_z, Integer p_cell_x, Integer p_cell_z);
 
 #endif

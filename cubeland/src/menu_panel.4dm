@@ -8,31 +8,31 @@
 #include "../include/save.h"
 #include "../include/panels.h"
 
-Integer menu_refresh_worlds(List_Box world_list)
+Integer menu_refresh_worlds(List_Box p_world_list)
 // ----------------------------------------------------------------
 // Fill the list box with the saved worlds; returns how many
 // ----------------------------------------------------------------
 {
-  Dynamic_Text names;
-  Integer      count    = 0;
-  Integer      existing = 0;
-  Integer      index    = 0;
-  Text         name     = "";
+  Dynamic_Text l_names;
+  Integer      l_count    = 0;
+  Integer      l_existing = 0;
+  Integer      l_index    = 0;
+  Text         l_name     = "";
 
-  Get_number_of_items(world_list, existing);
-  for (index = existing; index >= 1; --index) Delete_item(world_list, index);
+  Get_number_of_items(p_world_list, l_existing);
+  for (l_index = l_existing; l_index >= 1; --l_index) Delete_item(p_world_list, l_index);
 
-  count = save_list_worlds(names);
-  for (index = 1; index <= count; ++index) {
-    Get_item(names, index, name);
-    Add_item(world_list, name);
+  l_count = save_list_worlds(l_names);
+  for (l_index = 1; l_index <= l_count; ++l_index) {
+    Get_item(l_names, l_index, l_name);
+    Add_item(p_world_list, l_name);
   }
-  if (count > 0) Set_selection(world_list, 1);
+  if (l_count > 0) Set_selection(p_world_list, 1);
 
-  return count;
+  return l_count;
 }
 
-Integer menu_panel_run(Attributes &game, Attributes &random, Attributes &settings)
+Integer menu_panel_run(Attributes &p_game, Attributes &p_random, Attributes &p_settings)
 // ----------------------------------------------------------------
 // The world menu: pick a saved world to play, delete one, make a
 // new one with a name and an optional seed, or change the settings
@@ -40,130 +40,130 @@ Integer menu_panel_run(Attributes &game, Attributes &random, Attributes &setting
 // chosen world in the game record (ATTR_MENU_WORLD, ATTR_MENU_SEED)
 // ----------------------------------------------------------------
 {
-  Text               title          = GAME_TITLE;
-  Panel              panel          = Create_panel(title + " - worlds");
-  Vertical_Group     vgroup         = Create_vertical_group(0);
-  Colour_Message_Box message        = Create_colour_message_box("");
-  List_Box           world_list     = Create_list_box("Saved worlds", message, 8);
-  Input_Box          name_box       = Create_input_box("New world name", message);
-  Input_Box          seed_box       = Create_input_box("Seed (blank for random)", message);
-  Horizontal_Group   buttons        = Create_button_group();
-  Button             play_button    = Create_button("&Play selected", "play");
-  Button             create_button  = Create_button("&Create new world", "create");
-  Button             delete_button  = Create_button("&Delete selected", "delete");
-  Button             settings_button= Create_button("&Settings", "menu_settings");
-  Button             quit_button    = Create_finish_button("Quit", "quit");
-  Integer            result         = MENU_RESULT_QUIT;
-  Integer            doit           = TRUE;
-  Integer            count          = 0;
-  Integer            selected       = 0;
-  Integer64          id             = 0;
-  Text               cmd            = "";
-  Text               msg            = "";
-  Text               name           = "";
-  Text               seed_text      = "";
-  Text               pending_delete = "";
+  Text               l_title          = GAME_TITLE;
+  Panel              l_panel          = Create_panel(l_title + " - worlds");
+  Vertical_Group     l_vgroup         = Create_vertical_group(0);
+  Colour_Message_Box l_message        = Create_colour_message_box("");
+  List_Box           l_world_list     = Create_list_box("Saved worlds", l_message, 8);
+  Input_Box          l_name_box       = Create_input_box("New world name", l_message);
+  Input_Box          l_seed_box       = Create_input_box("Seed (blank for random)", l_message);
+  Horizontal_Group   l_buttons        = Create_button_group();
+  Button             l_play_button    = Create_button("&Play selected", "play");
+  Button             l_create_button  = Create_button("&Create new world", "create");
+  Button             l_delete_button  = Create_button("&Delete selected", "delete");
+  Button             l_settings_button= Create_button("&Settings", "menu_settings");
+  Button             l_quit_button    = Create_finish_button("Quit", "quit");
+  Integer            l_result         = MENU_RESULT_QUIT;
+  Integer            l_doit           = TRUE;
+  Integer            l_count          = 0;
+  Integer            l_selected       = 0;
+  Integer64          l_id             = 0;
+  Text               l_cmd            = "";
+  Text               l_msg            = "";
+  Text               l_name           = "";
+  Text               l_seed_text      = "";
+  Text               l_pending_delete = "";
 
-  Append(play_button  , buttons);
-  Append(create_button, buttons);
-  Append(delete_button, buttons);
-  Append(settings_button, buttons);
-  Append(quit_button  , buttons);
+  Append(l_play_button  , l_buttons);
+  Append(l_create_button, l_buttons);
+  Append(l_delete_button, l_buttons);
+  Append(l_settings_button, l_buttons);
+  Append(l_quit_button  , l_buttons);
 
-  Append(world_list, vgroup);
-  Append(name_box  , vgroup);
-  Append(seed_box  , vgroup);
-  Append(buttons   , vgroup);
-  Append(message   , vgroup);
-  Append(vgroup    , panel);
+  Append(l_world_list, l_vgroup);
+  Append(l_name_box  , l_vgroup);
+  Append(l_seed_box  , l_vgroup);
+  Append(l_buttons   , l_vgroup);
+  Append(l_message   , l_vgroup);
+  Append(l_vgroup    , l_panel);
 
-  Show_widget(panel);
+  Show_widget(l_panel);
 
-  count = menu_refresh_worlds(world_list);
-  Set_data(name_box, "World " + To_text(count + 1));
-  if (count == 0) {
-    Set_data(message, "No saved worlds yet - type a name (and a seed if you like) and press Create new world.");
+  l_count = menu_refresh_worlds(l_world_list);
+  Set_data(l_name_box, "World " + To_text(l_count + 1));
+  if (l_count == 0) {
+    Set_data(l_message, "No saved worlds yet - type a name (and a seed if you like) and press Create new world.");
   } else {
-    Set_data(message, "Pick a world and press Play, or make a new one.");
+    Set_data(l_message, "Pick a world and press Play, or make a new one.");
   }
 
-  while (doit) {
-    id  = 0;
-    cmd = "";
-    msg = "";
-    if (Wait_on_events(id, cmd, msg) != 0) continue;
+  while (l_doit) {
+    l_id  = 0;
+    l_cmd = "";
+    l_msg = "";
+    if (Wait_on_events(l_id, l_cmd, l_msg) != 0) continue;
 
-    if (cmd == "keystroke" || cmd == "set_focus" || cmd == "kill_focus") continue;
+    if (l_cmd == "keystroke" || l_cmd == "set_focus" || l_cmd == "kill_focus") continue;
 
-    if (cmd == "CodeShutdown") {
-      Set_exit_code(cmd);
-      result = SHUTDOWN_CODE;
-      doit   = FALSE;
-    } else if (cmd == "Panel Quit" || cmd == "quit") {
-      result = MENU_RESULT_QUIT;
-      doit   = FALSE;
-    } else if (cmd == "play") {
-      selected = 0;
-      Get_selection(world_list, selected);
-      if (selected < 1) {
-        Set_data(message, "Select a world in the list first.");
+    if (l_cmd == "CodeShutdown") {
+      Set_exit_code(l_cmd);
+      l_result = SHUTDOWN_CODE;
+      l_doit   = FALSE;
+    } else if (l_cmd == "Panel Quit" || l_cmd == "quit") {
+      l_result = MENU_RESULT_QUIT;
+      l_doit   = FALSE;
+    } else if (l_cmd == "play") {
+      l_selected = 0;
+      Get_selection(l_world_list, l_selected);
+      if (l_selected < 1) {
+        Set_data(l_message, "Select a world in the list first.");
       } else {
-        Get_item(world_list, selected, name);
-        record_set_text(game, ATTR_MENU_WORLD, name);
-        result = MENU_RESULT_PLAY;
-        doit   = FALSE;
+        Get_item(l_world_list, l_selected, l_name);
+        record_set_text(p_game, ATTR_MENU_WORLD, l_name);
+        l_result = MENU_RESULT_PLAY;
+        l_doit   = FALSE;
       }
-    } else if (cmd == "create") {
-      Get_data(name_box, name);
-      name = Text_justify(name);
-      Get_data(seed_box, seed_text);
-      seed_text = Text_justify(seed_text);
-      if (!text_is_safe_name(name)) {
-        Set_data(message, "World names can use letters, numbers, spaces, - and _ (up to 40 characters).");
-      } else if (save_world_exists(name)) {
-        Set_data(message, "There is already a world called " + name + ".");
+    } else if (l_cmd == "create") {
+      Get_data(l_name_box, l_name);
+      l_name = Text_justify(l_name);
+      Get_data(l_seed_box, l_seed_text);
+      l_seed_text = Text_justify(l_seed_text);
+      if (!text_is_safe_name(l_name)) {
+        Set_data(l_message, "World names can use letters, numbers, spaces, - and _ (up to 40 characters).");
+      } else if (save_world_exists(l_name)) {
+        Set_data(l_message, "There is already a world called " + l_name + ".");
       } else {
-        record_set_text(game, ATTR_MENU_WORLD, name);
-        if (seed_text == "") {
-          record_set_integer(game, ATTR_MENU_SEED, random_range(random, 1, 999999999));
+        record_set_text(p_game, ATTR_MENU_WORLD, l_name);
+        if (l_seed_text == "") {
+          record_set_integer(p_game, ATTR_MENU_SEED, random_range(p_random, 1, 999999999));
         } else {
-          record_set_integer(game, ATTR_MENU_SEED, text_to_seed(seed_text));
+          record_set_integer(p_game, ATTR_MENU_SEED, text_to_seed(l_seed_text));
         }
-        result = MENU_RESULT_CREATE;
-        doit   = FALSE;
+        l_result = MENU_RESULT_CREATE;
+        l_doit   = FALSE;
       }
-    } else if (cmd == "menu_settings") {
-      if (settings_panel_run(settings) == SHUTDOWN_CODE) {
-        result = SHUTDOWN_CODE;
-        doit   = FALSE;
+    } else if (l_cmd == "menu_settings") {
+      if (settings_panel_run(p_settings) == SHUTDOWN_CODE) {
+        l_result = SHUTDOWN_CODE;
+        l_doit   = FALSE;
       } else {
-        Set_data(message, "Settings saved.");
+        Set_data(l_message, "Settings saved.");
       }
-    } else if (cmd == "delete") {
-      selected = 0;
-      Get_selection(world_list, selected);
-      if (selected < 1) {
-        Set_data(message, "Select a world in the list first.");
+    } else if (l_cmd == "delete") {
+      l_selected = 0;
+      Get_selection(l_world_list, l_selected);
+      if (l_selected < 1) {
+        Set_data(l_message, "Select a world in the list first.");
       } else {
-        Get_item(world_list, selected, name);
-        if (pending_delete != name) {
-          pending_delete = name;
-          Set_data(message, "Press Delete selected again to delete " + name + " for good.");
+        Get_item(l_world_list, l_selected, l_name);
+        if (l_pending_delete != l_name) {
+          l_pending_delete = l_name;
+          Set_data(l_message, "Press Delete selected again to delete " + l_name + " for good.");
         } else {
-          pending_delete = "";
-          if (save_delete_world(name) == SUCCESS) {
-            Set_data(message, "Deleted " + name + ".");
+          l_pending_delete = "";
+          if (save_delete_world(l_name) == SUCCESS) {
+            Set_data(l_message, "Deleted " + l_name + ".");
           } else {
-            Set_data(message, "Couldn't delete " + name + ".");
+            Set_data(l_message, "Couldn't delete " + l_name + ".");
           }
-          menu_refresh_worlds(world_list);
+          menu_refresh_worlds(l_world_list);
         }
       }
     }
   }
 
-  Hide_widget(panel);
-  return result;
+  Hide_widget(l_panel);
+  return l_result;
 }
 
 #endif

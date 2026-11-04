@@ -15,331 +15,331 @@
 
 // ---------------------------------------------------------------- accessors
 
-void player_reset(Attributes &player, Real x, Real y, Real z)
+void player_reset(Attributes &p_player, Real p_x, Real p_y, Real p_z)
 // ----------------------------------------------------------------
 // Stand the player at (x, y, z), alive and at full health, keeping
 // the look direction and selected slot
 // ----------------------------------------------------------------
 {
-  Real    yaw      = record_real   (player, ATTR_YAW);
-  Real    pitch    = record_real   (player, ATTR_PITCH);
-  Integer selected = record_integer(player, ATTR_PLAYER_SELECTED);
+  Real    l_yaw      = record_real   (p_player, ATTR_YAW);
+  Real    l_pitch    = record_real   (p_player, ATTR_PITCH);
+  Integer l_selected = record_integer(p_player, ATTR_PLAYER_SELECTED);
 
-  if (selected < 1) selected = 1;
+  if (l_selected < 1) l_selected = 1;
 
-  record_clear(player, DATATYPE_PLAYER);
-  player_set_position (player, x, y, z);
-  player_set_velocity (player, 0.0, 0.0, 0.0);
-  player_set_look     (player, yaw, pitch);
-  player_set_health   (player, PLAYER_MAX_HEALTH);
-  player_set_selected (player, selected);
-  player_set_fall_peak(player, y);
-  player_set_auto_walk(player, FALSE);
+  record_clear(p_player, DATATYPE_PLAYER);
+  player_set_position (p_player, p_x, p_y, p_z);
+  player_set_velocity (p_player, 0.0, 0.0, 0.0);
+  player_set_look     (p_player, l_yaw, l_pitch);
+  player_set_health   (p_player, PLAYER_MAX_HEALTH);
+  player_set_selected (p_player, l_selected);
+  player_set_fall_peak(p_player, p_y);
+  player_set_auto_walk(p_player, FALSE);
 
-  record_set_integer(player, ATTR_PLAYER_DEAD,         FALSE);
-  record_set_integer(player, ATTR_ON_GROUND,           FALSE);
-  record_set_integer(player, ATTR_PLAYER_IN_WATER,     FALSE);
-  record_set_integer(player, ATTR_PLAYER_EYE_IN_WATER, FALSE);
-  record_set_real   (player, ATTR_PLAYER_REGEN,        0.0);
-  record_set_real   (player, ATTR_PLAYER_HURT,         0.0);
-  record_set_real   (player, ATTR_PLAYER_SWING,        0.0);
-  record_set_real   (player, ATTR_PLAYER_BOB,          0.0);
-  record_set_text   (player, ATTR_MOVE_KEY,            "");
-  record_set_real   (player, ATTR_MOVE_UNTIL,          0.0);
-  record_set_real   (player, ATTR_MOVE_LAST,           0.0);
-  record_set_real   (player, ATTR_MOVE_START,          0.0);
-  record_set_integer(player, ATTR_MOVE_HELD,           FALSE);
-  record_set_real   (player, ATTR_JUMP_UNTIL,          0.0);
-  record_set_integer(player, ATTR_TARGET_KIND,         TARGET_NONE);
-  record_set_integer(player, ATTR_TARGET_X,            0);
-  record_set_integer(player, ATTR_TARGET_Y,            0);
-  record_set_integer(player, ATTR_TARGET_Z,            0);
-  record_set_integer(player, ATTR_TARGET_NORMAL_X,     0);
-  record_set_integer(player, ATTR_TARGET_NORMAL_Y,     0);
-  record_set_integer(player, ATTR_TARGET_NORMAL_Z,     0);
-  record_set_integer(player, ATTR_TARGET_COW,          0);
-  record_set_integer(player, ATTR_BREAK_X,             0);
-  record_set_integer(player, ATTR_BREAK_Y,             -1);
-  record_set_integer(player, ATTR_BREAK_Z,             0);
-  record_set_integer(player, ATTR_BREAK_HITS,          0);
-  record_set_integer(player, ATTR_BREAK_NEEDED,        0);
-  record_set_real   (player, ATTR_BREAK_TIME,          0.0);
+  record_set_integer(p_player, ATTR_PLAYER_DEAD,         FALSE);
+  record_set_integer(p_player, ATTR_ON_GROUND,           FALSE);
+  record_set_integer(p_player, ATTR_PLAYER_IN_WATER,     FALSE);
+  record_set_integer(p_player, ATTR_PLAYER_EYE_IN_WATER, FALSE);
+  record_set_real   (p_player, ATTR_PLAYER_REGEN,        0.0);
+  record_set_real   (p_player, ATTR_PLAYER_HURT,         0.0);
+  record_set_real   (p_player, ATTR_PLAYER_SWING,        0.0);
+  record_set_real   (p_player, ATTR_PLAYER_BOB,          0.0);
+  record_set_text   (p_player, ATTR_MOVE_KEY,            "");
+  record_set_real   (p_player, ATTR_MOVE_UNTIL,          0.0);
+  record_set_real   (p_player, ATTR_MOVE_LAST,           0.0);
+  record_set_real   (p_player, ATTR_MOVE_START,          0.0);
+  record_set_integer(p_player, ATTR_MOVE_HELD,           FALSE);
+  record_set_real   (p_player, ATTR_JUMP_UNTIL,          0.0);
+  record_set_integer(p_player, ATTR_TARGET_KIND,         TARGET_NONE);
+  record_set_integer(p_player, ATTR_TARGET_X,            0);
+  record_set_integer(p_player, ATTR_TARGET_Y,            0);
+  record_set_integer(p_player, ATTR_TARGET_Z,            0);
+  record_set_integer(p_player, ATTR_TARGET_NORMAL_X,     0);
+  record_set_integer(p_player, ATTR_TARGET_NORMAL_Y,     0);
+  record_set_integer(p_player, ATTR_TARGET_NORMAL_Z,     0);
+  record_set_integer(p_player, ATTR_TARGET_COW,          0);
+  record_set_integer(p_player, ATTR_BREAK_X,             0);
+  record_set_integer(p_player, ATTR_BREAK_Y,             -1);
+  record_set_integer(p_player, ATTR_BREAK_Z,             0);
+  record_set_integer(p_player, ATTR_BREAK_HITS,          0);
+  record_set_integer(p_player, ATTR_BREAK_NEEDED,        0);
+  record_set_real   (p_player, ATTR_BREAK_TIME,          0.0);
 }
 
-void player_position(Attributes &player, Real &x, Real &y, Real &z)
+void player_position(Attributes &p_player, Real &p_x, Real &p_y, Real &p_z)
 // ----------------------------------------------------------------
 // Feet position (x, z centre of the footprint, y the soles)
 // ----------------------------------------------------------------
 {
-  x = record_real(player, ATTR_X);
-  y = record_real(player, ATTR_Y);
-  z = record_real(player, ATTR_Z);
+  p_x = record_real(p_player, ATTR_X);
+  p_y = record_real(p_player, ATTR_Y);
+  p_z = record_real(p_player, ATTR_Z);
 }
 
-void player_set_position(Attributes &player, Real x, Real y, Real z)
+void player_set_position(Attributes &p_player, Real p_x, Real p_y, Real p_z)
 // ----------------------------------------------------------------
 // Move the player without any collision checks
 // ----------------------------------------------------------------
 {
-  record_set_real(player, ATTR_X, x);
-  record_set_real(player, ATTR_Y, y);
-  record_set_real(player, ATTR_Z, z);
+  record_set_real(p_player, ATTR_X, p_x);
+  record_set_real(p_player, ATTR_Y, p_y);
+  record_set_real(p_player, ATTR_Z, p_z);
 }
 
-void player_velocity(Attributes &player, Real &vx, Real &vy, Real &vz)
+void player_velocity(Attributes &p_player, Real &p_vx, Real &p_vy, Real &p_vz)
 // ----------------------------------------------------------------
 // Velocity in blocks per second
 // ----------------------------------------------------------------
 {
-  vx = record_real(player, ATTR_VX);
-  vy = record_real(player, ATTR_VY);
-  vz = record_real(player, ATTR_VZ);
+  p_vx = record_real(p_player, ATTR_VX);
+  p_vy = record_real(p_player, ATTR_VY);
+  p_vz = record_real(p_player, ATTR_VZ);
 }
 
-void player_set_velocity(Attributes &player, Real vx, Real vy, Real vz)
+void player_set_velocity(Attributes &p_player, Real p_vx, Real p_vy, Real p_vz)
 // ----------------------------------------------------------------
 // Set the velocity in blocks per second
 // ----------------------------------------------------------------
 {
-  record_set_real(player, ATTR_VX, vx);
-  record_set_real(player, ATTR_VY, vy);
-  record_set_real(player, ATTR_VZ, vz);
+  record_set_real(p_player, ATTR_VX, p_vx);
+  record_set_real(p_player, ATTR_VY, p_vy);
+  record_set_real(p_player, ATTR_VZ, p_vz);
 }
 
-void player_look(Attributes &player, Real &yaw, Real &pitch)
+void player_look(Attributes &p_player, Real &p_yaw, Real &p_pitch)
 // ----------------------------------------------------------------
 // Look direction: yaw around the vertical, pitch up (+) and down
 // ----------------------------------------------------------------
 {
-  yaw   = record_real(player, ATTR_YAW);
-  pitch = record_real(player, ATTR_PITCH);
+  p_yaw   = record_real(p_player, ATTR_YAW);
+  p_pitch = record_real(p_player, ATTR_PITCH);
 }
 
-void player_set_look(Attributes &player, Real yaw, Real pitch)
+void player_set_look(Attributes &p_player, Real p_yaw, Real p_pitch)
 // ----------------------------------------------------------------
 // Set the look direction
 // ----------------------------------------------------------------
 {
-  record_set_real(player, ATTR_YAW,   yaw);
-  record_set_real(player, ATTR_PITCH, pitch);
+  record_set_real(p_player, ATTR_YAW,   p_yaw);
+  record_set_real(p_player, ATTR_PITCH, p_pitch);
 }
 
-Real player_eye_y(Attributes &player)
+Real player_eye_y(Attributes &p_player)
 // ----------------------------------------------------------------
 // Height of the player's eyes
 // ----------------------------------------------------------------
 {
-  return record_real(player, ATTR_Y) + PLAYER_EYE_HEIGHT;
+  return record_real(p_player, ATTR_Y) + PLAYER_EYE_HEIGHT;
 }
 
-void player_look_direction(Attributes &player, Real &dir_x, Real &dir_y, Real &dir_z)
+void player_look_direction(Attributes &p_player, Real &p_dir_x, Real &p_dir_y, Real &p_dir_z)
 // ----------------------------------------------------------------
 // Unit vector the player is looking along
 // ----------------------------------------------------------------
 {
-  Real yaw   = 0.0;
-  Real pitch = 0.0;
+  Real l_yaw   = 0.0;
+  Real l_pitch = 0.0;
 
-  player_look(player, yaw, pitch);
-  dir_x = Cos(pitch) * Cos(yaw);
-  dir_y = Sin(pitch);
-  dir_z = Cos(pitch) * Sin(yaw);
+  player_look(p_player, l_yaw, l_pitch);
+  p_dir_x = Cos(l_pitch) * Cos(l_yaw);
+  p_dir_y = Sin(l_pitch);
+  p_dir_z = Cos(l_pitch) * Sin(l_yaw);
 }
 
-Integer player_health(Attributes &player)
+Integer player_health(Attributes &p_player)
 // ----------------------------------------------------------------
 // Health points, 0..PLAYER_MAX_HEALTH
 // ----------------------------------------------------------------
 {
-  return record_integer(player, ATTR_HEALTH);
+  return record_integer(p_player, ATTR_HEALTH);
 }
 
-void player_set_health(Attributes &player, Integer health)
+void player_set_health(Attributes &p_player, Integer p_health)
 // ----------------------------------------------------------------
 // Set health, kept within 0..PLAYER_MAX_HEALTH
 // ----------------------------------------------------------------
 {
-  record_set_integer(player, ATTR_HEALTH, clamp_integer(health, 0, PLAYER_MAX_HEALTH));
+  record_set_integer(p_player, ATTR_HEALTH, clamp_integer(p_health, 0, PLAYER_MAX_HEALTH));
 }
 
-Integer player_is_dead(Attributes &player)
+Integer player_is_dead(Attributes &p_player)
 // ----------------------------------------------------------------
 // TRUE between dying and respawning
 // ----------------------------------------------------------------
 {
-  return record_integer(player, ATTR_PLAYER_DEAD);
+  return record_integer(p_player, ATTR_PLAYER_DEAD);
 }
 
-Integer player_on_ground(Attributes &player)
+Integer player_on_ground(Attributes &p_player)
 // ----------------------------------------------------------------
 // TRUE when standing on something
 // ----------------------------------------------------------------
 {
-  return record_integer(player, ATTR_ON_GROUND);
+  return record_integer(p_player, ATTR_ON_GROUND);
 }
 
-Integer player_in_water(Attributes &player)
+Integer player_in_water(Attributes &p_player)
 // ----------------------------------------------------------------
 // TRUE when the body is in water (swimming)
 // ----------------------------------------------------------------
 {
-  return record_integer(player, ATTR_PLAYER_IN_WATER);
+  return record_integer(p_player, ATTR_PLAYER_IN_WATER);
 }
 
-Integer player_eye_in_water(Attributes &player)
+Integer player_eye_in_water(Attributes &p_player)
 // ----------------------------------------------------------------
 // TRUE when the eyes are under water (the view turns blue)
 // ----------------------------------------------------------------
 {
-  return record_integer(player, ATTR_PLAYER_EYE_IN_WATER);
+  return record_integer(p_player, ATTR_PLAYER_EYE_IN_WATER);
 }
 
-Real player_hurt_time(Attributes &player)
+Real player_hurt_time(Attributes &p_player)
 // ----------------------------------------------------------------
 // Seconds left of the red "hurt" flash
 // ----------------------------------------------------------------
 {
-  return record_real(player, ATTR_PLAYER_HURT);
+  return record_real(p_player, ATTR_PLAYER_HURT);
 }
 
-Real player_swing_time(Attributes &player)
+Real player_swing_time(Attributes &p_player)
 // ----------------------------------------------------------------
 // Seconds left of the arm swing
 // ----------------------------------------------------------------
 {
-  return record_real(player, ATTR_PLAYER_SWING);
+  return record_real(p_player, ATTR_PLAYER_SWING);
 }
 
-Real player_bob(Attributes &player)
+Real player_bob(Attributes &p_player)
 // ----------------------------------------------------------------
 // Walking phase, used to bob the held item
 // ----------------------------------------------------------------
 {
-  return record_real(player, ATTR_PLAYER_BOB);
+  return record_real(p_player, ATTR_PLAYER_BOB);
 }
 
-Real player_fall_peak(Attributes &player)
+Real player_fall_peak(Attributes &p_player)
 // ----------------------------------------------------------------
 // Highest point since leaving the ground (for fall damage)
 // ----------------------------------------------------------------
 {
-  return record_real(player, ATTR_PLAYER_FALL_PEAK);
+  return record_real(p_player, ATTR_PLAYER_FALL_PEAK);
 }
 
-void player_set_fall_peak(Attributes &player, Real peak)
+void player_set_fall_peak(Attributes &p_player, Real p_peak)
 // ----------------------------------------------------------------
 // Set the highest point since leaving the ground
 // ----------------------------------------------------------------
 {
-  record_set_real(player, ATTR_PLAYER_FALL_PEAK, peak);
+  record_set_real(p_player, ATTR_PLAYER_FALL_PEAK, p_peak);
 }
 
-Integer player_selected(Attributes &player)
+Integer player_selected(Attributes &p_player)
 // ----------------------------------------------------------------
 // Selected hotbar slot, 1..HOTBAR_SLOTS
 // ----------------------------------------------------------------
 {
-  return record_integer(player, ATTR_PLAYER_SELECTED);
+  return record_integer(p_player, ATTR_PLAYER_SELECTED);
 }
 
-void player_set_selected(Attributes &player, Integer slot)
+void player_set_selected(Attributes &p_player, Integer p_slot)
 // ----------------------------------------------------------------
 // Select a hotbar slot
 // ----------------------------------------------------------------
 {
-  record_set_integer(player, ATTR_PLAYER_SELECTED, clamp_integer(slot, 1, HOTBAR_SLOTS));
+  record_set_integer(p_player, ATTR_PLAYER_SELECTED, clamp_integer(p_slot, 1, HOTBAR_SLOTS));
 }
 
-Integer player_auto_walk(Attributes &player)
+Integer player_auto_walk(Attributes &p_player)
 // ----------------------------------------------------------------
 // TRUE while auto-walk is on
 // ----------------------------------------------------------------
 {
-  return record_integer(player, ATTR_PLAYER_AUTO_WALK);
+  return record_integer(p_player, ATTR_PLAYER_AUTO_WALK);
 }
 
-void player_set_auto_walk(Attributes &player, Integer on)
+void player_set_auto_walk(Attributes &p_player, Integer p_on)
 // ----------------------------------------------------------------
 // Turn auto-walk on or off
 // ----------------------------------------------------------------
 {
-  record_set_integer(player, ATTR_PLAYER_AUTO_WALK, on);
+  record_set_integer(p_player, ATTR_PLAYER_AUTO_WALK, p_on);
 }
 
-Integer player_held_item(Attributes &player, Attributes &inventory)
+Integer player_held_item(Attributes &p_player, Attributes &p_inventory)
 // ----------------------------------------------------------------
 // Item in the selected hotbar slot
 // ----------------------------------------------------------------
 {
-  return slot_item(inventory, player_selected(player));
+  return slot_item(p_inventory, player_selected(p_player));
 }
 
-Integer player_target_kind(Attributes &player)
+Integer player_target_kind(Attributes &p_player)
 // ----------------------------------------------------------------
 // TARGET_NONE, TARGET_BLOCK or TARGET_COW
 // ----------------------------------------------------------------
 {
-  return record_integer(player, ATTR_TARGET_KIND);
+  return record_integer(p_player, ATTR_TARGET_KIND);
 }
 
-void player_target_cell(Attributes &player, Integer &x, Integer &y, Integer &z)
+void player_target_cell(Attributes &p_player, Integer &p_x, Integer &p_y, Integer &p_z)
 // ----------------------------------------------------------------
 // Cell of the targeted block
 // ----------------------------------------------------------------
 {
-  x = record_integer(player, ATTR_TARGET_X);
-  y = record_integer(player, ATTR_TARGET_Y);
-  z = record_integer(player, ATTR_TARGET_Z);
+  p_x = record_integer(p_player, ATTR_TARGET_X);
+  p_y = record_integer(p_player, ATTR_TARGET_Y);
+  p_z = record_integer(p_player, ATTR_TARGET_Z);
 }
 
-void player_target_normal(Attributes &player, Integer &x, Integer &y, Integer &z)
+void player_target_normal(Attributes &p_player, Integer &p_x, Integer &p_y, Integer &p_z)
 // ----------------------------------------------------------------
 // Outward normal of the targeted face (where a block would go)
 // ----------------------------------------------------------------
 {
-  x = record_integer(player, ATTR_TARGET_NORMAL_X);
-  y = record_integer(player, ATTR_TARGET_NORMAL_Y);
-  z = record_integer(player, ATTR_TARGET_NORMAL_Z);
+  p_x = record_integer(p_player, ATTR_TARGET_NORMAL_X);
+  p_y = record_integer(p_player, ATTR_TARGET_NORMAL_Y);
+  p_z = record_integer(p_player, ATTR_TARGET_NORMAL_Z);
 }
 
-Integer player_target_cow(Attributes &player)
+Integer player_target_cow(Attributes &p_player)
 // ----------------------------------------------------------------
 // Number of the targeted cow
 // ----------------------------------------------------------------
 {
-  return record_integer(player, ATTR_TARGET_COW);
+  return record_integer(p_player, ATTR_TARGET_COW);
 }
 
-Integer player_break_stage(Attributes &player, Real now)
+Integer player_break_stage(Attributes &p_player, Real p_now)
 // ----------------------------------------------------------------
 // How cracked the block being broken is: 0 (not started) to 4
 // ----------------------------------------------------------------
 {
-  Integer hits   = record_integer(player, ATTR_BREAK_HITS);
-  Integer needed = record_integer(player, ATTR_BREAK_NEEDED);
+  Integer l_hits   = record_integer(p_player, ATTR_BREAK_HITS);
+  Integer l_needed = record_integer(p_player, ATTR_BREAK_NEEDED);
 
-  if (hits <= 0 || record_integer(player, ATTR_BREAK_Y) < 0) return 0;
-  if (now - record_real(player, ATTR_BREAK_TIME) > BREAK_RESET_SECONDS) return 0;
-  if (needed <= 1) return 0;
+  if (l_hits <= 0 || record_integer(p_player, ATTR_BREAK_Y) < 0) return 0;
+  if (p_now - record_real(p_player, ATTR_BREAK_TIME) > BREAK_RESET_SECONDS) return 0;
+  if (l_needed <= 1) return 0;
 
-  return clamp_integer(1 + floor_integer(3.0 * hits / needed), 1, 4);
+  return clamp_integer(1 + floor_integer(3.0 * l_hits / l_needed), 1, 4);
 }
 
 // ---------------------------------------------------------------- behaviour
 
-void player_turn(Attributes &player, Real yaw_change, Real pitch_change)
+void player_turn(Attributes &p_player, Real p_yaw_change, Real p_pitch_change)
 // ----------------------------------------------------------------
 // Mouse look; pitch stops just short of straight up and down
 // ----------------------------------------------------------------
 {
-  Real yaw   = 0.0;
-  Real pitch = 0.0;
+  Real l_yaw   = 0.0;
+  Real l_pitch = 0.0;
 
-  player_look    (player, yaw, pitch);
-  player_set_look(player, wrap_angle(yaw + yaw_change), clamp_real(pitch + pitch_change, -MAX_PITCH, MAX_PITCH));
+  player_look    (p_player, l_yaw, l_pitch);
+  player_set_look(p_player, wrap_angle(l_yaw + p_yaw_change), clamp_real(l_pitch + p_pitch_change, -MAX_PITCH, MAX_PITCH));
 }
 
-void player_key_pressed(Attributes &player, Text key, Real now)
+void player_key_pressed(Attributes &p_player, Text p_key, Real p_now)
 // ----------------------------------------------------------------
 // A movement key (w a s d, space) arrived from the keyboard box
 // Only the last key held down auto-repeats, and there is no key-up
@@ -348,64 +348,64 @@ void player_key_pressed(Attributes &player, Text key, Real now)
 // going so you can run and jump.
 // ----------------------------------------------------------------
 {
-  Text move_key   = record_text(player, ATTR_MOVE_KEY);
-  Real move_last  = record_real(player, ATTR_MOVE_LAST);
-  Real move_until = record_real(player, ATTR_MOVE_UNTIL);
+  Text l_move_key   = record_text(p_player, ATTR_MOVE_KEY);
+  Real l_move_last  = record_real(p_player, ATTR_MOVE_LAST);
+  Real l_move_until = record_real(p_player, ATTR_MOVE_UNTIL);
 
-  if (key == "w" || key == "a" || key == "s" || key == "d") {
-    if (key == move_key && now - move_last < HELD_KEY_WINDOW) {
-      record_set_real   (player, ATTR_MOVE_UNTIL, now + HELD_KEY_EXTEND);
-      record_set_integer(player, ATTR_MOVE_HELD,  TRUE);
+  if (p_key == "w" || p_key == "a" || p_key == "s" || p_key == "d") {
+    if (p_key == l_move_key && p_now - l_move_last < HELD_KEY_WINDOW) {
+      record_set_real   (p_player, ATTR_MOVE_UNTIL, p_now + HELD_KEY_EXTEND);
+      record_set_integer(p_player, ATTR_MOVE_HELD,  TRUE);
     } else {
-      record_set_real   (player, ATTR_MOVE_UNTIL, now + TAP_TIME);
-      record_set_real   (player, ATTR_MOVE_START, now);
-      record_set_integer(player, ATTR_MOVE_HELD,  FALSE);
+      record_set_real   (p_player, ATTR_MOVE_UNTIL, p_now + TAP_TIME);
+      record_set_real   (p_player, ATTR_MOVE_START, p_now);
+      record_set_integer(p_player, ATTR_MOVE_HELD,  FALSE);
     }
-    record_set_text(player, ATTR_MOVE_KEY,  key);
-    record_set_real(player, ATTR_MOVE_LAST, now);
-    if (key == "s") player_set_auto_walk(player, FALSE);
+    record_set_text(p_player, ATTR_MOVE_KEY,  p_key);
+    record_set_real(p_player, ATTR_MOVE_LAST, p_now);
+    if (p_key == "s") player_set_auto_walk(p_player, FALSE);
     return;
   }
 
-  if (key == " ") {
-    record_set_real(player, ATTR_JUMP_UNTIL, now + 0.25);
-    if (move_until > now - 0.15) {
-      record_set_real   (player, ATTR_MOVE_UNTIL, max_real(move_until, now + 0.55));
-      record_set_integer(player, ATTR_MOVE_HELD,  TRUE);
+  if (p_key == " ") {
+    record_set_real(p_player, ATTR_JUMP_UNTIL, p_now + 0.25);
+    if (l_move_until > p_now - 0.15) {
+      record_set_real   (p_player, ATTR_MOVE_UNTIL, max_real(l_move_until, p_now + 0.55));
+      record_set_integer(p_player, ATTR_MOVE_HELD,  TRUE);
     }
   }
 }
 
-Integer player_key_active(Attributes &player, Text key, Real now)
+Integer player_key_active(Attributes &p_player, Text p_key, Real p_now)
 // ----------------------------------------------------------------
 // TRUE while a movement key counts as held down
 // ----------------------------------------------------------------
 {
-  if (record_text(player, ATTR_MOVE_KEY) == key && now < record_real(player, ATTR_MOVE_UNTIL)) return TRUE;
+  if (record_text(p_player, ATTR_MOVE_KEY) == p_key && p_now < record_real(p_player, ATTR_MOVE_UNTIL)) return TRUE;
   return FALSE;
 }
 
-void player_damage(Attributes &player, Attributes &events, Integer amount)
+void player_damage(Attributes &p_player, Attributes &p_events, Integer p_amount)
 // ----------------------------------------------------------------
 // Take damage; emits EVT_PLAYER_HURT and EVT_PLAYER_DIED
 // ----------------------------------------------------------------
 {
-  Integer health = player_health(player) - amount;
+  Integer l_health = player_health(p_player) - p_amount;
 
-  if (player_is_dead(player) || amount <= 0) return;
+  if (player_is_dead(p_player) || p_amount <= 0) return;
 
-  player_set_health(player, health);
-  record_set_real  (player, ATTR_PLAYER_HURT,  0.4);
-  record_set_real  (player, ATTR_PLAYER_REGEN, 0.0);
-  emit_item_event(events, EVT_PLAYER_HURT, amount, 0);
+  player_set_health(p_player, l_health);
+  record_set_real  (p_player, ATTR_PLAYER_HURT,  0.4);
+  record_set_real  (p_player, ATTR_PLAYER_REGEN, 0.0);
+  emit_item_event(p_events, EVT_PLAYER_HURT, p_amount, 0);
 
-  if (health <= 0) {
-    record_set_integer(player, ATTR_PLAYER_DEAD, TRUE);
-    emit_simple_event(events, EVT_PLAYER_DIED);
+  if (l_health <= 0) {
+    record_set_integer(p_player, ATTR_PLAYER_DEAD, TRUE);
+    emit_simple_event(p_events, EVT_PLAYER_DIED);
   }
 }
 
-void player_update(Attributes &player, Attributes &cows, Attributes &events, Integer auto_jump, Real dt, Real now)
+void player_update(Attributes &p_player, Attributes &p_cows, Attributes &p_events, Integer p_auto_jump, Real p_dt, Real p_now)
 // ----------------------------------------------------------------
 // Walk, jump, swim, fall and collide; fall damage, regeneration
 // and what the crosshair points at
@@ -413,440 +413,440 @@ void player_update(Attributes &player, Attributes &cows, Attributes &events, Int
 // the end, since a frame uses each field many times.
 // ----------------------------------------------------------------
 {
-  Real    x            = 0.0;
-  Real    y            = 0.0;
-  Real    z            = 0.0;
-  Real    vx           = 0.0;
-  Real    vy           = 0.0;
-  Real    vz           = 0.0;
-  Real    yaw          = 0.0;
-  Real    pitch        = 0.0;
-  Integer on_ground    = player_on_ground(player);
-  Integer in_water     = player_in_water(player);
-  Integer auto_walk    = player_auto_walk(player);
-  Integer move_held    = record_integer(player, ATTR_MOVE_HELD);
-  Real    move_start   = record_real   (player, ATTR_MOVE_START);
-  Real    jump_until   = record_real   (player, ATTR_JUMP_UNTIL);
-  Real    fall_peak    = player_fall_peak(player);
-  Real    regen        = record_real   (player, ATTR_PLAYER_REGEN);
-  Integer health       = player_health(player);
-  Real    forward      = 0.0;
-  Real    strafe       = 0.0;
-  Real    ease         = 1.0;
-  Real    speed        = 0.0;
-  Real    heading_x    = 0.0;
-  Real    heading_z    = 0.0;
-  Real    wish_x       = 0.0;
-  Real    wish_z       = 0.0;
-  Real    wish_length  = 0.0;
-  Real    blend        = 0.0;
-  Real    move_x       = 0.0;
-  Real    move_y       = 0.0;
-  Real    move_z       = 0.0;
-  Real    fall         = 0.0;
-  Real    longest      = 0.0;
-  Integer steps        = 1;
-  Integer step         = 0;
-  Integer was_grounded = on_ground;
-  Integer blocked      = FALSE;
-  Integer moving       = FALSE;
-  Integer ahead_x      = 0;
-  Integer ahead_z      = 0;
-  Integer feet_y       = 0;
-  Integer hit_x        = FALSE;
-  Integer hit_z        = FALSE;
-  Integer hit_down     = FALSE;
-  Integer hit_up       = FALSE;
+  Real    l_x            = 0.0;
+  Real    l_y            = 0.0;
+  Real    l_z            = 0.0;
+  Real    l_vx           = 0.0;
+  Real    l_vy           = 0.0;
+  Real    l_vz           = 0.0;
+  Real    l_yaw          = 0.0;
+  Real    l_pitch        = 0.0;
+  Integer l_on_ground    = player_on_ground(p_player);
+  Integer l_in_water     = player_in_water(p_player);
+  Integer l_auto_walk    = player_auto_walk(p_player);
+  Integer l_move_held    = record_integer(p_player, ATTR_MOVE_HELD);
+  Real    l_move_start   = record_real   (p_player, ATTR_MOVE_START);
+  Real    l_jump_until   = record_real   (p_player, ATTR_JUMP_UNTIL);
+  Real    l_fall_peak    = player_fall_peak(p_player);
+  Real    l_regen        = record_real   (p_player, ATTR_PLAYER_REGEN);
+  Integer l_health       = player_health(p_player);
+  Real    l_forward      = 0.0;
+  Real    l_strafe       = 0.0;
+  Real    l_ease         = 1.0;
+  Real    l_speed        = 0.0;
+  Real    l_heading_x    = 0.0;
+  Real    l_heading_z    = 0.0;
+  Real    l_wish_x       = 0.0;
+  Real    l_wish_z       = 0.0;
+  Real    l_wish_length  = 0.0;
+  Real    l_blend        = 0.0;
+  Real    l_move_x       = 0.0;
+  Real    l_move_y       = 0.0;
+  Real    l_move_z       = 0.0;
+  Real    l_fall         = 0.0;
+  Real    l_longest      = 0.0;
+  Integer l_steps        = 1;
+  Integer l_step         = 0;
+  Integer l_was_grounded = l_on_ground;
+  Integer l_blocked      = FALSE;
+  Integer l_moving       = FALSE;
+  Integer l_ahead_x      = 0;
+  Integer l_ahead_z      = 0;
+  Integer l_feet_y       = 0;
+  Integer l_hit_x        = FALSE;
+  Integer l_hit_z        = FALSE;
+  Integer l_hit_down     = FALSE;
+  Integer l_hit_up       = FALSE;
 
-  record_set_real(player, ATTR_PLAYER_HURT,  player_hurt_time (player) - dt);
-  record_set_real(player, ATTR_PLAYER_SWING, player_swing_time(player) - dt);
-  if (player_is_dead(player)) return;
+  record_set_real(p_player, ATTR_PLAYER_HURT,  player_hurt_time (p_player) - p_dt);
+  record_set_real(p_player, ATTR_PLAYER_SWING, player_swing_time(p_player) - p_dt);
+  if (player_is_dead(p_player)) return;
 
-  player_position(player, x, y, z);
-  player_velocity(player, vx, vy, vz);
-  player_look    (player, yaw, pitch);
-  heading_x = Cos(yaw);
-  heading_z = Sin(yaw);
+  player_position(p_player, l_x, l_y, l_z);
+  player_velocity(p_player, l_vx, l_vy, l_vz);
+  player_look    (p_player, l_yaw, l_pitch);
+  l_heading_x = Cos(l_yaw);
+  l_heading_z = Sin(l_yaw);
 
   // Movement input
-  if (player_key_active(player, "w", now)) forward =  1.0;
-  if (player_key_active(player, "s", now)) forward = -1.0;
-  if (player_key_active(player, "a", now)) strafe  = -1.0;
-  if (player_key_active(player, "d", now)) strafe  =  1.0;
-  if (auto_walk && forward == 0.0) forward = 1.0;
+  if (player_key_active(p_player, "w", p_now)) l_forward =  1.0;
+  if (player_key_active(p_player, "s", p_now)) l_forward = -1.0;
+  if (player_key_active(p_player, "a", p_now)) l_strafe  = -1.0;
+  if (player_key_active(p_player, "d", p_now)) l_strafe  =  1.0;
+  if (l_auto_walk && l_forward == 0.0) l_forward = 1.0;
 
-  if (!move_held && !auto_walk) {
-    ease = TAP_START_SPEED + (1.0 - TAP_START_SPEED) * clamp_real((now - move_start) / TAP_RAMP, 0.0, 1.0);
+  if (!l_move_held && !l_auto_walk) {
+    l_ease = TAP_START_SPEED + (1.0 - TAP_START_SPEED) * clamp_real((p_now - l_move_start) / TAP_RAMP, 0.0, 1.0);
   }
-  speed = WALK_SPEED * ease;
-  if (in_water) speed = speed * WATER_SPEED_FACTOR;
+  l_speed = WALK_SPEED * l_ease;
+  if (l_in_water) l_speed = l_speed * WATER_SPEED_FACTOR;
 
-  wish_x = heading_x * forward - heading_z * strafe;
-  wish_z = heading_z * forward + heading_x * strafe;
-  wish_length = Sqrt(wish_x * wish_x + wish_z * wish_z);
-  if (wish_length > 0.001) {
-    wish_x = wish_x / wish_length;
-    wish_z = wish_z / wish_length;
-    moving = TRUE;
+  l_wish_x = l_heading_x * l_forward - l_heading_z * l_strafe;
+  l_wish_z = l_heading_z * l_forward + l_heading_x * l_strafe;
+  l_wish_length = Sqrt(l_wish_x * l_wish_x + l_wish_z * l_wish_z);
+  if (l_wish_length > 0.001) {
+    l_wish_x = l_wish_x / l_wish_length;
+    l_wish_z = l_wish_z / l_wish_length;
+    l_moving = TRUE;
   }
 
-  if (on_ground) {
-    vx = wish_x * speed;
-    vz = wish_z * speed;
+  if (l_on_ground) {
+    l_vx = l_wish_x * l_speed;
+    l_vz = l_wish_z * l_speed;
   } else {
-    blend = min_real(1.0, dt * 5.0);
-    vx = vx + (wish_x * speed - vx) * blend;
-    vz = vz + (wish_z * speed - vz) * blend;
+    l_blend = min_real(1.0, p_dt * 5.0);
+    l_vx = l_vx + (l_wish_x * l_speed - l_vx) * l_blend;
+    l_vz = l_vz + (l_wish_z * l_speed - l_vz) * l_blend;
   }
 
   // Jumping and swimming
-  if (now < jump_until) {
-    if (in_water) {
-      vy = SWIM_UP_SPEED;
-    } else if (on_ground) {
-      vy         = JUMP_SPEED;
-      jump_until = 0.0;
+  if (p_now < l_jump_until) {
+    if (l_in_water) {
+      l_vy = SWIM_UP_SPEED;
+    } else if (l_on_ground) {
+      l_vy         = JUMP_SPEED;
+      l_jump_until = 0.0;
     }
   }
 
-  if (in_water) {
-    vy = vy - SWIM_GRAVITY * dt;
-    if (vy < -SWIM_SINK_SPEED) vy = -SWIM_SINK_SPEED;
+  if (l_in_water) {
+    l_vy = l_vy - SWIM_GRAVITY * p_dt;
+    if (l_vy < -SWIM_SINK_SPEED) l_vy = -SWIM_SINK_SPEED;
   } else {
-    vy = vy - GRAVITY * dt;
-    if (vy < -TERMINAL_SPEED) vy = -TERMINAL_SPEED;
+    l_vy = l_vy - GRAVITY * p_dt;
+    if (l_vy < -TERMINAL_SPEED) l_vy = -TERMINAL_SPEED;
   }
 
   // Move in steps short enough not to pass through a block
-  move_x  = vx * dt;
-  move_y  = vy * dt;
-  move_z  = vz * dt;
-  longest = max_real(Absolute(move_y), max_real(Absolute(move_x), Absolute(move_z)));
-  steps   = 1 + Floor(longest / MAX_MOVE_STEP);
+  l_move_x  = l_vx * p_dt;
+  l_move_y  = l_vy * p_dt;
+  l_move_z  = l_vz * p_dt;
+  l_longest = max_real(Absolute(l_move_y), max_real(Absolute(l_move_x), Absolute(l_move_z)));
+  l_steps   = 1 + Floor(l_longest / MAX_MOVE_STEP);
 
-  on_ground = FALSE;
-  for (step = 1; step <= steps; ++step) {
-    physics_move_box(x, y, z, PLAYER_HALF_WIDTH, PLAYER_HEIGHT, move_x / steps, move_y / steps, move_z / steps,
-                     hit_x, hit_z, hit_down, hit_up);
-    if (hit_down) {
-      on_ground = TRUE;
-      if (vy < 0.0) vy = 0.0;
+  l_on_ground = FALSE;
+  for (l_step = 1; l_step <= l_steps; ++l_step) {
+    physics_move_box(l_x, l_y, l_z, PLAYER_HALF_WIDTH, PLAYER_HEIGHT, l_move_x / l_steps, l_move_y / l_steps, l_move_z / l_steps,
+                     l_hit_x, l_hit_z, l_hit_down, l_hit_up);
+    if (l_hit_down) {
+      l_on_ground = TRUE;
+      if (l_vy < 0.0) l_vy = 0.0;
     }
-    if (hit_up && vy > 0.0) vy = 0.0;
-    if (hit_x || hit_z) blocked = TRUE;
+    if (l_hit_up && l_vy > 0.0) l_vy = 0.0;
+    if (l_hit_x || l_hit_z) l_blocked = TRUE;
   }
 
   // Auto-jump: walking into a one block step hops up it, and
   // swimming into the shore climbs out
-  if (blocked && moving) {
-    ahead_x = Floor(x + wish_x * 0.6);
-    ahead_z = Floor(z + wish_z * 0.6);
-    feet_y  = Floor(y + 0.05);
-    if (!world_is_solid(ahead_x, feet_y + 1, ahead_z) && !world_is_solid(ahead_x, feet_y + 2, ahead_z)) {
-      if (in_water) {
-        vy = SWIM_UP_SPEED * 1.6;
-      } else if (on_ground && auto_jump) {
-        vy = JUMP_SPEED;
+  if (l_blocked && l_moving) {
+    l_ahead_x = Floor(l_x + l_wish_x * 0.6);
+    l_ahead_z = Floor(l_z + l_wish_z * 0.6);
+    l_feet_y  = Floor(l_y + 0.05);
+    if (!world_is_solid(l_ahead_x, l_feet_y + 1, l_ahead_z) && !world_is_solid(l_ahead_x, l_feet_y + 2, l_ahead_z)) {
+      if (l_in_water) {
+        l_vy = SWIM_UP_SPEED * 1.6;
+      } else if (l_on_ground && p_auto_jump) {
+        l_vy = JUMP_SPEED;
       }
     }
   }
 
   // Water
-  in_water = physics_box_in_water(x, y, z, PLAYER_HALF_WIDTH, PLAYER_HEIGHT);
-  record_set_integer(player, ATTR_PLAYER_IN_WATER,     in_water);
-  record_set_integer(player, ATTR_PLAYER_EYE_IN_WATER, world_get_block(floor_integer(x), floor_integer(y + PLAYER_EYE_HEIGHT), floor_integer(z)) == BLOCK_WATER);
+  l_in_water = physics_box_in_water(l_x, l_y, l_z, PLAYER_HALF_WIDTH, PLAYER_HEIGHT);
+  record_set_integer(p_player, ATTR_PLAYER_IN_WATER,     l_in_water);
+  record_set_integer(p_player, ATTR_PLAYER_EYE_IN_WATER, world_get_block(floor_integer(l_x), floor_integer(l_y + PLAYER_EYE_HEIGHT), floor_integer(l_z)) == BLOCK_WATER);
 
-  player_set_position(player, x, y, z);
-  player_set_velocity(player, vx, vy, vz);
-  record_set_integer (player, ATTR_ON_GROUND,  on_ground);
-  record_set_real    (player, ATTR_JUMP_UNTIL, jump_until);
+  player_set_position(p_player, l_x, l_y, l_z);
+  player_set_velocity(p_player, l_vx, l_vy, l_vz);
+  record_set_integer (p_player, ATTR_ON_GROUND,  l_on_ground);
+  record_set_real    (p_player, ATTR_JUMP_UNTIL, l_jump_until);
 
   // Fall damage: measured from the highest point since leaving the
   // ground; water breaks any fall
-  if (in_water) {
-    fall_peak = y;
-  } else if (on_ground) {
-    if (!was_grounded) {
-      fall = fall_peak - y;
-      if (fall > FALL_DAMAGE_START) player_damage(player, events, floor_integer(fall - FALL_DAMAGE_START + 0.5));
+  if (l_in_water) {
+    l_fall_peak = l_y;
+  } else if (l_on_ground) {
+    if (!l_was_grounded) {
+      l_fall = l_fall_peak - l_y;
+      if (l_fall > FALL_DAMAGE_START) player_damage(p_player, p_events, floor_integer(l_fall - FALL_DAMAGE_START + 0.5));
     }
-    fall_peak = y;
-  } else if (y > fall_peak) {
-    fall_peak = y;
+    l_fall_peak = l_y;
+  } else if (l_y > l_fall_peak) {
+    l_fall_peak = l_y;
   }
-  player_set_fall_peak(player, fall_peak);
+  player_set_fall_peak(p_player, l_fall_peak);
 
-  if (on_ground && moving) record_set_real(player, ATTR_PLAYER_BOB, player_bob(player) + dt * 9.0 * ease);
+  if (l_on_ground && l_moving) record_set_real(p_player, ATTR_PLAYER_BOB, player_bob(p_player) + p_dt * 9.0 * l_ease);
 
   // Slow healing
-  health = player_health(player);
-  if (health < PLAYER_MAX_HEALTH && !player_is_dead(player)) {
-    regen = regen + dt;
-    if (regen >= REGEN_SECONDS) {
-      regen = 0.0;
-      player_set_health(player, health + 1);
+  l_health = player_health(p_player);
+  if (l_health < PLAYER_MAX_HEALTH && !player_is_dead(p_player)) {
+    l_regen = l_regen + p_dt;
+    if (l_regen >= REGEN_SECONDS) {
+      l_regen = 0.0;
+      player_set_health(p_player, l_health + 1);
     }
   }
-  record_set_real(player, ATTR_PLAYER_REGEN, regen);
+  record_set_real(p_player, ATTR_PLAYER_REGEN, l_regen);
 
-  if (now - record_real(player, ATTR_BREAK_TIME) > BREAK_RESET_SECONDS) record_set_integer(player, ATTR_BREAK_HITS, 0);
+  if (p_now - record_real(p_player, ATTR_BREAK_TIME) > BREAK_RESET_SECONDS) record_set_integer(p_player, ATTR_BREAK_HITS, 0);
 
-  player_update_target(player, cows);
+  player_update_target(p_player, p_cows);
 }
 
-void player_update_target(Attributes &player, Attributes &cows)
+void player_update_target(Attributes &p_player, Attributes &p_cows)
 // ----------------------------------------------------------------
 // Find what the crosshair is on within reach: a cow or a block
 // ----------------------------------------------------------------
 {
-  Real    eye_x          = record_real(player, ATTR_X);
-  Real    eye_y          = player_eye_y(player);
-  Real    eye_z          = record_real(player, ATTR_Z);
-  Real    dir_x          = 0.0;
-  Real    dir_y          = 0.0;
-  Real    dir_z          = 0.0;
-  Real    block_distance = PLAYER_REACH;
-  Real    cow_distance   = 0.0;
-  Integer block_hit      = FALSE;
-  Integer hit_x          = 0;
-  Integer hit_y          = 0;
-  Integer hit_z          = 0;
-  Integer normal_x       = 0;
-  Integer normal_y       = 0;
-  Integer normal_z       = 0;
-  Integer cow            = 0;
-  Integer kind           = TARGET_NONE;
+  Real    l_eye_x          = record_real(p_player, ATTR_X);
+  Real    l_eye_y          = player_eye_y(p_player);
+  Real    l_eye_z          = record_real(p_player, ATTR_Z);
+  Real    l_dir_x          = 0.0;
+  Real    l_dir_y          = 0.0;
+  Real    l_dir_z          = 0.0;
+  Real    l_block_distance = PLAYER_REACH;
+  Real    l_cow_distance   = 0.0;
+  Integer l_block_hit      = FALSE;
+  Integer l_hit_x          = 0;
+  Integer l_hit_y          = 0;
+  Integer l_hit_z          = 0;
+  Integer l_normal_x       = 0;
+  Integer l_normal_y       = 0;
+  Integer l_normal_z       = 0;
+  Integer l_cow            = 0;
+  Integer l_kind           = TARGET_NONE;
 
-  player_look_direction(player, dir_x, dir_y, dir_z);
+  player_look_direction(p_player, l_dir_x, l_dir_y, l_dir_z);
 
-  block_hit = physics_raycast_blocks(eye_x, eye_y, eye_z, dir_x, dir_y, dir_z, PLAYER_REACH,
-                                     hit_x, hit_y, hit_z, normal_x, normal_y, normal_z, block_distance);
-  if (block_hit) {
-    record_set_integer(player, ATTR_TARGET_X,        hit_x);
-    record_set_integer(player, ATTR_TARGET_Y,        hit_y);
-    record_set_integer(player, ATTR_TARGET_Z,        hit_z);
-    record_set_integer(player, ATTR_TARGET_NORMAL_X, normal_x);
-    record_set_integer(player, ATTR_TARGET_NORMAL_Y, normal_y);
-    record_set_integer(player, ATTR_TARGET_NORMAL_Z, normal_z);
-    kind = TARGET_BLOCK;
+  l_block_hit = physics_raycast_blocks(l_eye_x, l_eye_y, l_eye_z, l_dir_x, l_dir_y, l_dir_z, PLAYER_REACH,
+                                     l_hit_x, l_hit_y, l_hit_z, l_normal_x, l_normal_y, l_normal_z, l_block_distance);
+  if (l_block_hit) {
+    record_set_integer(p_player, ATTR_TARGET_X,        l_hit_x);
+    record_set_integer(p_player, ATTR_TARGET_Y,        l_hit_y);
+    record_set_integer(p_player, ATTR_TARGET_Z,        l_hit_z);
+    record_set_integer(p_player, ATTR_TARGET_NORMAL_X, l_normal_x);
+    record_set_integer(p_player, ATTR_TARGET_NORMAL_Y, l_normal_y);
+    record_set_integer(p_player, ATTR_TARGET_NORMAL_Z, l_normal_z);
+    l_kind = TARGET_BLOCK;
   } else {
-    block_distance = PLAYER_REACH;
+    l_block_distance = PLAYER_REACH;
   }
 
-  cow = cows_ray_hit(cows, eye_x, eye_y, eye_z, dir_x, dir_y, dir_z, block_distance, cow_distance);
-  if (cow > 0) {
-    kind = TARGET_COW;
-    record_set_integer(player, ATTR_TARGET_COW, cow);
+  l_cow = cows_ray_hit(p_cows, l_eye_x, l_eye_y, l_eye_z, l_dir_x, l_dir_y, l_dir_z, l_block_distance, l_cow_distance);
+  if (l_cow > 0) {
+    l_kind = TARGET_COW;
+    record_set_integer(p_player, ATTR_TARGET_COW, l_cow);
   }
-  record_set_integer(player, ATTR_TARGET_KIND, kind);
+  record_set_integer(p_player, ATTR_TARGET_KIND, l_kind);
 }
 
-Integer player_overlaps_cell(Attributes &player, Integer x, Integer y, Integer z)
+Integer player_overlaps_cell(Attributes &p_player, Integer p_x, Integer p_y, Integer p_z)
 // ----------------------------------------------------------------
 // TRUE if the player's body overlaps block cell (x, y, z)
 // ----------------------------------------------------------------
 {
-  Real px = 0.0;
-  Real py = 0.0;
-  Real pz = 0.0;
+  Real l_px = 0.0;
+  Real l_py = 0.0;
+  Real l_pz = 0.0;
 
-  player_position(player, px, py, pz);
-  if (px + PLAYER_HALF_WIDTH <= x || px - PLAYER_HALF_WIDTH >= x + 1.0) return FALSE;
-  if (pz + PLAYER_HALF_WIDTH <= z || pz - PLAYER_HALF_WIDTH >= z + 1.0) return FALSE;
-  if (py + PLAYER_HEIGHT     <= y || py                     >= y + 1.0) return FALSE;
+  player_position(p_player, l_px, l_py, l_pz);
+  if (l_px + PLAYER_HALF_WIDTH <= p_x || l_px - PLAYER_HALF_WIDTH >= p_x + 1.0) return FALSE;
+  if (l_pz + PLAYER_HALF_WIDTH <= p_z || l_pz - PLAYER_HALF_WIDTH >= p_z + 1.0) return FALSE;
+  if (l_py + PLAYER_HEIGHT     <= p_y || l_py                     >= p_y + 1.0) return FALSE;
   return TRUE;
 }
 
-void player_wear_tool(Attributes &player, Attributes &inventory, Attributes &events)
+void player_wear_tool(Attributes &p_player, Attributes &p_inventory, Attributes &p_events)
 // ----------------------------------------------------------------
 // The held item was used once; tools wear and may break
 // ----------------------------------------------------------------
 {
-  Integer slot = player_selected(player);
-  Integer item = slot_item(inventory, slot);
+  Integer l_slot = player_selected(p_player);
+  Integer l_item = slot_item(p_inventory, l_slot);
 
-  if (slot_wear(inventory, slot)) {
-    emit_toast(events, item_name(item) + " broke");
+  if (slot_wear(p_inventory, l_slot)) {
+    emit_toast(p_events, item_name(l_item) + " broke");
   }
 }
 
-void player_primary_action(Attributes &player, Attributes &inventory, Attributes &cows, Attributes &events,
-                           Attributes &random, Real now)
+void player_primary_action(Attributes &p_player, Attributes &p_inventory, Attributes &p_cows, Attributes &p_events,
+                           Attributes &p_random, Real p_now)
 // ----------------------------------------------------------------
 // Left click: hit a cow, or chip away at a block until it breaks
 // Harder blocks take more hits, the right tool takes fewer; a pause
 // of BREAK_RESET_SECONDS starts the count again
 // ----------------------------------------------------------------
 {
-  Integer held   = player_held_item(player, inventory);
-  Integer block  = 0;
-  Integer needed = 0;
-  Integer hits   = 0;
-  Integer x      = 0;
-  Integer y      = 0;
-  Integer z      = 0;
-  Real    yaw    = 0.0;
-  Real    pitch  = 0.0;
+  Integer l_held   = player_held_item(p_player, p_inventory);
+  Integer l_block  = 0;
+  Integer l_needed = 0;
+  Integer l_hits   = 0;
+  Integer l_x      = 0;
+  Integer l_y      = 0;
+  Integer l_z      = 0;
+  Real    l_yaw    = 0.0;
+  Real    l_pitch  = 0.0;
 
-  if (player_is_dead(player)) return;
+  if (player_is_dead(p_player)) return;
 
-  record_set_real     (player, ATTR_PLAYER_SWING, 0.25);
-  player_update_target(player, cows);
-  player_look         (player, yaw, pitch);
+  record_set_real     (p_player, ATTR_PLAYER_SWING, 0.25);
+  player_update_target(p_player, p_cows);
+  player_look         (p_player, l_yaw, l_pitch);
 
-  if (player_target_kind(player) == TARGET_COW) {
-    cow_damage(cows, events, random, player_target_cow(player), item_attack_damage(held), Cos(yaw), Sin(yaw));
-    if (item_tool_kind(held) != TOOL_NONE) player_wear_tool(player, inventory, events);
+  if (player_target_kind(p_player) == TARGET_COW) {
+    cow_damage(p_cows, p_events, p_random, player_target_cow(p_player), item_attack_damage(l_held), Cos(l_yaw), Sin(l_yaw));
+    if (item_tool_kind(l_held) != TOOL_NONE) player_wear_tool(p_player, p_inventory, p_events);
     return;
   }
-  if (player_target_kind(player) != TARGET_BLOCK) return;
+  if (player_target_kind(p_player) != TARGET_BLOCK) return;
 
-  player_target_cell(player, x, y, z);
-  block  = world_get_block(x, y, z);
-  needed = block_hits_with(block, held);
-  if (needed <= 0) {
-    emit_toast(events, "That is far too hard to break");
+  player_target_cell(p_player, l_x, l_y, l_z);
+  l_block  = world_get_block(l_x, l_y, l_z);
+  l_needed = block_hits_with(l_block, l_held);
+  if (l_needed <= 0) {
+    emit_toast(p_events, "That is far too hard to break");
     return;
   }
 
-  hits = record_integer(player, ATTR_BREAK_HITS);
-  if (x == record_integer(player, ATTR_BREAK_X) && y == record_integer(player, ATTR_BREAK_Y) &&
-      z == record_integer(player, ATTR_BREAK_Z) && now - record_real(player, ATTR_BREAK_TIME) <= BREAK_RESET_SECONDS && hits > 0) {
-    ++hits;
+  l_hits = record_integer(p_player, ATTR_BREAK_HITS);
+  if (l_x == record_integer(p_player, ATTR_BREAK_X) && l_y == record_integer(p_player, ATTR_BREAK_Y) &&
+      l_z == record_integer(p_player, ATTR_BREAK_Z) && p_now - record_real(p_player, ATTR_BREAK_TIME) <= BREAK_RESET_SECONDS && l_hits > 0) {
+    ++l_hits;
   } else {
-    record_set_integer(player, ATTR_BREAK_X, x);
-    record_set_integer(player, ATTR_BREAK_Y, y);
-    record_set_integer(player, ATTR_BREAK_Z, z);
-    hits = 1;
+    record_set_integer(p_player, ATTR_BREAK_X, l_x);
+    record_set_integer(p_player, ATTR_BREAK_Y, l_y);
+    record_set_integer(p_player, ATTR_BREAK_Z, l_z);
+    l_hits = 1;
   }
-  record_set_integer(player, ATTR_BREAK_HITS, hits);
-  record_set_integer(player, ATTR_BREAK_NEEDED, needed);
-  record_set_real   (player, ATTR_BREAK_TIME, now);
+  record_set_integer(p_player, ATTR_BREAK_HITS, l_hits);
+  record_set_integer(p_player, ATTR_BREAK_NEEDED, l_needed);
+  record_set_real   (p_player, ATTR_BREAK_TIME, p_now);
 
-  if (hits >= needed) {
-    if (block_needs_tool(block) && item_tool_kind(held) != block_tool_kind(block)) {
-      emit_toast(events, "You need a pickaxe to collect that");
+  if (l_hits >= l_needed) {
+    if (block_needs_tool(l_block) && item_tool_kind(l_held) != block_tool_kind(l_block)) {
+      emit_toast(p_events, "You need a pickaxe to collect that");
     }
-    world_break_block(events, x, y, z, held);
-    if (item_tool_kind(held) != TOOL_NONE) player_wear_tool(player, inventory, events);
-    record_set_integer(player, ATTR_BREAK_HITS, 0);
-    record_set_integer(player, ATTR_BREAK_Y,    -1);
-    player_update_target(player, cows);
+    world_break_block(p_events, l_x, l_y, l_z, l_held);
+    if (item_tool_kind(l_held) != TOOL_NONE) player_wear_tool(p_player, p_inventory, p_events);
+    record_set_integer(p_player, ATTR_BREAK_HITS, 0);
+    record_set_integer(p_player, ATTR_BREAK_Y,    -1);
+    player_update_target(p_player, p_cows);
   }
 }
 
-Integer player_furnace_facing(Real player_x, Real player_z, Integer cell_x, Integer cell_z)
+Integer player_furnace_facing(Real p_player_x, Real p_player_z, Integer p_cell_x, Integer p_cell_z)
 // ----------------------------------------------------------------
 // The furnace block that turns its door towards the player
 // ----------------------------------------------------------------
 {
-  Real toward_x = player_x - (cell_x + 0.5);
-  Real toward_z = player_z - (cell_z + 0.5);
+  Real l_toward_x = p_player_x - (p_cell_x + 0.5);
+  Real l_toward_z = p_player_z - (p_cell_z + 0.5);
 
-  if (Absolute(toward_x) >= Absolute(toward_z)) {
-    if (toward_x > 0.0) return BLOCK_FURNACE_PX;
+  if (Absolute(l_toward_x) >= Absolute(l_toward_z)) {
+    if (l_toward_x > 0.0) return BLOCK_FURNACE_PX;
     return BLOCK_FURNACE_NX;
   }
-  if (toward_z > 0.0) return BLOCK_FURNACE_PZ;
+  if (l_toward_z > 0.0) return BLOCK_FURNACE_PZ;
   return BLOCK_FURNACE_NZ;
 }
 
-void player_secondary_action(Attributes &player, Attributes &inventory, Attributes &cows, Attributes &events, Real now)
+void player_secondary_action(Attributes &p_player, Attributes &p_inventory, Attributes &p_cows, Attributes &p_events, Real p_now)
 // ----------------------------------------------------------------
 // Right click: open a crafting table or furnace, eat food, or
 // place the held block against the face the crosshair is on
 // (a plant there is replaced)
 // ----------------------------------------------------------------
 {
-  Integer held     = player_held_item(player, inventory);
-  Integer slot     = player_selected(player);
-  Integer block    = 0;
-  Integer place    = BLOCK_AIR;
-  Integer x        = 0;
-  Integer y        = 0;
-  Integer z        = 0;
-  Integer normal_x = 0;
-  Integer normal_y = 0;
-  Integer normal_z = 0;
-  Integer cell_x   = 0;
-  Integer cell_y   = 0;
-  Integer cell_z   = 0;
-  Integer existing = 0;
-  Integer food     = 0;
-  Real    px       = 0.0;
-  Real    py       = 0.0;
-  Real    pz       = 0.0;
+  Integer l_held     = player_held_item(p_player, p_inventory);
+  Integer l_slot     = player_selected(p_player);
+  Integer l_block    = 0;
+  Integer l_place    = BLOCK_AIR;
+  Integer l_x        = 0;
+  Integer l_y        = 0;
+  Integer l_z        = 0;
+  Integer l_normal_x = 0;
+  Integer l_normal_y = 0;
+  Integer l_normal_z = 0;
+  Integer l_cell_x   = 0;
+  Integer l_cell_y   = 0;
+  Integer l_cell_z   = 0;
+  Integer l_existing = 0;
+  Integer l_food     = 0;
+  Real    l_px       = 0.0;
+  Real    l_py       = 0.0;
+  Real    l_pz       = 0.0;
 
-  if (player_is_dead(player)) return;
+  if (player_is_dead(p_player)) return;
 
-  player_update_target(player, cows);
-  player_target_cell  (player, x, y, z);
-  player_target_normal(player, normal_x, normal_y, normal_z);
+  player_update_target(p_player, p_cows);
+  player_target_cell  (p_player, l_x, l_y, l_z);
+  player_target_normal(p_player, l_normal_x, l_normal_y, l_normal_z);
 
-  if (player_target_kind(player) == TARGET_BLOCK) {
-    block = world_get_block(x, y, z);
-    if (block == BLOCK_CRAFTING_TABLE) {
-      emit_event(events, EVT_OPEN_SCREEN, SCREEN_CRAFTING, x, y, z, 0.0, 0.0, 0.0, "");
+  if (player_target_kind(p_player) == TARGET_BLOCK) {
+    l_block = world_get_block(l_x, l_y, l_z);
+    if (l_block == BLOCK_CRAFTING_TABLE) {
+      emit_event(p_events, EVT_OPEN_SCREEN, SCREEN_CRAFTING, l_x, l_y, l_z, 0.0, 0.0, 0.0, "");
       return;
     }
-    if (block_is_furnace(block)) {
-      emit_event(events, EVT_OPEN_SCREEN, SCREEN_FURNACE, x, y, z, 0.0, 0.0, 0.0, "");
+    if (block_is_furnace(l_block)) {
+      emit_event(p_events, EVT_OPEN_SCREEN, SCREEN_FURNACE, l_x, l_y, l_z, 0.0, 0.0, 0.0, "");
       return;
     }
   }
 
-  food = item_food_value(held);
-  if (food > 0) {
-    if (player_health(player) >= PLAYER_MAX_HEALTH) {
-      emit_toast(events, "You are already at full health");
+  l_food = item_food_value(l_held);
+  if (l_food > 0) {
+    if (player_health(p_player) >= PLAYER_MAX_HEALTH) {
+      emit_toast(p_events, "You are already at full health");
       return;
     }
-    player_set_health(player, player_health(player) + food);
-    slot_take_one    (inventory, slot);
-    record_set_real  (player, ATTR_PLAYER_SWING, 0.25);
-    emit_item_event(events, EVT_PLAYER_ATE, held, food);
+    player_set_health(p_player, player_health(p_player) + l_food);
+    slot_take_one    (p_inventory, l_slot);
+    record_set_real  (p_player, ATTR_PLAYER_SWING, 0.25);
+    emit_item_event(p_events, EVT_PLAYER_ATE, l_held, l_food);
     return;
   }
 
-  place = item_places_block(held);
-  if (place == BLOCK_AIR) return;
-  if (player_target_kind(player) != TARGET_BLOCK) return;
+  l_place = item_places_block(l_held);
+  if (l_place == BLOCK_AIR) return;
+  if (player_target_kind(p_player) != TARGET_BLOCK) return;
 
   // Clicking a plant replaces it; otherwise the block goes against
   // the face that was clicked
-  cell_x = x + normal_x;
-  cell_y = y + normal_y;
-  cell_z = z + normal_z;
-  if (block_is_plant(world_get_block(x, y, z))) {
-    cell_x = x;
-    cell_y = y;
-    cell_z = z;
-  } else if (normal_x == 0 && normal_y == 0 && normal_z == 0) {
+  l_cell_x = l_x + l_normal_x;
+  l_cell_y = l_y + l_normal_y;
+  l_cell_z = l_z + l_normal_z;
+  if (block_is_plant(world_get_block(l_x, l_y, l_z))) {
+    l_cell_x = l_x;
+    l_cell_y = l_y;
+    l_cell_z = l_z;
+  } else if (l_normal_x == 0 && l_normal_y == 0 && l_normal_z == 0) {
     return;
   }
-  if (!world_in_bounds(cell_x, cell_y, cell_z)) return;
+  if (!world_in_bounds(l_cell_x, l_cell_y, l_cell_z)) return;
 
-  existing = world_get_block(cell_x, cell_y, cell_z);
-  if (existing != BLOCK_AIR && existing != BLOCK_WATER && !block_is_plant(existing)) return;
+  l_existing = world_get_block(l_cell_x, l_cell_y, l_cell_z);
+  if (l_existing != BLOCK_AIR && l_existing != BLOCK_WATER && !block_is_plant(l_existing)) return;
 
   // Plants need ground to stand on
-  if (block_is_plant(place)) {
-    if (world_get_block(cell_x, cell_y - 1, cell_z) != BLOCK_GRASS && world_get_block(cell_x, cell_y - 1, cell_z) != BLOCK_DIRT) return;
+  if (block_is_plant(l_place)) {
+    if (world_get_block(l_cell_x, l_cell_y - 1, l_cell_z) != BLOCK_GRASS && world_get_block(l_cell_x, l_cell_y - 1, l_cell_z) != BLOCK_DIRT) return;
   } else {
     // Not inside the player or a cow
-    if (player_overlaps_cell(player, cell_x, cell_y, cell_z)) return;
-    if (cows_box_overlaps(cows, cell_x, cell_y, cell_z, cell_x + 1.0, cell_y + 1.0, cell_z + 1.0)) return;
+    if (player_overlaps_cell(p_player, l_cell_x, l_cell_y, l_cell_z)) return;
+    if (cows_box_overlaps(p_cows, l_cell_x, l_cell_y, l_cell_z, l_cell_x + 1.0, l_cell_y + 1.0, l_cell_z + 1.0)) return;
   }
 
-  if (held == ITEM_FURNACE) {
-    player_position(player, px, py, pz);
-    place = player_furnace_facing(px, pz, cell_x, cell_z);
+  if (l_held == ITEM_FURNACE) {
+    player_position(p_player, l_px, l_py, l_pz);
+    l_place = player_furnace_facing(l_px, l_pz, l_cell_x, l_cell_z);
   }
 
-  world_place_block(events, cell_x, cell_y, cell_z, place);
-  slot_take_one    (inventory, slot);
-  record_set_real  (player, ATTR_PLAYER_SWING, 0.25);
-  player_update_target(player, cows);
+  world_place_block(p_events, l_cell_x, l_cell_y, l_cell_z, l_place);
+  slot_take_one    (p_inventory, l_slot);
+  record_set_real  (p_player, ATTR_PLAYER_SWING, 0.25);
+  player_update_target(p_player, p_cows);
 }
 
 #endif

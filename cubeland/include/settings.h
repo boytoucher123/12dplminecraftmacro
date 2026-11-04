@@ -35,18 +35,18 @@
 #define SENSITIVITY_DEFAULT      5
 #define SETTINGS_FILE            "cubeland_settings.txt"
 
-void    settings_defaults       (Attributes &settings);
-Integer settings_render_distance(Attributes &settings);
-Integer settings_detail         (Attributes &settings);
-Integer settings_flag           (Attributes &settings, Text field);
-Integer settings_fov_degrees    (Attributes &settings);
-Real    settings_fov_radians    (Attributes &settings);
-Real    settings_mouse_scale    (Attributes &settings);
-void    settings_change         (Attributes &settings, Text field, Integer direction);
-void    settings_toggle         (Attributes &settings, Text field);
-Text    settings_describe       (Attributes &settings, Text field);
-Text    settings_line           (Text name, Integer value);
-Integer settings_save           (Attributes &settings, Text path);
-Integer settings_load           (Attributes &settings, Text path);
+void    settings_defaults       (Attributes &p_settings);
+Integer settings_render_distance(Attributes &p_settings);
+Integer settings_detail         (Attributes &p_settings);
+Integer settings_flag           (Attributes &p_settings, Text p_field);
+Integer settings_fov_degrees    (Attributes &p_settings);
+Real    settings_fov_radians    (Attributes &p_settings);
+Real    settings_mouse_scale    (Attributes &p_settings);
+void    settings_change         (Attributes &p_settings, Text p_field, Integer p_direction);
+void    settings_toggle         (Attributes &p_settings, Text p_field);
+Text    settings_describe       (Attributes &p_settings, Text p_field);
+Text    settings_line           (Text p_name, Integer p_value);
+Integer settings_save           (Attributes &p_settings, Text p_path);
+Integer settings_load           (Attributes &p_settings, Text p_path);
 
 #endif

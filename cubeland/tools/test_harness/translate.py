@@ -90,11 +90,13 @@ for m in func_re.finditer(code):
     seen={}
     for dm in decl_re.finditer(params+','):
         seen[dm.group(2)]=1
+        if not dm.group(2).startswith('p_'): problems.append(f'{name}: parameter {dm.group(2)} should start with p_')
     bodyc=re.sub(r'"(\\.|[^"\\])*"','""',body)
     bodyc=re.sub(r'//[^\n]*','',bodyc)
     for dm in decl_re.finditer(bodyc):
         v=dm.group(2)
         if v in seen: problems.append(f'{name}: duplicate declaration of {v}')
+        if not v.startswith(('l_','p_','g_')): problems.append(f'{name}: local {v} should start with l_')
         seen[v]=1
         if v in funcs or v in builtin_used: problems.append(f'{name}: variable {v} has the name of a function')
 for p in problems: print('LINT', p)

@@ -49,22 +49,22 @@ void main()
 // Entry point: world menu, then the game, until Quit
 // --------------------------------------------------------
 {
-  Integer running   = TRUE;
-  Integer result    = 0;
-  Integer time_seed = 0;
+  Integer l_running   = TRUE;
+  Integer l_result    = 0;
+  Integer l_time_seed = 0;
 
-  Get_time(time_seed);
-  game_init_once(g_game, g_book, g_settings, g_random, time_seed);
+  Get_time(l_time_seed);
+  game_init_once(g_game, g_book, g_settings, g_random, l_time_seed);
 
-  while (running) {
-    result = menu_panel_run(g_game, g_random, g_settings);
+  while (l_running) {
+    l_result = menu_panel_run(g_game, g_random, g_settings);
 
-    if (result == MENU_RESULT_QUIT || result == SHUTDOWN_CODE) {
-      running = FALSE;
+    if (l_result == MENU_RESULT_QUIT || l_result == SHUTDOWN_CODE) {
+      l_running = FALSE;
     } else {
-      result = game_panel_run(record_text(g_game, ATTR_MENU_WORLD), result == MENU_RESULT_CREATE,
+      l_result = game_panel_run(record_text(g_game, ATTR_MENU_WORLD), l_result == MENU_RESULT_CREATE,
                               record_integer(g_game, ATTR_MENU_SEED));
-      if (result == SHUTDOWN_CODE) running = FALSE;
+      if (l_result == SHUTDOWN_CODE) l_running = FALSE;
     }
   }
 }

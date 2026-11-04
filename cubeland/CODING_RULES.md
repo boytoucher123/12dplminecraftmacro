@@ -13,15 +13,15 @@ and you can test it by building its arguments by hand.
 
 ```
 // Dishonest: reads and writes globals the caller can't see
-void player_heal(Integer amount)
+void player_heal(Integer p_amount)
 {
-  g_player_health = g_player_health + amount;
+  g_player_health = g_player_health + p_amount;
 }
 
 // Honest: the record it changes is a parameter
-void player_heal(Attributes &player, Integer amount)
+void player_heal(Attributes &p_player, Integer p_amount)
 {
-  player_set_health(player, player_health(player) + amount);
+  player_set_health(p_player, player_health(p_player) + p_amount);
 }
 ```
 
@@ -151,6 +151,19 @@ other:
 
 - Align declarations and repeated statements, and use meaningful names
   rather than abbreviations.
+- **Name prefixes.** 12dPL doesn't allow a variable and a function to
+  share a name, so every variable carries a prefix that no function
+  name has:
+
+  | Kind        | Prefix | Example                 |
+  |-------------|--------|-------------------------|
+  | global      | `g_`   | `g_player`, `g_world`   |
+  | parameter   | `p_`   | `Attributes &p_player`  |
+  | local       | `l_`   | `Integer l_count = 0;`  |
+  | function    | none   | `player_position(...)`  |
+
+  The test harness's lint reports a parameter without `p_` or a local
+  without `l_`.
 - Write constants as object-like macros in the appropriate header:
   `SUCCESS (0)`, `FAILURE (-1)`, field names, sizes.
 - Each file includes the headers it uses. `src/build.4dm` includes every
@@ -171,7 +184,8 @@ other:
 - Convert Reals to Integers by assignment (`Integer i = Floor(x);`) or with
   `floor_integer()`. Don't pass a Real where an Integer parameter is
   expected.
-- Variables and functions must not share a name.
+- Variables and functions must not share a name (the `g_`, `p_` and
+  `l_` prefixes in section 4 make sure they never do).
 
 ## 6. Testing
 

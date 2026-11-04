@@ -102,16 +102,16 @@
 }
 
 void    textures_init          ();
-void    texture_set_palette    (Integer tex, Integer index, Integer red, Integer green, Integer blue);
-void    texture_set            (Integer tex, Integer u, Integer v, Integer index);
-Integer texture_get            (Integer tex, Integer u, Integer v);
-void    texture_fill           (Integer tex, Integer index);
-void    texture_fill_rect      (Integer tex, Integer u0, Integer v0, Integer u1, Integer v1, Integer index);
-Real    texture_random         (Integer tex, Integer u, Integer v, Integer salt);
-Real    texture_noise          (Integer tex, Integer u, Integer v, Integer cell, Integer salt);
-void    texture_copy           (Integer from_tex, Integer to_tex);
-void    texture_row            (Integer tex, Integer v, Text pixels);
-void    texture_finish         (Integer tex);
-Integer texture_palette_index  (Integer tex, Integer index);
+void    texture_set_palette    (Integer p_tex, Integer p_index, Integer p_red, Integer p_green, Integer p_blue);
+void    texture_set            (Integer p_tex, Integer p_u, Integer p_v, Integer p_index);
+Integer texture_get            (Integer p_tex, Integer p_u, Integer p_v);
+void    texture_fill           (Integer p_tex, Integer p_index);
+void    texture_fill_rect      (Integer p_tex, Integer p_u0, Integer p_v0, Integer p_u1, Integer p_v1, Integer p_index);
+Real    texture_random         (Integer p_tex, Integer p_u, Integer p_v, Integer p_salt);
+Real    texture_noise          (Integer p_tex, Integer p_u, Integer p_v, Integer p_cell, Integer p_salt);
+void    texture_copy           (Integer p_from_tex, Integer p_to_tex);
+void    texture_row            (Integer p_tex, Integer p_v, Text p_pixels);
+void    texture_finish         (Integer p_tex);
+Integer texture_palette_index  (Integer p_tex, Integer p_index);
 
 #endif

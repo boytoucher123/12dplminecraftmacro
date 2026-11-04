@@ -21,20 +21,20 @@
 #define ATTR_MENU_WORLD      ("menu_world")
 #define ATTR_MENU_SEED       ("menu_seed")
 
-Integer menu_panel_run       (Attributes &game, Attributes &random, Attributes &settings);
-Integer settings_panel_run   (Attributes &settings);
-void    settings_panel_show  (Attributes &settings, Colour_Message_Box render_row, Colour_Message_Box detail_row,
-                              Colour_Message_Box fov_row, Colour_Message_Box mouse_row, Colour_Message_Box plants_row,
-                              Colour_Message_Box shading_row, Colour_Message_Box jump_row, Colour_Message_Box hud_row,
-                              Colour_Message_Box debug_row);
-Integer menu_refresh_worlds  (List_Box world_list);
-Integer game_panel_split_xy  (Text msg, Real &x, Real &y);
-Integer game_panel_calibrate (Draw_Box box, Real box_x, Real box_y, Integer width, Integer height, Integer &origin_x, Integer &origin_y);
-void    game_panel_notice    (Draw_Box box, Text title, Text line);
-void    game_panel_dispatch  (Real now);
+Integer menu_panel_run       (Attributes &p_game, Attributes &p_random, Attributes &p_settings);
+Integer settings_panel_run   (Attributes &p_settings);
+void    settings_panel_show  (Attributes &p_settings, Colour_Message_Box p_render_row, Colour_Message_Box p_detail_row,
+                              Colour_Message_Box p_fov_row, Colour_Message_Box p_mouse_row, Colour_Message_Box p_plants_row,
+                              Colour_Message_Box p_shading_row, Colour_Message_Box p_jump_row, Colour_Message_Box p_hud_row,
+                              Colour_Message_Box p_debug_row);
+Integer menu_refresh_worlds  (List_Box p_world_list);
+Integer game_panel_split_xy  (Text p_msg, Real &p_x, Real &p_y);
+Integer game_panel_calibrate (Draw_Box p_box, Real p_box_x, Real p_box_y, Integer p_width, Integer p_height, Integer &p_origin_x, Integer &p_origin_y);
+void    game_panel_notice    (Draw_Box p_box, Text p_title, Text p_line);
+void    game_panel_dispatch  (Real p_now);
 Integer game_panel_save      ();
 void    game_panel_close_screen();
-void    game_panel_render    (Draw_Box box, Integer captured, Real frame_ms, Real now);
-Integer game_panel_run       (Text world_name, Integer create, Integer seed);
+void    game_panel_render    (Draw_Box p_box, Integer p_captured, Real p_frame_ms, Real p_now);
+Integer game_panel_run       (Text p_world_name, Integer p_create, Integer p_seed);
 
 #endif

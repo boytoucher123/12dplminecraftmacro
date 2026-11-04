@@ -89,33 +89,33 @@
 #define NUM_FACE_GROUPS       7
 #define DIR_WET_FLAG          8    // added to a face that touches water
 
-Integer block_is_solid       (Integer block);
-Integer block_is_plant       (Integer block);
-Integer block_hides_faces    (Integer block);
-Integer block_is_furnace     (Integer block);
-Integer block_furnace_front  (Integer block);
-Integer block_falls          (Integer block);
-Integer block_hand_hits      (Integer block);
-Integer block_tool_kind      (Integer block);
-Integer block_needs_tool     (Integer block);
-Integer block_hits_with      (Integer block, Integer tool_item);
-Integer block_drop_item      (Integer block, Integer tool_item);
-Integer block_face_texture   (Integer block, Integer direction);
-Real    block_face_shade     (Integer direction);
-Text    item_name            (Integer item);
-Integer item_places_block    (Integer item);
-Integer item_is_block        (Integer item);
-Integer item_max_stack       (Integer item);
-Integer item_tool_kind       (Integer item);
-Integer item_tool_tier       (Integer item);
-Integer item_max_uses        (Integer item);
-Integer item_attack_damage   (Integer item);
-Integer item_food_value      (Integer item);
-Integer item_fuel_seconds    (Integer item);
-Integer item_smelt_result    (Integer item);
-Integer item_top_texture     (Integer item);
-Integer item_side_texture    (Integer item);
-Integer item_sprite_texture  (Integer item);
-Integer block_plant_texture  (Integer block);
+Integer block_is_solid       (Integer p_block);
+Integer block_is_plant       (Integer p_block);
+Integer block_hides_faces    (Integer p_block);
+Integer block_is_furnace     (Integer p_block);
+Integer block_furnace_front  (Integer p_block);
+Integer block_falls          (Integer p_block);
+Integer block_hand_hits      (Integer p_block);
+Integer block_tool_kind      (Integer p_block);
+Integer block_needs_tool     (Integer p_block);
+Integer block_hits_with      (Integer p_block, Integer p_tool_item);
+Integer block_drop_item      (Integer p_block, Integer p_tool_item);
+Integer block_face_texture   (Integer p_block, Integer p_direction);
+Real    block_face_shade     (Integer p_direction);
+Text    item_name            (Integer p_item);
+Integer item_places_block    (Integer p_item);
+Integer item_is_block        (Integer p_item);
+Integer item_max_stack       (Integer p_item);
+Integer item_tool_kind       (Integer p_item);
+Integer item_tool_tier       (Integer p_item);
+Integer item_max_uses        (Integer p_item);
+Integer item_attack_damage   (Integer p_item);
+Integer item_food_value      (Integer p_item);
+Integer item_fuel_seconds    (Integer p_item);
+Integer item_smelt_result    (Integer p_item);
+Integer item_top_texture     (Integer p_item);
+Integer item_side_texture    (Integer p_item);
+Integer item_sprite_texture  (Integer p_item);
+Integer block_plant_texture  (Integer p_block);
 
 #endif

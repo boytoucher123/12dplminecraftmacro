@@ -11,269 +11,269 @@
 
 // ---------------------------------------------------------------- accessors
 
-void furnaces_clear(Attributes &furnaces)
+void furnaces_clear(Attributes &p_furnaces)
 // ----------------------------------------------------------------
 // Forget every furnace
 // ----------------------------------------------------------------
 {
-  Integer furnace = 0;
+  Integer l_furnace = 0;
 
-  record_clear(furnaces, DATATYPE_FURNACES);
-  for (furnace = 1; furnace <= MAX_FURNACES; ++furnace) record_set_integer_at(furnaces, ATTR_USED, furnace, FALSE);
+  record_clear(p_furnaces, DATATYPE_FURNACES);
+  for (l_furnace = 1; l_furnace <= MAX_FURNACES; ++l_furnace) record_set_integer_at(p_furnaces, ATTR_USED, l_furnace, FALSE);
 }
 
-Integer furnace_slot(Integer furnace, Integer which)
+Integer furnace_slot(Integer p_furnace, Integer p_which)
 // ----------------------------------------------------------------
 // Container slot number of slot which (FURNACE_SLOT_*) of a furnace
 // ----------------------------------------------------------------
 {
-  return (furnace - 1) * FURNACE_SLOTS + which;
+  return (p_furnace - 1) * FURNACE_SLOTS + p_which;
 }
 
-Integer furnace_used(Attributes &furnaces, Integer furnace)
+Integer furnace_used(Attributes &p_furnaces, Integer p_furnace)
 // ----------------------------------------------------------------
 // TRUE if furnace number furnace exists
 // ----------------------------------------------------------------
 {
-  if (furnace < 1 || furnace > MAX_FURNACES) return FALSE;
-  return record_integer_at(furnaces, ATTR_USED, furnace);
+  if (p_furnace < 1 || p_furnace > MAX_FURNACES) return FALSE;
+  return record_integer_at(p_furnaces, ATTR_USED, p_furnace);
 }
 
-void furnace_cell(Attributes &furnaces, Integer furnace, Integer &x, Integer &y, Integer &z)
+void furnace_cell(Attributes &p_furnaces, Integer p_furnace, Integer &p_x, Integer &p_y, Integer &p_z)
 // ----------------------------------------------------------------
 // Block cell of a furnace
 // ----------------------------------------------------------------
 {
-  x = record_integer_at(furnaces, ATTR_X, furnace);
-  y = record_integer_at(furnaces, ATTR_Y, furnace);
-  z = record_integer_at(furnaces, ATTR_Z, furnace);
+  p_x = record_integer_at(p_furnaces, ATTR_X, p_furnace);
+  p_y = record_integer_at(p_furnaces, ATTR_Y, p_furnace);
+  p_z = record_integer_at(p_furnaces, ATTR_Z, p_furnace);
 }
 
-Real furnace_burn_left(Attributes &furnaces, Integer furnace)
+Real furnace_burn_left(Attributes &p_furnaces, Integer p_furnace)
 // ----------------------------------------------------------------
 // Seconds of fuel left burning
 // ----------------------------------------------------------------
 {
-  return record_real_at(furnaces, ATTR_FURNACE_BURN, furnace);
+  return record_real_at(p_furnaces, ATTR_FURNACE_BURN, p_furnace);
 }
 
-Real furnace_burn_total(Attributes &furnaces, Integer furnace)
+Real furnace_burn_total(Attributes &p_furnaces, Integer p_furnace)
 // ----------------------------------------------------------------
 // Seconds the current piece of fuel burns for in all
 // ----------------------------------------------------------------
 {
-  return record_real_at(furnaces, ATTR_FURNACE_BURN_TOTAL, furnace);
+  return record_real_at(p_furnaces, ATTR_FURNACE_BURN_TOTAL, p_furnace);
 }
 
-Real furnace_progress(Attributes &furnaces, Integer furnace)
+Real furnace_progress(Attributes &p_furnaces, Integer p_furnace)
 // ----------------------------------------------------------------
 // Seconds the current input item has been cooking
 // ----------------------------------------------------------------
 {
-  return record_real_at(furnaces, ATTR_FURNACE_PROGRESS, furnace);
+  return record_real_at(p_furnaces, ATTR_FURNACE_PROGRESS, p_furnace);
 }
 
-void furnace_set_state(Attributes &furnaces, Integer furnace, Real burn_left, Real burn_total, Real progress)
+void furnace_set_state(Attributes &p_furnaces, Integer p_furnace, Real p_burn_left, Real p_burn_total, Real p_progress)
 // ----------------------------------------------------------------
 // Set the burning and cooking state of a furnace
 // ----------------------------------------------------------------
 {
-  record_set_real_at(furnaces, ATTR_FURNACE_BURN,       furnace, burn_left);
-  record_set_real_at(furnaces, ATTR_FURNACE_BURN_TOTAL, furnace, burn_total);
-  record_set_real_at(furnaces, ATTR_FURNACE_PROGRESS,   furnace, progress);
+  record_set_real_at(p_furnaces, ATTR_FURNACE_BURN,       p_furnace, p_burn_left);
+  record_set_real_at(p_furnaces, ATTR_FURNACE_BURN_TOTAL, p_furnace, p_burn_total);
+  record_set_real_at(p_furnaces, ATTR_FURNACE_PROGRESS,   p_furnace, p_progress);
 }
 
 // ---------------------------------------------------------------- furnaces
 
-Integer furnace_find(Attributes &furnaces, Integer x, Integer y, Integer z)
+Integer furnace_find(Attributes &p_furnaces, Integer p_x, Integer p_y, Integer p_z)
 // ----------------------------------------------------------------
 // Number of the furnace at a cell, 0 if there isn't one
 // ----------------------------------------------------------------
 {
-  Integer furnace = 0;
-  Integer fx      = 0;
-  Integer fy      = 0;
-  Integer fz      = 0;
+  Integer l_furnace = 0;
+  Integer l_fx      = 0;
+  Integer l_fy      = 0;
+  Integer l_fz      = 0;
 
-  for (furnace = 1; furnace <= MAX_FURNACES; ++furnace) {
-    if (!furnace_used(furnaces, furnace)) continue;
-    furnace_cell(furnaces, furnace, fx, fy, fz);
-    if (fx == x && fy == y && fz == z) return furnace;
+  for (l_furnace = 1; l_furnace <= MAX_FURNACES; ++l_furnace) {
+    if (!furnace_used(p_furnaces, l_furnace)) continue;
+    furnace_cell(p_furnaces, l_furnace, l_fx, l_fy, l_fz);
+    if (l_fx == p_x && l_fy == p_y && l_fz == p_z) return l_furnace;
   }
   return 0;
 }
 
-Integer furnace_get_or_create(Attributes &furnaces, Integer x, Integer y, Integer z)
+Integer furnace_get_or_create(Attributes &p_furnaces, Integer p_x, Integer p_y, Integer p_z)
 // ----------------------------------------------------------------
 // Number of the furnace at a cell, making an empty one if needed
 // Returns 0 if every furnace number is taken
 // ----------------------------------------------------------------
 {
-  Integer furnace = furnace_find(furnaces, x, y, z);
-  Integer which   = 0;
+  Integer l_furnace = furnace_find(p_furnaces, p_x, p_y, p_z);
+  Integer l_which   = 0;
 
-  if (furnace > 0) return furnace;
+  if (l_furnace > 0) return l_furnace;
 
-  for (furnace = 1; furnace <= MAX_FURNACES; ++furnace) {
-    if (furnace_used(furnaces, furnace)) continue;
-    record_set_integer_at(furnaces, ATTR_USED, furnace, TRUE);
-    record_set_integer_at(furnaces, ATTR_X,    furnace, x);
-    record_set_integer_at(furnaces, ATTR_Y,    furnace, y);
-    record_set_integer_at(furnaces, ATTR_Z,    furnace, z);
-    for (which = 1; which <= FURNACE_SLOTS; ++which) slot_clear(furnaces, furnace_slot(furnace, which));
-    furnace_set_state(furnaces, furnace, 0.0, 0.0, 0.0);
-    return furnace;
+  for (l_furnace = 1; l_furnace <= MAX_FURNACES; ++l_furnace) {
+    if (furnace_used(p_furnaces, l_furnace)) continue;
+    record_set_integer_at(p_furnaces, ATTR_USED, l_furnace, TRUE);
+    record_set_integer_at(p_furnaces, ATTR_X,    l_furnace, p_x);
+    record_set_integer_at(p_furnaces, ATTR_Y,    l_furnace, p_y);
+    record_set_integer_at(p_furnaces, ATTR_Z,    l_furnace, p_z);
+    for (l_which = 1; l_which <= FURNACE_SLOTS; ++l_which) slot_clear(p_furnaces, furnace_slot(l_furnace, l_which));
+    furnace_set_state(p_furnaces, l_furnace, 0.0, 0.0, 0.0);
+    return l_furnace;
   }
   return 0;
 }
 
-void furnace_remove(Attributes &furnaces, Attributes &events, Integer furnace)
+void furnace_remove(Attributes &p_furnaces, Attributes &p_events, Integer p_furnace)
 // ----------------------------------------------------------------
 // The furnace block is gone: drop whatever it held and free it
 // ----------------------------------------------------------------
 {
-  Integer which = 0;
-  Integer slot  = 0;
-  Integer x     = 0;
-  Integer y     = 0;
-  Integer z     = 0;
+  Integer l_which = 0;
+  Integer l_slot  = 0;
+  Integer l_x     = 0;
+  Integer l_y     = 0;
+  Integer l_z     = 0;
 
-  if (!furnace_used(furnaces, furnace)) return;
+  if (!furnace_used(p_furnaces, p_furnace)) return;
 
-  furnace_cell(furnaces, furnace, x, y, z);
-  for (which = 1; which <= FURNACE_SLOTS; ++which) {
-    slot = furnace_slot(furnace, which);
-    if (!slot_is_empty(furnaces, slot)) {
-      emit_drop_event(events, slot_item(furnaces, slot), slot_count(furnaces, slot), slot_damage(furnaces, slot), x + 0.5, y + 0.5, z + 0.5);
+  furnace_cell(p_furnaces, p_furnace, l_x, l_y, l_z);
+  for (l_which = 1; l_which <= FURNACE_SLOTS; ++l_which) {
+    l_slot = furnace_slot(p_furnace, l_which);
+    if (!slot_is_empty(p_furnaces, l_slot)) {
+      emit_drop_event(p_events, slot_item(p_furnaces, l_slot), slot_count(p_furnaces, l_slot), slot_damage(p_furnaces, l_slot), l_x + 0.5, l_y + 0.5, l_z + 0.5);
     }
-    slot_clear(furnaces, slot);
+    slot_clear(p_furnaces, l_slot);
   }
 
-  record_set_integer_at(furnaces, ATTR_USED, furnace, FALSE);
+  record_set_integer_at(p_furnaces, ATTR_USED, p_furnace, FALSE);
 }
 
-Integer furnace_is_lit(Attributes &furnaces, Integer x, Integer y, Integer z)
+Integer furnace_is_lit(Attributes &p_furnaces, Integer p_x, Integer p_y, Integer p_z)
 // ----------------------------------------------------------------
 // TRUE if the furnace at a cell is burning fuel
 // ----------------------------------------------------------------
 {
-  Integer furnace = furnace_find(furnaces, x, y, z);
+  Integer l_furnace = furnace_find(p_furnaces, p_x, p_y, p_z);
 
-  if (furnace == 0) return FALSE;
-  if (furnace_burn_left(furnaces, furnace) > 0.0) return TRUE;
+  if (l_furnace == 0) return FALSE;
+  if (furnace_burn_left(p_furnaces, l_furnace) > 0.0) return TRUE;
   return FALSE;
 }
 
-Integer furnace_can_cook(Attributes &furnaces, Integer furnace)
+Integer furnace_can_cook(Attributes &p_furnaces, Integer p_furnace)
 // ----------------------------------------------------------------
 // TRUE if the input can be cooked and the output has room for it
 // ----------------------------------------------------------------
 {
-  Integer input  = furnace_slot(furnace, FURNACE_SLOT_INPUT);
-  Integer output = furnace_slot(furnace, FURNACE_SLOT_OUTPUT);
-  Integer result = ITEM_NONE;
+  Integer l_input  = furnace_slot(p_furnace, FURNACE_SLOT_INPUT);
+  Integer l_output = furnace_slot(p_furnace, FURNACE_SLOT_OUTPUT);
+  Integer l_result = ITEM_NONE;
 
-  if (slot_is_empty(furnaces, input)) return FALSE;
+  if (slot_is_empty(p_furnaces, l_input)) return FALSE;
 
-  result = item_smelt_result(slot_item(furnaces, input));
-  if (result == ITEM_NONE) return FALSE;
-  if (slot_is_empty(furnaces, output)) return TRUE;
-  if (slot_item(furnaces, output) != result) return FALSE;
-  if (slot_count(furnaces, output) >= item_max_stack(result)) return FALSE;
+  l_result = item_smelt_result(slot_item(p_furnaces, l_input));
+  if (l_result == ITEM_NONE) return FALSE;
+  if (slot_is_empty(p_furnaces, l_output)) return TRUE;
+  if (slot_item(p_furnaces, l_output) != l_result) return FALSE;
+  if (slot_count(p_furnaces, l_output) >= item_max_stack(l_result)) return FALSE;
   return TRUE;
 }
 
-void furnace_step(Attributes &furnaces, Integer furnace, Real dt)
+void furnace_step(Attributes &p_furnaces, Integer p_furnace, Real p_dt)
 // ----------------------------------------------------------------
 // Advance one furnace by dt seconds (dt should be small)
 // A new piece of fuel is only lit when there is something to cook
 // ----------------------------------------------------------------
 {
-  Integer can_cook   = furnace_can_cook(furnaces, furnace);
-  Integer input      = furnace_slot(furnace, FURNACE_SLOT_INPUT);
-  Integer fuel_slot  = furnace_slot(furnace, FURNACE_SLOT_FUEL);
-  Integer output     = furnace_slot(furnace, FURNACE_SLOT_OUTPUT);
-  Real    burn_left  = furnace_burn_left (furnaces, furnace);
-  Real    burn_total = furnace_burn_total(furnaces, furnace);
-  Real    progress   = furnace_progress  (furnaces, furnace);
-  Integer fuel       = 0;
-  Integer result     = 0;
+  Integer l_can_cook   = furnace_can_cook(p_furnaces, p_furnace);
+  Integer l_input      = furnace_slot(p_furnace, FURNACE_SLOT_INPUT);
+  Integer l_fuel_slot  = furnace_slot(p_furnace, FURNACE_SLOT_FUEL);
+  Integer l_output     = furnace_slot(p_furnace, FURNACE_SLOT_OUTPUT);
+  Real    l_burn_left  = furnace_burn_left (p_furnaces, p_furnace);
+  Real    l_burn_total = furnace_burn_total(p_furnaces, p_furnace);
+  Real    l_progress   = furnace_progress  (p_furnaces, p_furnace);
+  Integer l_fuel       = 0;
+  Integer l_result     = 0;
 
-  if (burn_left <= 0.0 && can_cook && !slot_is_empty(furnaces, fuel_slot)) {
-    fuel = item_fuel_seconds(slot_item(furnaces, fuel_slot));
-    if (fuel > 0) {
-      burn_left  = fuel;
-      burn_total = fuel;
-      slot_take_one(furnaces, fuel_slot);
+  if (l_burn_left <= 0.0 && l_can_cook && !slot_is_empty(p_furnaces, l_fuel_slot)) {
+    l_fuel = item_fuel_seconds(slot_item(p_furnaces, l_fuel_slot));
+    if (l_fuel > 0) {
+      l_burn_left  = l_fuel;
+      l_burn_total = l_fuel;
+      slot_take_one(p_furnaces, l_fuel_slot);
     }
   }
 
-  if (burn_left > 0.0) {
-    burn_left = burn_left - dt;
-    if (burn_left < 0.0) burn_left = 0.0;
+  if (l_burn_left > 0.0) {
+    l_burn_left = l_burn_left - p_dt;
+    if (l_burn_left < 0.0) l_burn_left = 0.0;
 
-    if (can_cook) {
-      progress = progress + dt;
-      if (progress >= COOK_SECONDS) {
-        progress = 0.0;
-        result   = item_smelt_result(slot_item(furnaces, input));
-        slot_set     (furnaces, output, result, slot_count(furnaces, output) + 1, 0);
-        slot_take_one(furnaces, input);
+    if (l_can_cook) {
+      l_progress = l_progress + p_dt;
+      if (l_progress >= COOK_SECONDS) {
+        l_progress = 0.0;
+        l_result   = item_smelt_result(slot_item(p_furnaces, l_input));
+        slot_set     (p_furnaces, l_output, l_result, slot_count(p_furnaces, l_output) + 1, 0);
+        slot_take_one(p_furnaces, l_input);
       }
     } else {
-      progress = 0.0;
+      l_progress = 0.0;
     }
   } else {
     // Cools down without fuel
-    progress = progress - dt * 2.0;
-    if (progress < 0.0) progress = 0.0;
+    l_progress = l_progress - p_dt * 2.0;
+    if (l_progress < 0.0) l_progress = 0.0;
   }
 
-  furnace_set_state(furnaces, furnace, burn_left, burn_total, progress);
+  furnace_set_state(p_furnaces, p_furnace, l_burn_left, l_burn_total, l_progress);
 }
 
-void furnaces_update(Attributes &furnaces, Real dt)
+void furnaces_update(Attributes &p_furnaces, Real p_dt)
 // ----------------------------------------------------------------
 // Advance every furnace by dt seconds, in small steps so a long
 // gap between frames (paused game) still cooks correctly
 // ----------------------------------------------------------------
 {
-  Integer furnace   = 0;
-  Real    remaining = dt;
-  Real    step      = 0.0;
+  Integer l_furnace   = 0;
+  Real    l_remaining = p_dt;
+  Real    l_step      = 0.0;
 
-  if (remaining > 3600.0) remaining = 3600.0;
+  if (l_remaining > 3600.0) l_remaining = 3600.0;
 
-  for (furnace = 1; furnace <= MAX_FURNACES; ++furnace) {
-    if (!furnace_used(furnaces, furnace)) continue;
-    remaining = dt;
-    if (remaining > 3600.0) remaining = 3600.0;
-    while (remaining > 0.0) {
-      step = remaining;
-      if (step > 0.5) step = 0.5;
-      remaining = remaining - step;
-      furnace_step(furnaces, furnace, step);
+  for (l_furnace = 1; l_furnace <= MAX_FURNACES; ++l_furnace) {
+    if (!furnace_used(p_furnaces, l_furnace)) continue;
+    l_remaining = p_dt;
+    if (l_remaining > 3600.0) l_remaining = 3600.0;
+    while (l_remaining > 0.0) {
+      l_step = l_remaining;
+      if (l_step > 0.5) l_step = 0.5;
+      l_remaining = l_remaining - l_step;
+      furnace_step(p_furnaces, l_furnace, l_step);
     }
   }
 }
 
-void furnace_on_event(Attributes &event, Attributes &furnaces, Attributes &events)
+void furnace_on_event(Attributes &p_event, Attributes &p_furnaces, Attributes &p_events)
 // ----------------------------------------------------------------
 // Event handler: furnaces appear and disappear with their blocks
 // ----------------------------------------------------------------
 {
-  Integer type  = event_type(event);
-  Integer x     = event_integer(event, 1);
-  Integer y     = event_integer(event, 2);
-  Integer z     = event_integer(event, 3);
-  Integer block = event_integer(event, 4);
+  Integer l_type  = event_type(p_event);
+  Integer l_x     = event_integer(p_event, 1);
+  Integer l_y     = event_integer(p_event, 2);
+  Integer l_z     = event_integer(p_event, 3);
+  Integer l_block = event_integer(p_event, 4);
 
-  if (!block_is_furnace(block)) return;
+  if (!block_is_furnace(l_block)) return;
 
-  if (type == EVT_BLOCK_PLACED) {
-    furnace_get_or_create(furnaces, x, y, z);
-  } else if (type == EVT_BLOCK_BROKEN) {
-    furnace_remove(furnaces, events, furnace_find(furnaces, x, y, z));
+  if (l_type == EVT_BLOCK_PLACED) {
+    furnace_get_or_create(p_furnaces, l_x, l_y, l_z);
+  } else if (l_type == EVT_BLOCK_BROKEN) {
+    furnace_remove(p_furnaces, p_events, furnace_find(p_furnaces, l_x, l_y, l_z));
   }
 }
 

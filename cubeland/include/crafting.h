@@ -31,21 +31,21 @@
 #define GRID_INVENTORY_WIDTH  2
 #define GRID_TABLE_WIDTH      3
 
-void    crafting_init_book    (Attributes &book);
-void    crafting_add_recipe   (Attributes &book, Integer output, Integer output_count,
-                               Integer width, Integer height, Text pattern, Integer item_a, Integer item_b);
-Integer crafting_recipe_count (Attributes &book);
-Integer crafting_recipe_output(Attributes &book, Integer recipe);
-Integer crafting_recipe_cell  (Attributes &book, Integer recipe, Integer column, Integer row);
+void    crafting_init_book    (Attributes &p_book);
+void    crafting_add_recipe   (Attributes &p_book, Integer p_output, Integer p_output_count,
+                               Integer p_width, Integer p_height, Text p_pattern, Integer p_item_a, Integer p_item_b);
+Integer crafting_recipe_count (Attributes &p_book);
+Integer crafting_recipe_output(Attributes &p_book, Integer p_recipe);
+Integer crafting_recipe_cell  (Attributes &p_book, Integer p_recipe, Integer p_column, Integer p_row);
 
-void    grid_clear            (Attributes &grid, Integer width);
-Integer grid_width            (Attributes &grid);
-Integer grid_slot             (Integer column, Integer row);
-Integer grid_slot_used        (Attributes &grid, Integer slot);
-Integer crafting_match        (Attributes &book, Attributes &grid);
-Integer crafting_match_at     (Attributes &book, Integer recipe, Attributes &grid,
-                               Integer left, Integer top, Integer mirrored);
-Integer crafting_take_output  (Attributes &book, Attributes &grid, Attributes &holder, Attributes &events);
-void    grid_return_items     (Attributes &grid, Attributes &inventory, Attributes &events, Real x, Real y, Real z);
+void    grid_clear            (Attributes &p_grid, Integer p_width);
+Integer grid_width            (Attributes &p_grid);
+Integer grid_slot             (Integer p_column, Integer p_row);
+Integer grid_slot_used        (Attributes &p_grid, Integer p_slot);
+Integer crafting_match        (Attributes &p_book, Attributes &p_grid);
+Integer crafting_match_at     (Attributes &p_book, Integer p_recipe, Attributes &p_grid,
+                               Integer p_left, Integer p_top, Integer p_mirrored);
+Integer crafting_take_output  (Attributes &p_book, Attributes &p_grid, Attributes &p_holder, Attributes &p_events);
+void    grid_return_items     (Attributes &p_grid, Attributes &p_inventory, Attributes &p_events, Real p_x, Real p_y, Real p_z);
 
 #endif

@@ -157,35 +157,35 @@
 }
 
 void    render_init            ();
-void    render_set_detail      (Integer level);
-void    render_set_colour      (Draw_Box box, Real red, Real green, Real blue);
-void    render_set_face_colour (Draw_Box box, Real red, Real green, Real blue);
-void    render_fill_rect       (Draw_Box box, Real x0, Real y0, Real x1, Real y1);
-void    render_line            (Draw_Box box, Real x0, Real y0, Real x1, Real y1);
-void    render_setup_camera    (Real w, Real h, Real view_bottom, Real eye_x, Real eye_y, Real eye_z,
-                                Real yaw, Real pitch, Real field_of_view);
-void    render_to_camera       (Real rel_x, Real rel_y, Real rel_z);
-Integer render_sphere_visible  (Real rel_x, Real rel_y, Real rel_z, Real radius);
-void    render_add_face        (Real c0x, Real c0y, Real c0z, Real e1x, Real e1y, Real e1z, Real e2x, Real e2y, Real e2z,
-                                Integer tex, Real shade, Real distance_squared, Real size, Real tint, Integer crack);
-void    render_add_block_face  (Attributes &furnaces, Integer x, Integer y, Integer z, Integer direction, Integer block,
-                                Real distance_squared, Integer crack, Real light);
-void    render_add_sprite      (Real rel_x, Real rel_y, Real rel_z, Real half_width, Real height, Integer tex,
-                                Real shade, Real distance_squared);
-void    render_collect_blocks  (Attributes &furnaces);
-void    render_add_box         (Real centre_x, Real centre_y, Real centre_z, Real yaw, Real half_f, Real half_y, Real half_s,
-                                Integer tex_side, Integer tex_top, Integer tex_front, Real tint);
-void    render_collect_cows    (Attributes &cows);
-void    render_collect_drops   (Attributes &drops);
-Integer render_clip_and_draw   (Draw_Box box);
-void    render_quad            (Draw_Box box, Real u0, Real v0, Real u1, Real v1);
-void    render_draw_face       (Draw_Box box, Integer face);
-void    render_draw_faces      (Draw_Box box);
-void    render_sky             (Draw_Box box);
-void    render_target_outline  (Draw_Box box);
-void    render_view_from       (Attributes &player, Attributes &settings, Real now);
+void    render_set_detail      (Integer p_level);
+void    render_set_colour      (Draw_Box p_box, Real p_red, Real p_green, Real p_blue);
+void    render_set_face_colour (Draw_Box p_box, Real p_red, Real p_green, Real p_blue);
+void    render_fill_rect       (Draw_Box p_box, Real p_x0, Real p_y0, Real p_x1, Real p_y1);
+void    render_line            (Draw_Box p_box, Real p_x0, Real p_y0, Real p_x1, Real p_y1);
+void    render_setup_camera    (Real p_w, Real p_h, Real p_view_bottom, Real p_eye_x, Real p_eye_y, Real p_eye_z,
+                                Real p_yaw, Real p_pitch, Real p_field_of_view);
+void    render_to_camera       (Real p_rel_x, Real p_rel_y, Real p_rel_z);
+Integer render_sphere_visible  (Real p_rel_x, Real p_rel_y, Real p_rel_z, Real p_radius);
+void    render_add_face        (Real p_c0x, Real p_c0y, Real p_c0z, Real p_e1x, Real p_e1y, Real p_e1z, Real p_e2x, Real p_e2y, Real p_e2z,
+                                Integer p_tex, Real p_shade, Real p_distance_squared, Real p_size, Real p_tint, Integer p_crack);
+void    render_add_block_face  (Attributes &p_furnaces, Integer p_x, Integer p_y, Integer p_z, Integer p_direction, Integer p_block,
+                                Real p_distance_squared, Integer p_crack, Real p_light);
+void    render_add_sprite      (Real p_rel_x, Real p_rel_y, Real p_rel_z, Real p_half_width, Real p_height, Integer p_tex,
+                                Real p_shade, Real p_distance_squared);
+void    render_collect_blocks  (Attributes &p_furnaces);
+void    render_add_box         (Real p_centre_x, Real p_centre_y, Real p_centre_z, Real p_yaw, Real p_half_f, Real p_half_y, Real p_half_s,
+                                Integer p_tex_side, Integer p_tex_top, Integer p_tex_front, Real p_tint);
+void    render_collect_cows    (Attributes &p_cows);
+void    render_collect_drops   (Attributes &p_drops);
+Integer render_clip_and_draw   (Draw_Box p_box);
+void    render_quad            (Draw_Box p_box, Real p_u0, Real p_v0, Real p_u1, Real p_v1);
+void    render_draw_face       (Draw_Box p_box, Integer p_face);
+void    render_draw_faces      (Draw_Box p_box);
+void    render_sky             (Draw_Box p_box);
+void    render_target_outline  (Draw_Box p_box);
+void    render_view_from       (Attributes &p_player, Attributes &p_settings, Real p_now);
 Text    render_stats_text      ();
-void    render_world           (Draw_Box box, Real w, Real h, Real view_bottom, Attributes &player, Attributes &cows,
-                                Attributes &drops, Attributes &furnaces, Attributes &settings, Real now);
+void    render_world           (Draw_Box p_box, Real p_w, Real p_h, Real p_view_bottom, Attributes &p_player, Attributes &p_cows,
+                                Attributes &p_drops, Attributes &p_furnaces, Attributes &p_settings, Real p_now);
 
 #endif

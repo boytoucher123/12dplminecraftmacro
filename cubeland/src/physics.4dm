@@ -8,33 +8,33 @@
 #include "../include/world.h"
 #include "../include/physics.h"
 
-Integer physics_box_collides(Real min_x, Real min_y, Real min_z, Real max_x, Real max_y, Real max_z)
+Integer physics_box_collides(Real p_min_x, Real p_min_y, Real p_min_z, Real p_max_x, Real p_max_y, Real p_max_z)
 // ----------------------------------------------------------------
 // TRUE if any solid cell overlaps the box
 // ----------------------------------------------------------------
 {
-  Integer x0 = Floor(min_x);
-  Integer y0 = Floor(min_y);
-  Integer z0 = Floor(min_z);
-  Integer x1 = Floor(max_x - COLLISION_EPSILON * 0.1);
-  Integer y1 = Floor(max_y - COLLISION_EPSILON * 0.1);
-  Integer z1 = Floor(max_z - COLLISION_EPSILON * 0.1);
-  Integer x  = 0;
-  Integer y  = 0;
-  Integer z  = 0;
+  Integer l_x0 = Floor(p_min_x);
+  Integer l_y0 = Floor(p_min_y);
+  Integer l_z0 = Floor(p_min_z);
+  Integer l_x1 = Floor(p_max_x - COLLISION_EPSILON * 0.1);
+  Integer l_y1 = Floor(p_max_y - COLLISION_EPSILON * 0.1);
+  Integer l_z1 = Floor(p_max_z - COLLISION_EPSILON * 0.1);
+  Integer l_x  = 0;
+  Integer l_y  = 0;
+  Integer l_z  = 0;
 
-  for (x = x0; x <= x1; ++x) {
-    for (z = z0; z <= z1; ++z) {
-      for (y = y0; y <= y1; ++y) {
-        if (world_is_solid(x, y, z)) return TRUE;
+  for (l_x = l_x0; l_x <= l_x1; ++l_x) {
+    for (l_z = l_z0; l_z <= l_z1; ++l_z) {
+      for (l_y = l_y0; l_y <= l_y1; ++l_y) {
+        if (world_is_solid(l_x, l_y, l_z)) return TRUE;
       }
     }
   }
   return FALSE;
 }
 
-void physics_move_box(Real &x, Real &y, Real &z, Real half_width, Real height, Real dx, Real dy, Real dz,
-                      Integer &hit_x, Integer &hit_z, Integer &hit_down, Integer &hit_up)
+void physics_move_box(Real &p_x, Real &p_y, Real &p_z, Real p_half_width, Real p_height, Real p_dx, Real p_dy, Real p_dz,
+                      Integer &p_hit_x, Integer &p_hit_z, Integer &p_hit_down, Integer &p_hit_up)
 // ----------------------------------------------------------------
 // Move a box by (dx, dy, dz), one axis at a time (y, then x, then
 // z) so it slides along walls. When an axis is blocked the box is
@@ -44,81 +44,81 @@ void physics_move_box(Real &x, Real &y, Real &z, Real half_width, Real height, R
 // hit_up.
 // ----------------------------------------------------------------
 {
-  Real new_x = x;
-  Real new_y = y;
-  Real new_z = z;
+  Real l_new_x = p_x;
+  Real l_new_y = p_y;
+  Real l_new_z = p_z;
 
-  hit_x    = FALSE;
-  hit_z    = FALSE;
-  hit_down = FALSE;
-  hit_up   = FALSE;
+  p_hit_x    = FALSE;
+  p_hit_z    = FALSE;
+  p_hit_down = FALSE;
+  p_hit_up   = FALSE;
 
-  if (dy != 0.0) {
-    new_y = y + dy;
-    if (physics_box_collides(x - half_width, new_y, z - half_width, x + half_width, new_y + height, z + half_width)) {
-      if (dy < 0.0) {
-        new_y      = Floor(new_y) + 1.0 + COLLISION_EPSILON;
-        hit_down = TRUE;
+  if (p_dy != 0.0) {
+    l_new_y = p_y + p_dy;
+    if (physics_box_collides(p_x - p_half_width, l_new_y, p_z - p_half_width, p_x + p_half_width, l_new_y + p_height, p_z + p_half_width)) {
+      if (p_dy < 0.0) {
+        l_new_y      = Floor(l_new_y) + 1.0 + COLLISION_EPSILON;
+        p_hit_down = TRUE;
       } else {
-        new_y    = Floor(new_y + height) - height - COLLISION_EPSILON;
-        hit_up = TRUE;
+        l_new_y    = Floor(l_new_y + p_height) - p_height - COLLISION_EPSILON;
+        p_hit_up = TRUE;
       }
-      if (physics_box_collides(x - half_width, new_y, z - half_width, x + half_width, new_y + height, z + half_width)) {
-        new_y = y;
+      if (physics_box_collides(p_x - p_half_width, l_new_y, p_z - p_half_width, p_x + p_half_width, l_new_y + p_height, p_z + p_half_width)) {
+        l_new_y = p_y;
       }
     }
-    y = new_y;
+    p_y = l_new_y;
   }
 
-  if (dx != 0.0) {
-    new_x = x + dx;
-    if (physics_box_collides(new_x - half_width, y, z - half_width, new_x + half_width, y + height, z + half_width)) {
-      if (dx < 0.0) {
-        new_x = Floor(new_x - half_width) + 1.0 + half_width + COLLISION_EPSILON;
+  if (p_dx != 0.0) {
+    l_new_x = p_x + p_dx;
+    if (physics_box_collides(l_new_x - p_half_width, p_y, p_z - p_half_width, l_new_x + p_half_width, p_y + p_height, p_z + p_half_width)) {
+      if (p_dx < 0.0) {
+        l_new_x = Floor(l_new_x - p_half_width) + 1.0 + p_half_width + COLLISION_EPSILON;
       } else {
-        new_x = Floor(new_x + half_width) - half_width - COLLISION_EPSILON;
+        l_new_x = Floor(l_new_x + p_half_width) - p_half_width - COLLISION_EPSILON;
       }
-      if (physics_box_collides(new_x - half_width, y, z - half_width, new_x + half_width, y + height, z + half_width)) {
-        new_x = x;
+      if (physics_box_collides(l_new_x - p_half_width, p_y, p_z - p_half_width, l_new_x + p_half_width, p_y + p_height, p_z + p_half_width)) {
+        l_new_x = p_x;
       }
-      hit_x = TRUE;
+      p_hit_x = TRUE;
     }
-    x = new_x;
+    p_x = l_new_x;
   }
 
-  if (dz != 0.0) {
-    new_z = z + dz;
-    if (physics_box_collides(x - half_width, y, new_z - half_width, x + half_width, y + height, new_z + half_width)) {
-      if (dz < 0.0) {
-        new_z = Floor(new_z - half_width) + 1.0 + half_width + COLLISION_EPSILON;
+  if (p_dz != 0.0) {
+    l_new_z = p_z + p_dz;
+    if (physics_box_collides(p_x - p_half_width, p_y, l_new_z - p_half_width, p_x + p_half_width, p_y + p_height, l_new_z + p_half_width)) {
+      if (p_dz < 0.0) {
+        l_new_z = Floor(l_new_z - p_half_width) + 1.0 + p_half_width + COLLISION_EPSILON;
       } else {
-        new_z = Floor(new_z + half_width) - half_width - COLLISION_EPSILON;
+        l_new_z = Floor(l_new_z + p_half_width) - p_half_width - COLLISION_EPSILON;
       }
-      if (physics_box_collides(x - half_width, y, new_z - half_width, x + half_width, y + height, new_z + half_width)) {
-        new_z = z;
+      if (physics_box_collides(p_x - p_half_width, p_y, l_new_z - p_half_width, p_x + p_half_width, p_y + p_height, l_new_z + p_half_width)) {
+        l_new_z = p_z;
       }
-      hit_z = TRUE;
+      p_hit_z = TRUE;
     }
-    z = new_z;
+    p_z = l_new_z;
   }
 }
 
-Integer physics_box_in_water(Real x, Real y, Real z, Real half_width, Real height)
+Integer physics_box_in_water(Real p_x, Real p_y, Real p_z, Real p_half_width, Real p_height)
 // ----------------------------------------------------------------
 // TRUE if the lower part of a box is in a water cell
 // ----------------------------------------------------------------
 {
-  Integer cell_x = Floor(x);
-  Integer cell_y = Floor(y + height * 0.3);
-  Integer cell_z = Floor(z);
+  Integer l_cell_x = Floor(p_x);
+  Integer l_cell_y = Floor(p_y + p_height * 0.3);
+  Integer l_cell_z = Floor(p_z);
 
-  if (world_get_block(cell_x, cell_y, cell_z) == BLOCK_WATER) return TRUE;
+  if (world_get_block(l_cell_x, l_cell_y, l_cell_z) == BLOCK_WATER) return TRUE;
   return FALSE;
 }
 
-Integer physics_raycast_blocks(Real origin_x, Real origin_y, Real origin_z, Real dir_x, Real dir_y, Real dir_z, Real max_distance,
-                               Integer &hit_x, Integer &hit_y, Integer &hit_z,
-                               Integer &normal_x, Integer &normal_y, Integer &normal_z, Real &distance)
+Integer physics_raycast_blocks(Real p_origin_x, Real p_origin_y, Real p_origin_z, Real p_dir_x, Real p_dir_y, Real p_dir_z, Real p_max_distance,
+                               Integer &p_hit_x, Integer &p_hit_y, Integer &p_hit_z,
+                               Integer &p_normal_x, Integer &p_normal_y, Integer &p_normal_z, Real &p_distance)
 // ----------------------------------------------------------------
 // Walk a ray through the grid cell by cell (3D DDA) and stop at the
 // first block that is neither air nor water (plants count, so they
@@ -127,145 +127,145 @@ Integer physics_raycast_blocks(Real origin_x, Real origin_y, Real origin_z, Real
 // face that was hit) and distance.
 // ----------------------------------------------------------------
 {
-  Integer cell_x     = Floor(origin_x);
-  Integer cell_y     = Floor(origin_y);
-  Integer cell_z     = Floor(origin_z);
-  Integer step_x     = 1;
-  Integer step_y     = 1;
-  Integer step_z     = 1;
-  Real    delta_x    = 1000000.0;
-  Real    delta_y    = 1000000.0;
-  Real    delta_z    = 1000000.0;
-  Real    next_x     = 1000000.0;
-  Real    next_y     = 1000000.0;
-  Real    next_z     = 1000000.0;
-  Real    travelled  = 0.0;
-  Integer block      = 0;
-  Integer guard      = 0;
+  Integer l_cell_x     = Floor(p_origin_x);
+  Integer l_cell_y     = Floor(p_origin_y);
+  Integer l_cell_z     = Floor(p_origin_z);
+  Integer l_step_x     = 1;
+  Integer l_step_y     = 1;
+  Integer l_step_z     = 1;
+  Real    l_delta_x    = 1000000.0;
+  Real    l_delta_y    = 1000000.0;
+  Real    l_delta_z    = 1000000.0;
+  Real    l_next_x     = 1000000.0;
+  Real    l_next_y     = 1000000.0;
+  Real    l_next_z     = 1000000.0;
+  Real    l_travelled  = 0.0;
+  Integer l_block      = 0;
+  Integer l_guard      = 0;
 
-  normal_x = 0;
-  normal_y = 0;
-  normal_z = 0;
-  distance = 0.0;
+  p_normal_x = 0;
+  p_normal_y = 0;
+  p_normal_z = 0;
+  p_distance = 0.0;
 
-  if (dir_x != 0.0) delta_x = Absolute(1.0 / dir_x);
-  if (dir_y != 0.0) delta_y = Absolute(1.0 / dir_y);
-  if (dir_z != 0.0) delta_z = Absolute(1.0 / dir_z);
+  if (p_dir_x != 0.0) l_delta_x = Absolute(1.0 / p_dir_x);
+  if (p_dir_y != 0.0) l_delta_y = Absolute(1.0 / p_dir_y);
+  if (p_dir_z != 0.0) l_delta_z = Absolute(1.0 / p_dir_z);
 
-  if (dir_x < 0.0) {
-    step_x = -1;
-    next_x = (origin_x - cell_x) * delta_x;
+  if (p_dir_x < 0.0) {
+    l_step_x = -1;
+    l_next_x = (p_origin_x - l_cell_x) * l_delta_x;
   } else {
-    next_x = (cell_x + 1.0 - origin_x) * delta_x;
+    l_next_x = (l_cell_x + 1.0 - p_origin_x) * l_delta_x;
   }
-  if (dir_y < 0.0) {
-    step_y = -1;
-    next_y = (origin_y - cell_y) * delta_y;
+  if (p_dir_y < 0.0) {
+    l_step_y = -1;
+    l_next_y = (p_origin_y - l_cell_y) * l_delta_y;
   } else {
-    next_y = (cell_y + 1.0 - origin_y) * delta_y;
+    l_next_y = (l_cell_y + 1.0 - p_origin_y) * l_delta_y;
   }
-  if (dir_z < 0.0) {
-    step_z = -1;
-    next_z = (origin_z - cell_z) * delta_z;
+  if (p_dir_z < 0.0) {
+    l_step_z = -1;
+    l_next_z = (p_origin_z - l_cell_z) * l_delta_z;
   } else {
-    next_z = (cell_z + 1.0 - origin_z) * delta_z;
+    l_next_z = (l_cell_z + 1.0 - p_origin_z) * l_delta_z;
   }
 
-  while (guard < 64) {
-    ++guard;
+  while (l_guard < 64) {
+    ++l_guard;
 
-    block = world_get_block(cell_x, cell_y, cell_z);
-    if (block != BLOCK_AIR && block != BLOCK_WATER && world_in_bounds(cell_x, cell_y, cell_z)) {
-      hit_x    = cell_x;
-      hit_y    = cell_y;
-      hit_z    = cell_z;
-      distance = travelled;
+    l_block = world_get_block(l_cell_x, l_cell_y, l_cell_z);
+    if (l_block != BLOCK_AIR && l_block != BLOCK_WATER && world_in_bounds(l_cell_x, l_cell_y, l_cell_z)) {
+      p_hit_x    = l_cell_x;
+      p_hit_y    = l_cell_y;
+      p_hit_z    = l_cell_z;
+      p_distance = l_travelled;
       return TRUE;
     }
 
-    normal_x = 0;
-    normal_y = 0;
-    normal_z = 0;
-    if (next_x <= next_y && next_x <= next_z) {
-      travelled = next_x;
-      next_x    = next_x + delta_x;
-      cell_x    = cell_x + step_x;
-      normal_x  = -step_x;
-    } else if (next_y <= next_z) {
-      travelled = next_y;
-      next_y    = next_y + delta_y;
-      cell_y    = cell_y + step_y;
-      normal_y  = -step_y;
+    p_normal_x = 0;
+    p_normal_y = 0;
+    p_normal_z = 0;
+    if (l_next_x <= l_next_y && l_next_x <= l_next_z) {
+      l_travelled = l_next_x;
+      l_next_x    = l_next_x + l_delta_x;
+      l_cell_x    = l_cell_x + l_step_x;
+      p_normal_x  = -l_step_x;
+    } else if (l_next_y <= l_next_z) {
+      l_travelled = l_next_y;
+      l_next_y    = l_next_y + l_delta_y;
+      l_cell_y    = l_cell_y + l_step_y;
+      p_normal_y  = -l_step_y;
     } else {
-      travelled = next_z;
-      next_z    = next_z + delta_z;
-      cell_z    = cell_z + step_z;
-      normal_z  = -step_z;
+      l_travelled = l_next_z;
+      l_next_z    = l_next_z + l_delta_z;
+      l_cell_z    = l_cell_z + l_step_z;
+      p_normal_z  = -l_step_z;
     }
 
-    if (travelled > max_distance) return FALSE;
+    if (l_travelled > p_max_distance) return FALSE;
   }
   return FALSE;
 }
 
-Real physics_ray_box(Real origin_x, Real origin_y, Real origin_z, Real dir_x, Real dir_y, Real dir_z,
-                     Real min_x, Real min_y, Real min_z, Real max_x, Real max_y, Real max_z)
+Real physics_ray_box(Real p_origin_x, Real p_origin_y, Real p_origin_z, Real p_dir_x, Real p_dir_y, Real p_dir_z,
+                     Real p_min_x, Real p_min_y, Real p_min_z, Real p_max_x, Real p_max_y, Real p_max_z)
 // ----------------------------------------------------------------
 // Distance along a ray to where it enters a box (slab method)
 // Returns -1 if the ray misses or the box is behind the origin
 // ----------------------------------------------------------------
 {
-  Real enter = -1000000.0;
-  Real leave =  1000000.0;
-  Real t0    = 0.0;
-  Real t1    = 0.0;
-  Real swap  = 0.0;
+  Real l_enter = -1000000.0;
+  Real l_leave =  1000000.0;
+  Real l_t0    = 0.0;
+  Real l_t1    = 0.0;
+  Real l_swap  = 0.0;
 
-  if (dir_x == 0.0) {
-    if (origin_x < min_x || origin_x > max_x) return -1.0;
+  if (p_dir_x == 0.0) {
+    if (p_origin_x < p_min_x || p_origin_x > p_max_x) return -1.0;
   } else {
-    t0 = (min_x - origin_x) / dir_x;
-    t1 = (max_x - origin_x) / dir_x;
-    if (t0 > t1) {
-      swap = t0;
-      t0   = t1;
-      t1   = swap;
+    l_t0 = (p_min_x - p_origin_x) / p_dir_x;
+    l_t1 = (p_max_x - p_origin_x) / p_dir_x;
+    if (l_t0 > l_t1) {
+      l_swap = l_t0;
+      l_t0   = l_t1;
+      l_t1   = l_swap;
     }
-    enter = max_real(enter, t0);
-    leave = min_real(leave, t1);
+    l_enter = max_real(l_enter, l_t0);
+    l_leave = min_real(l_leave, l_t1);
   }
 
-  if (dir_y == 0.0) {
-    if (origin_y < min_y || origin_y > max_y) return -1.0;
+  if (p_dir_y == 0.0) {
+    if (p_origin_y < p_min_y || p_origin_y > p_max_y) return -1.0;
   } else {
-    t0 = (min_y - origin_y) / dir_y;
-    t1 = (max_y - origin_y) / dir_y;
-    if (t0 > t1) {
-      swap = t0;
-      t0   = t1;
-      t1   = swap;
+    l_t0 = (p_min_y - p_origin_y) / p_dir_y;
+    l_t1 = (p_max_y - p_origin_y) / p_dir_y;
+    if (l_t0 > l_t1) {
+      l_swap = l_t0;
+      l_t0   = l_t1;
+      l_t1   = l_swap;
     }
-    enter = max_real(enter, t0);
-    leave = min_real(leave, t1);
+    l_enter = max_real(l_enter, l_t0);
+    l_leave = min_real(l_leave, l_t1);
   }
 
-  if (dir_z == 0.0) {
-    if (origin_z < min_z || origin_z > max_z) return -1.0;
+  if (p_dir_z == 0.0) {
+    if (p_origin_z < p_min_z || p_origin_z > p_max_z) return -1.0;
   } else {
-    t0 = (min_z - origin_z) / dir_z;
-    t1 = (max_z - origin_z) / dir_z;
-    if (t0 > t1) {
-      swap = t0;
-      t0   = t1;
-      t1   = swap;
+    l_t0 = (p_min_z - p_origin_z) / p_dir_z;
+    l_t1 = (p_max_z - p_origin_z) / p_dir_z;
+    if (l_t0 > l_t1) {
+      l_swap = l_t0;
+      l_t0   = l_t1;
+      l_t1   = l_swap;
     }
-    enter = max_real(enter, t0);
-    leave = min_real(leave, t1);
+    l_enter = max_real(l_enter, l_t0);
+    l_leave = min_real(l_leave, l_t1);
   }
 
-  if (enter > leave || leave < 0.0) return -1.0;
-  if (enter < 0.0) return 0.0;
-  return enter;
+  if (l_enter > l_leave || l_leave < 0.0) return -1.0;
+  if (l_enter < 0.0) return 0.0;
+  return l_enter;
 }
 
 #endif

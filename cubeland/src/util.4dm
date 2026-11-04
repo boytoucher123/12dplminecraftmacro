@@ -4,222 +4,222 @@
 #include "../include/common.h"
 #include "../include/util.h"
 
-Real clamp_real(Real value, Real low, Real high)
+Real clamp_real(Real p_value, Real p_low, Real p_high)
 // ----------------------------------------------------------------
 // Limit value to the range [low, high]
 // ----------------------------------------------------------------
 {
-  Real result = value;
+  Real l_result = p_value;
 
-  if (result < low ) result = low;
-  if (result > high) result = high;
+  if (l_result < p_low ) l_result = p_low;
+  if (l_result > p_high) l_result = p_high;
 
-  return result;
+  return l_result;
 }
 
-Integer clamp_integer(Integer value, Integer low, Integer high)
+Integer clamp_integer(Integer p_value, Integer p_low, Integer p_high)
 // ----------------------------------------------------------------
 // Limit value to the range [low, high]
 // ----------------------------------------------------------------
 {
-  Integer result = value;
+  Integer l_result = p_value;
 
-  if (result < low ) result = low;
-  if (result > high) result = high;
+  if (l_result < p_low ) l_result = p_low;
+  if (l_result > p_high) l_result = p_high;
 
-  return result;
+  return l_result;
 }
 
-Real min_real(Real first, Real second)
+Real min_real(Real p_first, Real p_second)
 // ----------------------------------------------------------------
 // The smaller of two values
 // ----------------------------------------------------------------
 {
-  if (first < second) return first;
-  return second;
+  if (p_first < p_second) return p_first;
+  return p_second;
 }
 
-Real max_real(Real first, Real second)
+Real max_real(Real p_first, Real p_second)
 // ----------------------------------------------------------------
 // The larger of two values
 // ----------------------------------------------------------------
 {
-  if (first > second) return first;
-  return second;
+  if (p_first > p_second) return p_first;
+  return p_second;
 }
 
-Integer floor_integer(Real value)
+Integer floor_integer(Real p_value)
 // ----------------------------------------------------------------
 // Round towards negative infinity and return as an Integer
 // ----------------------------------------------------------------
 {
-  Integer result = Floor(value);
-  return result;
+  Integer l_result = Floor(p_value);
+  return l_result;
 }
 
-Integer floor_divide(Integer numerator, Integer denominator)
+Integer floor_divide(Integer p_numerator, Integer p_denominator)
 // ----------------------------------------------------------------
 // Integer division rounding towards negative infinity
 // Done in Reals so the result never depends on how the language
 // rounds negative Integer division
 // ----------------------------------------------------------------
 {
-  Integer result = Floor(numerator / (1.0 * denominator));
-  return result;
+  Integer l_result = Floor(p_numerator / (1.0 * p_denominator));
+  return l_result;
 }
 
-Integer positive_mod(Integer value, Integer modulus)
+Integer positive_mod(Integer p_value, Integer p_modulus)
 // ----------------------------------------------------------------
 // value modulo modulus, always in the range [0, modulus - 1]
 // ----------------------------------------------------------------
 {
-  Integer result = value - floor_divide(value, modulus) * modulus;
-  return result;
+  Integer l_result = p_value - floor_divide(p_value, p_modulus) * p_modulus;
+  return l_result;
 }
 
-Integer to_byte(Real value)
+Integer to_byte(Real p_value)
 // ----------------------------------------------------------------
 // Convert a colour channel to an Integer in [0, 255]
 // ----------------------------------------------------------------
 {
-  Integer result = Floor(clamp_real(value, 0.0, 255.0));
-  return result;
+  Integer l_result = Floor(clamp_real(p_value, 0.0, 255.0));
+  return l_result;
 }
 
-Real lerp_real(Real from, Real to, Real amount)
+Real lerp_real(Real p_from, Real p_to, Real p_amount)
 // ----------------------------------------------------------------
 // Linear interpolation, amount 0 gives from and 1 gives to
 // ----------------------------------------------------------------
 {
-  return from + (to - from) * amount;
+  return p_from + (p_to - p_from) * p_amount;
 }
 
-Real smooth_curve(Real amount)
+Real smooth_curve(Real p_amount)
 // ----------------------------------------------------------------
 // Smoothstep easing of amount in [0, 1]
 // ----------------------------------------------------------------
 {
-  return amount * amount * (3.0 - 2.0 * amount);
+  return p_amount * p_amount * (3.0 - 2.0 * p_amount);
 }
 
-Real hash_real(Real first, Real second, Real third)
+Real hash_real(Real p_first, Real p_second, Real p_third)
 // ----------------------------------------------------------------
 // Deterministic pseudo random number in [0, 1) from three values
 // Used by terrain and texture generation so that a seed always
 // produces the same result regardless of call order
 // ----------------------------------------------------------------
 {
-  Real value = Sin(first * 127.1 + second * 311.7 + third * 74.7) * 43758.5453123;
-  return value - Floor(value);
+  Real l_value = Sin(p_first * 127.1 + p_second * 311.7 + p_third * 74.7) * 43758.5453123;
+  return l_value - Floor(l_value);
 }
 
-Real wrap_angle(Real angle)
+Real wrap_angle(Real p_angle)
 // ----------------------------------------------------------------
 // Bring an angle into the range [0, 2 pi)
 // ----------------------------------------------------------------
 {
-  return angle - Floor(angle / TWO_PI) * TWO_PI;
+  return p_angle - Floor(p_angle / TWO_PI) * TWO_PI;
 }
 
-Integer text_to_seed(Text text)
+Integer text_to_seed(Text p_text)
 // ----------------------------------------------------------------
 // Turn the seed typed by the player into an Integer seed
 // Whole numbers (optionally negative) are used as they are, any
 // other text is hashed so that words make repeatable worlds too
 // ----------------------------------------------------------------
 {
-  Text    trimmed    = Text_justify(text);
-  Text    digits     = "0123456789";
-  Text    charset    = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_.,!?:;()+=*/@#$%&";
-  Text    character  = "";
-  Integer length     = Text_length(trimmed);
-  Integer position   = 0;
-  Integer digit      = 0;
-  Integer is_number  = TRUE;
-  Integer negative   = FALSE;
-  Integer start      = 1;
-  Integer seed       = 0;
-  Real    accumulate = 0.0;
+  Text    l_trimmed    = Text_justify(p_text);
+  Text    l_digits     = "0123456789";
+  Text    l_charset    = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_.,!?:;()+=*/@#$%&";
+  Text    l_character  = "";
+  Integer l_length     = Text_length(l_trimmed);
+  Integer l_position   = 0;
+  Integer l_digit      = 0;
+  Integer l_is_number  = TRUE;
+  Integer l_negative   = FALSE;
+  Integer l_start      = 1;
+  Integer l_seed       = 0;
+  Real    l_accumulate = 0.0;
 
-  if (length == 0) return 0;
+  if (l_length == 0) return 0;
 
-  if (Get_subtext(trimmed, 1, 1) == "-") {
-    negative = TRUE;
-    start    = 2;
+  if (Get_subtext(l_trimmed, 1, 1) == "-") {
+    l_negative = TRUE;
+    l_start    = 2;
   }
-  if (start > length) is_number = FALSE;
-  if (length - start + 1 > 9) is_number = FALSE;
+  if (l_start > l_length) l_is_number = FALSE;
+  if (l_length - l_start + 1 > 9) l_is_number = FALSE;
 
-  for (position = start; position <= length; ++position) {
-    character = Get_subtext(trimmed, position, position);
-    if (Find_text(digits, character) == 0) is_number = FALSE;
+  for (l_position = l_start; l_position <= l_length; ++l_position) {
+    l_character = Get_subtext(l_trimmed, l_position, l_position);
+    if (Find_text(l_digits, l_character) == 0) l_is_number = FALSE;
   }
 
-  if (is_number) {
-    for (position = start; position <= length; ++position) {
-      character = Get_subtext(trimmed, position, position);
-      digit     = Find_text(digits, character) - 1;
-      seed      = seed * 10 + digit;
+  if (l_is_number) {
+    for (l_position = l_start; l_position <= l_length; ++l_position) {
+      l_character = Get_subtext(l_trimmed, l_position, l_position);
+      l_digit     = Find_text(l_digits, l_character) - 1;
+      l_seed      = l_seed * 10 + l_digit;
     }
-    if (negative) seed = -seed;
-    return seed;
+    if (l_negative) l_seed = -l_seed;
+    return l_seed;
   }
 
-  for (position = 1; position <= length; ++position) {
-    character  = Get_subtext(trimmed, position, position);
-    accumulate = accumulate * 31.0 + Find_text(charset, character) + 1.0;
-    accumulate = accumulate - Floor(accumulate / 2147483.0) * 2147483.0;
+  for (l_position = 1; l_position <= l_length; ++l_position) {
+    l_character  = Get_subtext(l_trimmed, l_position, l_position);
+    l_accumulate = l_accumulate * 31.0 + Find_text(l_charset, l_character) + 1.0;
+    l_accumulate = l_accumulate - Floor(l_accumulate / 2147483.0) * 2147483.0;
   }
-  seed = Floor(accumulate);
+  l_seed = Floor(l_accumulate);
 
-  return seed;
+  return l_seed;
 }
 
-Text file_title_from_path(Text path)
+Text file_title_from_path(Text p_path)
 // ----------------------------------------------------------------
 // "C:\folder\name.ext" -> "name"
 // Accepts either slash style
 // ----------------------------------------------------------------
 {
-  Integer length    = Text_length(path);
-  Integer position  = 0;
-  Integer first     = 1;
-  Integer last      = length;
-  Text    character = "";
+  Integer l_length    = Text_length(p_path);
+  Integer l_position  = 0;
+  Integer l_first     = 1;
+  Integer l_last      = l_length;
+  Text    l_character = "";
 
-  for (position = 1; position <= length; ++position) {
-    character = Get_subtext(path, position, position);
-    if (character == "/" || character == "\\") first = position + 1;
+  for (l_position = 1; l_position <= l_length; ++l_position) {
+    l_character = Get_subtext(p_path, l_position, l_position);
+    if (l_character == "/" || l_character == "\\") l_first = l_position + 1;
   }
-  for (position = length; position >= first; --position) {
-    character = Get_subtext(path, position, position);
-    if (character == ".") {
-      last = position - 1;
+  for (l_position = l_length; l_position >= l_first; --l_position) {
+    l_character = Get_subtext(p_path, l_position, l_position);
+    if (l_character == ".") {
+      l_last = l_position - 1;
       break;
     }
   }
 
-  if (last < first) return "";
+  if (l_last < l_first) return "";
 
-  return Get_subtext(path, first, last);
+  return Get_subtext(p_path, l_first, l_last);
 }
 
-Integer text_is_safe_name(Text name)
+Integer text_is_safe_name(Text p_name)
 // ----------------------------------------------------------------
 // TRUE if name only uses letters, digits, spaces, - and _
 // so that it can be used as a file name
 // ----------------------------------------------------------------
 {
-  Text    allowed   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_";
-  Text    character = "";
-  Integer length    = Text_length(name);
-  Integer position  = 0;
+  Text    l_allowed   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_";
+  Text    l_character = "";
+  Integer l_length    = Text_length(p_name);
+  Integer l_position  = 0;
 
-  if (length == 0 || length > 40) return FALSE;
+  if (l_length == 0 || l_length > 40) return FALSE;
 
-  for (position = 1; position <= length; ++position) {
-    character = Get_subtext(name, position, position);
-    if (Find_text(allowed, character) == 0) return FALSE;
+  for (l_position = 1; l_position <= l_length; ++l_position) {
+    l_character = Get_subtext(p_name, l_position, l_position);
+    if (Find_text(l_allowed, l_character) == 0) return FALSE;
   }
 
   return TRUE;

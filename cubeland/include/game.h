@@ -36,29 +36,29 @@
   Attributes g_book;        // recipes
 }
 
-void    game_init_once        (Attributes &game, Attributes &book, Attributes &settings, Attributes &random, Integer time_seed);
-void    game_reset_state      (Attributes &game, Attributes &player, Attributes &inventory, Attributes &grid,
-                               Attributes &furnaces, Attributes &cows, Attributes &drops, Attributes &events,
-                               Attributes &hud, Attributes &ui);
-Text    game_world_name       (Attributes &game);
-Integer game_new_world        (Text name, Integer seed, Attributes &game, Attributes &info, Attributes &player,
-                               Attributes &inventory, Attributes &grid, Attributes &furnaces, Attributes &cows,
-                               Attributes &drops, Attributes &events, Attributes &hud, Attributes &ui);
-Integer game_load_world       (Text name, Attributes &game, Attributes &info, Attributes &player,
-                               Attributes &inventory, Attributes &grid, Attributes &furnaces, Attributes &cows,
-                               Attributes &drops, Attributes &events, Attributes &hud, Attributes &ui, Text &problem);
-Integer game_save_world       (Attributes &game, Attributes &info, Attributes &player, Attributes &inventory,
-                               Attributes &furnaces, Attributes &cows, Attributes &drops, Attributes &events);
-void    game_build_nearby     (Attributes &player, Integer range);
-void    game_respawn          (Attributes &info, Attributes &player, Attributes &events);
-void    game_dispatch_events  (Attributes &events, Attributes &event, Attributes &player, Attributes &inventory,
-                               Attributes &grid, Attributes &furnaces, Attributes &drops, Attributes &random,
-                               Attributes &hud, Attributes &ui, Real now);
-void    game_update           (Real dt, Real real_dt, Real now, Integer running,
-                               Attributes &game, Attributes &info, Attributes &player, Attributes &inventory,
-                               Attributes &grid, Attributes &furnaces, Attributes &cows, Attributes &drops,
-                               Attributes &events, Attributes &event, Attributes &random, Attributes &settings,
-                               Attributes &hud, Attributes &ui);
-void    game_select_slot      (Attributes &player, Attributes &hud, Integer slot, Real now);
+void    game_init_once        (Attributes &p_game, Attributes &p_book, Attributes &p_settings, Attributes &p_random, Integer p_time_seed);
+void    game_reset_state      (Attributes &p_game, Attributes &p_player, Attributes &p_inventory, Attributes &p_grid,
+                               Attributes &p_furnaces, Attributes &p_cows, Attributes &p_drops, Attributes &p_events,
+                               Attributes &p_hud, Attributes &p_ui);
+Text    game_world_name       (Attributes &p_game);
+Integer game_new_world        (Text p_name, Integer p_seed, Attributes &p_game, Attributes &p_info, Attributes &p_player,
+                               Attributes &p_inventory, Attributes &p_grid, Attributes &p_furnaces, Attributes &p_cows,
+                               Attributes &p_drops, Attributes &p_events, Attributes &p_hud, Attributes &p_ui);
+Integer game_load_world       (Text p_name, Attributes &p_game, Attributes &p_info, Attributes &p_player,
+                               Attributes &p_inventory, Attributes &p_grid, Attributes &p_furnaces, Attributes &p_cows,
+                               Attributes &p_drops, Attributes &p_events, Attributes &p_hud, Attributes &p_ui, Text &p_problem);
+Integer game_save_world       (Attributes &p_game, Attributes &p_info, Attributes &p_player, Attributes &p_inventory,
+                               Attributes &p_furnaces, Attributes &p_cows, Attributes &p_drops, Attributes &p_events);
+void    game_build_nearby     (Attributes &p_player, Integer p_range);
+void    game_respawn          (Attributes &p_info, Attributes &p_player, Attributes &p_events);
+void    game_dispatch_events  (Attributes &p_events, Attributes &p_event, Attributes &p_player, Attributes &p_inventory,
+                               Attributes &p_grid, Attributes &p_furnaces, Attributes &p_drops, Attributes &p_random,
+                               Attributes &p_hud, Attributes &p_ui, Real p_now);
+void    game_update           (Real p_dt, Real p_real_dt, Real p_now, Integer p_running,
+                               Attributes &p_game, Attributes &p_info, Attributes &p_player, Attributes &p_inventory,
+                               Attributes &p_grid, Attributes &p_furnaces, Attributes &p_cows, Attributes &p_drops,
+                               Attributes &p_events, Attributes &p_event, Attributes &p_random, Attributes &p_settings,
+                               Attributes &p_hud, Attributes &p_ui);
+void    game_select_slot      (Attributes &p_player, Attributes &p_hud, Integer p_slot, Real p_now);
 
 #endif

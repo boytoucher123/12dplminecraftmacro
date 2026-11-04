@@ -13,14 +13,14 @@
 // Table functions: these read the block grid through world_get_block.
 // Results come back through reference parameters.
 
-Integer physics_box_collides  (Real min_x, Real min_y, Real min_z, Real max_x, Real max_y, Real max_z);
-void    physics_move_box      (Real &x, Real &y, Real &z, Real half_width, Real height, Real dx, Real dy, Real dz,
-                               Integer &hit_x, Integer &hit_z, Integer &hit_down, Integer &hit_up);
-Integer physics_box_in_water  (Real x, Real y, Real z, Real half_width, Real height);
-Integer physics_raycast_blocks(Real origin_x, Real origin_y, Real origin_z, Real dir_x, Real dir_y, Real dir_z, Real max_distance,
-                               Integer &hit_x, Integer &hit_y, Integer &hit_z,
-                               Integer &normal_x, Integer &normal_y, Integer &normal_z, Real &distance);
-Real    physics_ray_box       (Real origin_x, Real origin_y, Real origin_z, Real dir_x, Real dir_y, Real dir_z,
-                               Real min_x, Real min_y, Real min_z, Real max_x, Real max_y, Real max_z);
+Integer physics_box_collides  (Real p_min_x, Real p_min_y, Real p_min_z, Real p_max_x, Real p_max_y, Real p_max_z);
+void    physics_move_box      (Real &p_x, Real &p_y, Real &p_z, Real p_half_width, Real p_height, Real p_dx, Real p_dy, Real p_dz,
+                               Integer &p_hit_x, Integer &p_hit_z, Integer &p_hit_down, Integer &p_hit_up);
+Integer physics_box_in_water  (Real p_x, Real p_y, Real p_z, Real p_half_width, Real p_height);
+Integer physics_raycast_blocks(Real p_origin_x, Real p_origin_y, Real p_origin_z, Real p_dir_x, Real p_dir_y, Real p_dir_z, Real p_max_distance,
+                               Integer &p_hit_x, Integer &p_hit_y, Integer &p_hit_z,
+                               Integer &p_normal_x, Integer &p_normal_y, Integer &p_normal_z, Real &p_distance);
+Real    physics_ray_box       (Real p_origin_x, Real p_origin_y, Real p_origin_z, Real p_dir_x, Real p_dir_y, Real p_dir_z,
+                               Real p_min_x, Real p_min_y, Real p_min_z, Real p_max_x, Real p_max_y, Real p_max_z);
 
 #endif

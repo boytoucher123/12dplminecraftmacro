@@ -11,97 +11,97 @@
 
 // ---------------------------------------------------------------- slots
 
-Integer slot_item(Attributes &container, Integer slot)
+Integer slot_item(Attributes &p_container, Integer p_slot)
 // ----------------------------------------------------------------
 // Item in a slot, ITEM_NONE if it is empty
 // ----------------------------------------------------------------
 {
-  return record_integer_at(container, ATTR_ITEM, slot);
+  return record_integer_at(p_container, ATTR_ITEM, p_slot);
 }
 
-Integer slot_count(Attributes &container, Integer slot)
+Integer slot_count(Attributes &p_container, Integer p_slot)
 // ----------------------------------------------------------------
 // Number of items in a slot
 // ----------------------------------------------------------------
 {
-  return record_integer_at(container, ATTR_COUNT, slot);
+  return record_integer_at(p_container, ATTR_COUNT, p_slot);
 }
 
-Integer slot_damage(Attributes &container, Integer slot)
+Integer slot_damage(Attributes &p_container, Integer p_slot)
 // ----------------------------------------------------------------
 // How many uses the tool in a slot has had
 // ----------------------------------------------------------------
 {
-  return record_integer_at(container, ATTR_DAMAGE, slot);
+  return record_integer_at(p_container, ATTR_DAMAGE, p_slot);
 }
 
-Integer slot_is_empty(Attributes &container, Integer slot)
+Integer slot_is_empty(Attributes &p_container, Integer p_slot)
 // ----------------------------------------------------------------
 // TRUE if nothing is in a slot
 // ----------------------------------------------------------------
 {
-  if (slot_item(container, slot) == ITEM_NONE) return TRUE;
-  if (slot_count(container, slot) <= 0) return TRUE;
+  if (slot_item(p_container, p_slot) == ITEM_NONE) return TRUE;
+  if (slot_count(p_container, p_slot) <= 0) return TRUE;
   return FALSE;
 }
 
-void slot_set(Attributes &container, Integer slot, Integer item, Integer count, Integer damage)
+void slot_set(Attributes &p_container, Integer p_slot, Integer p_item, Integer p_count, Integer p_damage)
 // ----------------------------------------------------------------
 // Put a stack into a slot; a count of 0 or less empties it
 // ----------------------------------------------------------------
 {
-  Integer stored_item   = item;
-  Integer stored_count  = count;
-  Integer stored_damage = damage;
+  Integer l_stored_item   = p_item;
+  Integer l_stored_count  = p_count;
+  Integer l_stored_damage = p_damage;
 
-  if (item == ITEM_NONE || count <= 0) {
-    stored_item   = ITEM_NONE;
-    stored_count  = 0;
-    stored_damage = 0;
+  if (p_item == ITEM_NONE || p_count <= 0) {
+    l_stored_item   = ITEM_NONE;
+    l_stored_count  = 0;
+    l_stored_damage = 0;
   }
-  record_set_integer_at(container, ATTR_ITEM,   slot, stored_item);
-  record_set_integer_at(container, ATTR_COUNT,  slot, stored_count);
-  record_set_integer_at(container, ATTR_DAMAGE, slot, stored_damage);
+  record_set_integer_at(p_container, ATTR_ITEM,   p_slot, l_stored_item);
+  record_set_integer_at(p_container, ATTR_COUNT,  p_slot, l_stored_count);
+  record_set_integer_at(p_container, ATTR_DAMAGE, p_slot, l_stored_damage);
 }
 
-void slot_clear(Attributes &container, Integer slot)
+void slot_clear(Attributes &p_container, Integer p_slot)
 // ----------------------------------------------------------------
 // Empty a slot
 // ----------------------------------------------------------------
 {
-  slot_set(container, slot, ITEM_NONE, 0, 0);
+  slot_set(p_container, p_slot, ITEM_NONE, 0, 0);
 }
 
-void slot_take_one(Attributes &container, Integer slot)
+void slot_take_one(Attributes &p_container, Integer p_slot)
 // ----------------------------------------------------------------
 // Use up one item from a slot (placing a block, eating)
 // ----------------------------------------------------------------
 {
-  slot_set(container, slot, slot_item(container, slot), slot_count(container, slot) - 1, slot_damage(container, slot));
+  slot_set(p_container, p_slot, slot_item(p_container, p_slot), slot_count(p_container, p_slot) - 1, slot_damage(p_container, p_slot));
 }
 
-Integer slot_wear(Attributes &container, Integer slot)
+Integer slot_wear(Attributes &p_container, Integer p_slot)
 // ----------------------------------------------------------------
 // Use a tool in a slot once. Returns TRUE if that wore it out (the
 // slot is then empty). Items that don't wear are left alone.
 // ----------------------------------------------------------------
 {
-  Integer item   = slot_item(container, slot);
-  Integer uses   = item_max_uses(item);
-  Integer damage = slot_damage(container, slot) + 1;
+  Integer l_item   = slot_item(p_container, p_slot);
+  Integer l_uses   = item_max_uses(l_item);
+  Integer l_damage = slot_damage(p_container, p_slot) + 1;
 
-  if (uses <= 0) return FALSE;
+  if (l_uses <= 0) return FALSE;
 
-  if (damage >= uses) {
-    slot_clear(container, slot);
+  if (l_damage >= l_uses) {
+    slot_clear(p_container, p_slot);
     return TRUE;
   }
-  record_set_integer_at(container, ATTR_DAMAGE, slot, damage);
+  record_set_integer_at(p_container, ATTR_DAMAGE, p_slot, l_damage);
 
   return FALSE;
 }
 
-void slot_click_left(Attributes &holder, Attributes &container, Integer slot, Integer take_only)
+void slot_click_left(Attributes &p_holder, Attributes &p_container, Integer p_slot, Integer p_take_only)
 // ----------------------------------------------------------------
 // Left click on a slot of container while holder's cursor slot
 // holds what the mouse carries:
@@ -112,237 +112,237 @@ void slot_click_left(Attributes &holder, Attributes &container, Integer slot, In
 // empty or matching cursor
 // ----------------------------------------------------------------
 {
-  Integer cursor_item   = slot_item  (holder, CURSOR_SLOT);
-  Integer cursor_count  = slot_count (holder, CURSOR_SLOT);
-  Integer cursor_damage = slot_damage(holder, CURSOR_SLOT);
-  Integer item          = slot_item  (container, slot);
-  Integer count         = slot_count (container, slot);
-  Integer damage        = slot_damage(container, slot);
-  Integer limit         = item_max_stack(item);
-  Integer moved         = 0;
+  Integer l_cursor_item   = slot_item  (p_holder, CURSOR_SLOT);
+  Integer l_cursor_count  = slot_count (p_holder, CURSOR_SLOT);
+  Integer l_cursor_damage = slot_damage(p_holder, CURSOR_SLOT);
+  Integer l_item          = slot_item  (p_container, p_slot);
+  Integer l_count         = slot_count (p_container, p_slot);
+  Integer l_damage        = slot_damage(p_container, p_slot);
+  Integer l_limit         = item_max_stack(l_item);
+  Integer l_moved         = 0;
 
-  if (take_only) {
-    if (item == ITEM_NONE) return;
-    if (cursor_item == ITEM_NONE) {
-      slot_set  (holder, CURSOR_SLOT, item, count, damage);
-      slot_clear(container, slot);
-    } else if (cursor_item == item) {
-      moved = limit - cursor_count;
-      if (moved > count) moved = count;
-      if (moved <= 0) return;
-      slot_set(holder,    CURSOR_SLOT, item, cursor_count + moved, cursor_damage);
-      slot_set(container, slot,        item, count - moved,        damage);
+  if (p_take_only) {
+    if (l_item == ITEM_NONE) return;
+    if (l_cursor_item == ITEM_NONE) {
+      slot_set  (p_holder, CURSOR_SLOT, l_item, l_count, l_damage);
+      slot_clear(p_container, p_slot);
+    } else if (l_cursor_item == l_item) {
+      l_moved = l_limit - l_cursor_count;
+      if (l_moved > l_count) l_moved = l_count;
+      if (l_moved <= 0) return;
+      slot_set(p_holder,    CURSOR_SLOT, l_item, l_cursor_count + l_moved, l_cursor_damage);
+      slot_set(p_container, p_slot,        l_item, l_count - l_moved,        l_damage);
     }
     return;
   }
 
-  if (cursor_item != ITEM_NONE && cursor_item == item && limit > 1) {
-    moved = limit - count;
-    if (moved > cursor_count) moved = cursor_count;
-    slot_set(container, slot,        item, count + moved,        damage);
-    slot_set(holder,    CURSOR_SLOT, item, cursor_count - moved, cursor_damage);
+  if (l_cursor_item != ITEM_NONE && l_cursor_item == l_item && l_limit > 1) {
+    l_moved = l_limit - l_count;
+    if (l_moved > l_cursor_count) l_moved = l_cursor_count;
+    slot_set(p_container, p_slot,        l_item, l_count + l_moved,        l_damage);
+    slot_set(p_holder,    CURSOR_SLOT, l_item, l_cursor_count - l_moved, l_cursor_damage);
     return;
   }
 
-  slot_set(container, slot,        cursor_item, cursor_count, cursor_damage);
-  slot_set(holder,    CURSOR_SLOT, item,        count,        damage);
+  slot_set(p_container, p_slot,        l_cursor_item, l_cursor_count, l_cursor_damage);
+  slot_set(p_holder,    CURSOR_SLOT, l_item,        l_count,        l_damage);
 }
 
-void slot_click_right(Attributes &holder, Attributes &container, Integer slot, Integer take_only)
+void slot_click_right(Attributes &p_holder, Attributes &p_container, Integer p_slot, Integer p_take_only)
 // ----------------------------------------------------------------
 // Right click on a slot of container:
 //  - empty cursor: pick up half the stack (rounded up)
 //  - otherwise:    put one item from the cursor into the slot
 // ----------------------------------------------------------------
 {
-  Integer cursor_item   = slot_item  (holder, CURSOR_SLOT);
-  Integer cursor_count  = slot_count (holder, CURSOR_SLOT);
-  Integer cursor_damage = slot_damage(holder, CURSOR_SLOT);
-  Integer item          = slot_item  (container, slot);
-  Integer count         = slot_count (container, slot);
-  Integer damage        = slot_damage(container, slot);
-  Integer half          = 0;
+  Integer l_cursor_item   = slot_item  (p_holder, CURSOR_SLOT);
+  Integer l_cursor_count  = slot_count (p_holder, CURSOR_SLOT);
+  Integer l_cursor_damage = slot_damage(p_holder, CURSOR_SLOT);
+  Integer l_item          = slot_item  (p_container, p_slot);
+  Integer l_count         = slot_count (p_container, p_slot);
+  Integer l_damage        = slot_damage(p_container, p_slot);
+  Integer l_half          = 0;
 
-  if (cursor_item == ITEM_NONE) {
-    if (item == ITEM_NONE) return;
-    half = count - floor_divide(count, 2);
-    slot_set(holder,    CURSOR_SLOT, item, half,         damage);
-    slot_set(container, slot,        item, count - half, damage);
+  if (l_cursor_item == ITEM_NONE) {
+    if (l_item == ITEM_NONE) return;
+    l_half = l_count - floor_divide(l_count, 2);
+    slot_set(p_holder,    CURSOR_SLOT, l_item, l_half,         l_damage);
+    slot_set(p_container, p_slot,        l_item, l_count - l_half, l_damage);
     return;
   }
 
-  if (take_only) return;
-  if (item != ITEM_NONE && item != cursor_item) return;
-  if (count >= item_max_stack(cursor_item)) return;
+  if (p_take_only) return;
+  if (l_item != ITEM_NONE && l_item != l_cursor_item) return;
+  if (l_count >= item_max_stack(l_cursor_item)) return;
 
-  slot_set(container, slot,        cursor_item, count + 1,        cursor_damage);
-  slot_set(holder,    CURSOR_SLOT, cursor_item, cursor_count - 1, cursor_damage);
+  slot_set(p_container, p_slot,        l_cursor_item, l_count + 1,        l_cursor_damage);
+  slot_set(p_holder,    CURSOR_SLOT, l_cursor_item, l_cursor_count - 1, l_cursor_damage);
 }
 
-void slot_move_all(Attributes &from, Integer from_slot, Attributes &to, Integer first, Integer last)
+void slot_move_all(Attributes &p_from, Integer p_from_slot, Attributes &p_to, Integer p_first, Integer p_last)
 // ----------------------------------------------------------------
 // Move as much of a stack as fits into slots first..last of
 // another container (shift-click style); the rest stays put
 // ----------------------------------------------------------------
 {
-  Integer left = container_add(to, first, last, slot_item(from, from_slot), slot_count(from, from_slot), slot_damage(from, from_slot));
+  Integer l_left = container_add(p_to, p_first, p_last, slot_item(p_from, p_from_slot), slot_count(p_from, p_from_slot), slot_damage(p_from, p_from_slot));
 
-  slot_set(from, from_slot, slot_item(from, from_slot), left, slot_damage(from, from_slot));
+  slot_set(p_from, p_from_slot, slot_item(p_from, p_from_slot), l_left, slot_damage(p_from, p_from_slot));
 }
 
 // ---------------------------------------------------------------- containers
 
-void container_clear(Attributes &container, Text datatype, Integer first, Integer last)
+void container_clear(Attributes &p_container, Text p_datatype, Integer p_first, Integer p_last)
 // ----------------------------------------------------------------
 // Make container an empty record of the given datatype whose slots
 // first..last exist and are empty
 // ----------------------------------------------------------------
 {
-  Integer slot = 0;
+  Integer l_slot = 0;
 
-  record_clear(container, datatype);
-  for (slot = first; slot <= last; ++slot) slot_clear(container, slot);
+  record_clear(p_container, p_datatype);
+  for (l_slot = p_first; l_slot <= p_last; ++l_slot) slot_clear(p_container, l_slot);
 }
 
-Integer container_add(Attributes &container, Integer first, Integer last, Integer item, Integer count, Integer damage)
+Integer container_add(Attributes &p_container, Integer p_first, Integer p_last, Integer p_item, Integer p_count, Integer p_damage)
 // ----------------------------------------------------------------
 // Put items into slots first..last: first topping up stacks of the
 // same item, then into empty slots in order
 // Returns how many did not fit
 // ----------------------------------------------------------------
 {
-  Integer left  = count;
-  Integer limit = item_max_stack(item);
-  Integer slot  = 0;
-  Integer space = 0;
-  Integer moved = 0;
+  Integer l_left  = p_count;
+  Integer l_limit = item_max_stack(p_item);
+  Integer l_slot  = 0;
+  Integer l_space = 0;
+  Integer l_moved = 0;
 
-  if (item == ITEM_NONE || count <= 0) return 0;
+  if (p_item == ITEM_NONE || p_count <= 0) return 0;
 
-  if (limit > 1) {
-    for (slot = first; slot <= last; ++slot) {
-      if (left <= 0) break;
-      if (slot_item(container, slot) != item) continue;
-      space = limit - slot_count(container, slot);
-      if (space <= 0) continue;
-      moved = left;
-      if (moved > space) moved = space;
-      slot_set(container, slot, item, slot_count(container, slot) + moved, 0);
-      left = left - moved;
+  if (l_limit > 1) {
+    for (l_slot = p_first; l_slot <= p_last; ++l_slot) {
+      if (l_left <= 0) break;
+      if (slot_item(p_container, l_slot) != p_item) continue;
+      l_space = l_limit - slot_count(p_container, l_slot);
+      if (l_space <= 0) continue;
+      l_moved = l_left;
+      if (l_moved > l_space) l_moved = l_space;
+      slot_set(p_container, l_slot, p_item, slot_count(p_container, l_slot) + l_moved, 0);
+      l_left = l_left - l_moved;
     }
   }
 
-  for (slot = first; slot <= last; ++slot) {
-    if (left <= 0) break;
-    if (!slot_is_empty(container, slot)) continue;
-    moved = left;
-    if (moved > limit) moved = limit;
-    slot_set(container, slot, item, moved, damage);
-    left = left - moved;
+  for (l_slot = p_first; l_slot <= p_last; ++l_slot) {
+    if (l_left <= 0) break;
+    if (!slot_is_empty(p_container, l_slot)) continue;
+    l_moved = l_left;
+    if (l_moved > l_limit) l_moved = l_limit;
+    slot_set(p_container, l_slot, p_item, l_moved, p_damage);
+    l_left = l_left - l_moved;
   }
 
-  return left;
+  return l_left;
 }
 
-Integer container_count_item(Attributes &container, Integer first, Integer last, Integer item)
+Integer container_count_item(Attributes &p_container, Integer p_first, Integer p_last, Integer p_item)
 // ----------------------------------------------------------------
 // Total number of an item across slots first..last
 // ----------------------------------------------------------------
 {
-  Integer slot  = 0;
-  Integer total = 0;
+  Integer l_slot  = 0;
+  Integer l_total = 0;
 
-  for (slot = first; slot <= last; ++slot) {
-    if (slot_item(container, slot) == item) total = total + slot_count(container, slot);
+  for (l_slot = p_first; l_slot <= p_last; ++l_slot) {
+    if (slot_item(p_container, l_slot) == p_item) l_total = l_total + slot_count(p_container, l_slot);
   }
-  return total;
+  return l_total;
 }
 
-Integer container_remove_item(Attributes &container, Integer first, Integer last, Integer item, Integer count)
+Integer container_remove_item(Attributes &p_container, Integer p_first, Integer p_last, Integer p_item, Integer p_count)
 // ----------------------------------------------------------------
 // Take count of an item out of slots first..last, from the last
 // slot backwards. Returns FALSE (and removes nothing) if there are
 // not enough.
 // ----------------------------------------------------------------
 {
-  Integer left  = count;
-  Integer slot  = 0;
-  Integer taken = 0;
-  Integer have  = 0;
+  Integer l_left  = p_count;
+  Integer l_slot  = 0;
+  Integer l_taken = 0;
+  Integer l_have  = 0;
 
-  if (container_count_item(container, first, last, item) < count) return FALSE;
+  if (container_count_item(p_container, p_first, p_last, p_item) < p_count) return FALSE;
 
-  for (slot = last; slot >= first; --slot) {
-    if (left <= 0) break;
-    if (slot_item(container, slot) != item) continue;
-    have  = slot_count(container, slot);
-    taken = left;
-    if (taken > have) taken = have;
-    slot_set(container, slot, item, have - taken, slot_damage(container, slot));
-    left = left - taken;
+  for (l_slot = p_last; l_slot >= p_first; --l_slot) {
+    if (l_left <= 0) break;
+    if (slot_item(p_container, l_slot) != p_item) continue;
+    l_have  = slot_count(p_container, l_slot);
+    l_taken = l_left;
+    if (l_taken > l_have) l_taken = l_have;
+    slot_set(p_container, l_slot, p_item, l_have - l_taken, slot_damage(p_container, l_slot));
+    l_left = l_left - l_taken;
   }
   return TRUE;
 }
 
 // ---------------------------------------------------------------- the player's inventory
 
-void inventory_clear(Attributes &inventory)
+void inventory_clear(Attributes &p_inventory)
 // ----------------------------------------------------------------
 // Empty every slot and the cursor
 // ----------------------------------------------------------------
 {
-  container_clear(inventory, DATATYPE_INVENTORY, CURSOR_SLOT, INVENTORY_SLOTS);
+  container_clear(p_inventory, DATATYPE_INVENTORY, CURSOR_SLOT, INVENTORY_SLOTS);
 }
 
-Integer inventory_add(Attributes &inventory, Integer item, Integer count)
+Integer inventory_add(Attributes &p_inventory, Integer p_item, Integer p_count)
 // ----------------------------------------------------------------
 // Add new items, hotbar first. Returns how many did not fit.
 // ----------------------------------------------------------------
 {
-  return container_add(inventory, 1, INVENTORY_SLOTS, item, count, 0);
+  return container_add(p_inventory, 1, INVENTORY_SLOTS, p_item, p_count, 0);
 }
 
-Integer inventory_add_worn(Attributes &inventory, Integer item, Integer count, Integer damage)
+Integer inventory_add_worn(Attributes &p_inventory, Integer p_item, Integer p_count, Integer p_damage)
 // ----------------------------------------------------------------
 // Add items that keep their wear (a tool coming back from a
 // crafting grid or being picked up). Returns how many did not fit.
 // ----------------------------------------------------------------
 {
-  return container_add(inventory, 1, INVENTORY_SLOTS, item, count, damage);
+  return container_add(p_inventory, 1, INVENTORY_SLOTS, p_item, p_count, p_damage);
 }
 
-Integer inventory_count_item(Attributes &inventory, Integer item)
+Integer inventory_count_item(Attributes &p_inventory, Integer p_item)
 // ----------------------------------------------------------------
 // Total number of an item in the inventory
 // ----------------------------------------------------------------
 {
-  return container_count_item(inventory, 1, INVENTORY_SLOTS, item);
+  return container_count_item(p_inventory, 1, INVENTORY_SLOTS, p_item);
 }
 
-Integer inventory_remove_item(Attributes &inventory, Integer item, Integer count)
+Integer inventory_remove_item(Attributes &p_inventory, Integer p_item, Integer p_count)
 // ----------------------------------------------------------------
 // Take items out, main inventory before hotbar. FALSE if there are
 // not enough (nothing is removed then).
 // ----------------------------------------------------------------
 {
-  return container_remove_item(inventory, 1, INVENTORY_SLOTS, item, count);
+  return container_remove_item(p_inventory, 1, INVENTORY_SLOTS, p_item, p_count);
 }
 
-void inventory_return_cursor(Attributes &inventory, Attributes &events, Real x, Real y, Real z)
+void inventory_return_cursor(Attributes &p_inventory, Attributes &p_events, Real p_x, Real p_y, Real p_z)
 // ----------------------------------------------------------------
 // Put the cursor stack back into the inventory when a screen
 // closes; anything that does not fit is dropped at (x, y, z)
 // ----------------------------------------------------------------
 {
-  Integer item = slot_item(inventory, CURSOR_SLOT);
-  Integer left = 0;
+  Integer l_item = slot_item(p_inventory, CURSOR_SLOT);
+  Integer l_left = 0;
 
-  if (item == ITEM_NONE) return;
+  if (l_item == ITEM_NONE) return;
 
-  left = inventory_add_worn(inventory, item, slot_count(inventory, CURSOR_SLOT), slot_damage(inventory, CURSOR_SLOT));
-  if (left > 0) emit_drop_event(events, item, left, slot_damage(inventory, CURSOR_SLOT), x, y, z);
+  l_left = inventory_add_worn(p_inventory, l_item, slot_count(p_inventory, CURSOR_SLOT), slot_damage(p_inventory, CURSOR_SLOT));
+  if (l_left > 0) emit_drop_event(p_events, l_item, l_left, slot_damage(p_inventory, CURSOR_SLOT), p_x, p_y, p_z);
 
-  slot_clear(inventory, CURSOR_SLOT);
+  slot_clear(p_inventory, CURSOR_SLOT);
 }
 
 #endif

@@ -24,21 +24,21 @@
 #define FURNACE_SLOT_OUTPUT     3
 #define FURNACE_SLOTS           3
 
-void    furnaces_clear        (Attributes &furnaces);
-Integer furnace_slot          (Integer furnace, Integer which);
-Integer furnace_used          (Attributes &furnaces, Integer furnace);
-void    furnace_cell          (Attributes &furnaces, Integer furnace, Integer &x, Integer &y, Integer &z);
-Real    furnace_burn_left     (Attributes &furnaces, Integer furnace);
-Real    furnace_burn_total    (Attributes &furnaces, Integer furnace);
-Real    furnace_progress      (Attributes &furnaces, Integer furnace);
-void    furnace_set_state     (Attributes &furnaces, Integer furnace, Real burn_left, Real burn_total, Real progress);
-Integer furnace_find          (Attributes &furnaces, Integer x, Integer y, Integer z);
-Integer furnace_get_or_create (Attributes &furnaces, Integer x, Integer y, Integer z);
-void    furnace_remove        (Attributes &furnaces, Attributes &events, Integer furnace);
-Integer furnace_is_lit        (Attributes &furnaces, Integer x, Integer y, Integer z);
-Integer furnace_can_cook      (Attributes &furnaces, Integer furnace);
-void    furnace_step          (Attributes &furnaces, Integer furnace, Real dt);
-void    furnaces_update       (Attributes &furnaces, Real dt);
-void    furnace_on_event      (Attributes &event, Attributes &furnaces, Attributes &events);
+void    furnaces_clear        (Attributes &p_furnaces);
+Integer furnace_slot          (Integer p_furnace, Integer p_which);
+Integer furnace_used          (Attributes &p_furnaces, Integer p_furnace);
+void    furnace_cell          (Attributes &p_furnaces, Integer p_furnace, Integer &p_x, Integer &p_y, Integer &p_z);
+Real    furnace_burn_left     (Attributes &p_furnaces, Integer p_furnace);
+Real    furnace_burn_total    (Attributes &p_furnaces, Integer p_furnace);
+Real    furnace_progress      (Attributes &p_furnaces, Integer p_furnace);
+void    furnace_set_state     (Attributes &p_furnaces, Integer p_furnace, Real p_burn_left, Real p_burn_total, Real p_progress);
+Integer furnace_find          (Attributes &p_furnaces, Integer p_x, Integer p_y, Integer p_z);
+Integer furnace_get_or_create (Attributes &p_furnaces, Integer p_x, Integer p_y, Integer p_z);
+void    furnace_remove        (Attributes &p_furnaces, Attributes &p_events, Integer p_furnace);
+Integer furnace_is_lit        (Attributes &p_furnaces, Integer p_x, Integer p_y, Integer p_z);
+Integer furnace_can_cook      (Attributes &p_furnaces, Integer p_furnace);
+void    furnace_step          (Attributes &p_furnaces, Integer p_furnace, Real p_dt);
+void    furnaces_update       (Attributes &p_furnaces, Real p_dt);
+void    furnace_on_event      (Attributes &p_event, Attributes &p_furnaces, Attributes &p_events);
 
 #endif

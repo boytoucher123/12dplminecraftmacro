@@ -6,20 +6,20 @@
 // their arguments). Random sequences are in records.h.
 // ----------------------------------------------------------------
 
-Real    clamp_real          (Real value, Real low, Real high);
-Integer clamp_integer       (Integer value, Integer low, Integer high);
-Real    min_real            (Real first, Real second);
-Real    max_real            (Real first, Real second);
-Integer floor_integer       (Real value);
-Integer floor_divide        (Integer numerator, Integer denominator);
-Integer positive_mod        (Integer value, Integer modulus);
-Integer to_byte             (Real value);
-Real    lerp_real           (Real from, Real to, Real amount);
-Real    smooth_curve        (Real amount);
-Real    hash_real           (Real first, Real second, Real third);
-Real    wrap_angle          (Real angle);
-Integer text_to_seed        (Text text);
-Text    file_title_from_path(Text path);
-Integer text_is_safe_name   (Text name);
+Real    clamp_real          (Real p_value, Real p_low, Real p_high);
+Integer clamp_integer       (Integer p_value, Integer p_low, Integer p_high);
+Real    min_real            (Real p_first, Real p_second);
+Real    max_real            (Real p_first, Real p_second);
+Integer floor_integer       (Real p_value);
+Integer floor_divide        (Integer p_numerator, Integer p_denominator);
+Integer positive_mod        (Integer p_value, Integer p_modulus);
+Integer to_byte             (Real p_value);
+Real    lerp_real           (Real p_from, Real p_to, Real p_amount);
+Real    smooth_curve        (Real p_amount);
+Real    hash_real           (Real p_first, Real p_second, Real p_third);
+Real    wrap_angle          (Real p_angle);
+Integer text_to_seed        (Text p_text);
+Text    file_title_from_path(Text p_path);
+Integer text_is_safe_name   (Text p_name);
 
 #endif

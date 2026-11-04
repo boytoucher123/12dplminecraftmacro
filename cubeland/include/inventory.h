@@ -20,30 +20,30 @@
 #define CURSOR_SLOT          0
 
 // ---------------------------------------------------------------- slots
-Integer slot_item            (Attributes &container, Integer slot);
-Integer slot_count           (Attributes &container, Integer slot);
-Integer slot_damage          (Attributes &container, Integer slot);
-Integer slot_is_empty        (Attributes &container, Integer slot);
-void    slot_set             (Attributes &container, Integer slot, Integer item, Integer count, Integer damage);
-void    slot_clear           (Attributes &container, Integer slot);
-void    slot_take_one        (Attributes &container, Integer slot);
-Integer slot_wear            (Attributes &container, Integer slot);
-void    slot_click_left      (Attributes &holder, Attributes &container, Integer slot, Integer take_only);
-void    slot_click_right     (Attributes &holder, Attributes &container, Integer slot, Integer take_only);
-void    slot_move_all        (Attributes &from, Integer from_slot, Attributes &to, Integer first, Integer last);
+Integer slot_item            (Attributes &p_container, Integer p_slot);
+Integer slot_count           (Attributes &p_container, Integer p_slot);
+Integer slot_damage          (Attributes &p_container, Integer p_slot);
+Integer slot_is_empty        (Attributes &p_container, Integer p_slot);
+void    slot_set             (Attributes &p_container, Integer p_slot, Integer p_item, Integer p_count, Integer p_damage);
+void    slot_clear           (Attributes &p_container, Integer p_slot);
+void    slot_take_one        (Attributes &p_container, Integer p_slot);
+Integer slot_wear            (Attributes &p_container, Integer p_slot);
+void    slot_click_left      (Attributes &p_holder, Attributes &p_container, Integer p_slot, Integer p_take_only);
+void    slot_click_right     (Attributes &p_holder, Attributes &p_container, Integer p_slot, Integer p_take_only);
+void    slot_move_all        (Attributes &p_from, Integer p_from_slot, Attributes &p_to, Integer p_first, Integer p_last);
 
 // ---------------------------------------------------------------- containers
-void    container_clear      (Attributes &container, Text datatype, Integer first, Integer last);
-Integer container_add        (Attributes &container, Integer first, Integer last, Integer item, Integer count, Integer damage);
-Integer container_count_item (Attributes &container, Integer first, Integer last, Integer item);
-Integer container_remove_item(Attributes &container, Integer first, Integer last, Integer item, Integer count);
+void    container_clear      (Attributes &p_container, Text p_datatype, Integer p_first, Integer p_last);
+Integer container_add        (Attributes &p_container, Integer p_first, Integer p_last, Integer p_item, Integer p_count, Integer p_damage);
+Integer container_count_item (Attributes &p_container, Integer p_first, Integer p_last, Integer p_item);
+Integer container_remove_item(Attributes &p_container, Integer p_first, Integer p_last, Integer p_item, Integer p_count);
 
 // ---------------------------------------------------------------- the player's inventory
-void    inventory_clear      (Attributes &inventory);
-Integer inventory_add        (Attributes &inventory, Integer item, Integer count);
-Integer inventory_add_worn   (Attributes &inventory, Integer item, Integer count, Integer damage);
-Integer inventory_count_item (Attributes &inventory, Integer item);
-Integer inventory_remove_item(Attributes &inventory, Integer item, Integer count);
-void    inventory_return_cursor(Attributes &inventory, Attributes &events, Real x, Real y, Real z);
+void    inventory_clear      (Attributes &p_inventory);
+Integer inventory_add        (Attributes &p_inventory, Integer p_item, Integer p_count);
+Integer inventory_add_worn   (Attributes &p_inventory, Integer p_item, Integer p_count, Integer p_damage);
+Integer inventory_count_item (Attributes &p_inventory, Integer p_item);
+Integer inventory_remove_item(Attributes &p_inventory, Integer p_item, Integer p_count);
+void    inventory_return_cursor(Attributes &p_inventory, Attributes &p_events, Real p_x, Real p_y, Real p_z);
 
 #endif
