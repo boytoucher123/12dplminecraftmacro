@@ -15,7 +15,8 @@ at the code it cites.
 |---|---|---|
 | A1 Caves | done (differently) | random-walk "worm" tunnels (`world_carve_caves`) rather than a 3D noise lattice, which was too slow to generate in 12dPL |
 | A2 Plants (billboards) | done | tall grass, poppy, dandelion, dead bush as camera-facing sprites (`DIR_PLANT` faces) |
-| A3 Flood-fill sky and block light, torches | not done | replaced for now by a cheaper per-face light: depth below the column's sky top plus corner (AO) shading, baked into `g_face_light` |
+| A3 Block light and torches | done | flood-fill block light packed into `g_world` (`block + 64 * light`, option 2 of the plan), relit in a 31^3 box per change and after loading; torches (light 14); faces store sky and torch light separately |
+| A3 Flood-fill sky light | not done | sky light is still the cheaper depth-below-sky-top estimate; glass lets it through |
 | A3 Per-face AO | done | edges weigh 2, corners 1, out of 12 (`LIGHT_AO_STRENGTH`) |
 | A4 Ponds and stamps | done (ponds) | ponds without a general stamp system; the starter house is built directly |
 | A5 Dirt/gravel pockets, ores | done | coal veins, gravel pockets, **iron ore** (stone pickaxe needed), iron ingot from the furnace, iron tools |
@@ -23,16 +24,17 @@ at the code it cites.
 | A6 Hide HUD | done | key U and a settings button |
 | A6 FPS min/avg/max | done | in the I statistics line, over each second |
 | A6 Settings file | done | `cubeland_worlds/cubeland_settings.txt` |
-| B1 Animated water | not done | |
+| B1 Animated water | done (simplified) | drifting light/dark bands on water surfaces; the surface itself stays flat |
 | B2 Edge-strip AO | not done | |
 | B3 Isometric icons | done (differently) | block icons were already drawn as small cubes; non-block items got 16 x 16 pixel-art icons |
 | B4 Fly mode | done | key G; Space up, C down; no gravity or fall damage while flying |
-| B5 Day/night | not done | best done after the A3 flood-fill light |
-| B6 Vertical render range | not done | |
+| B5 Day/night | done | 20 minute day saved with the world; sky, fog, sun, moon and stars follow it; sky light dims at night; beds skip the night |
+| B6 Vertical render range | done | sections more than 40 blocks above or below the eye are skipped |
 | Resource packs (not from SM) | done | `.zip` or folder in Settings; zip, deflate and PNG decoded in 12dPL (`resource_pack.4dm`) |
+| Beyond SM | done | zombies at night, glass, beds, chests, iron |
 
-Suggested next steps: A3 flood-fill light with torches (then B5 day/night, which needs it),
-B1 animated water, B6 vertical range clamp.
+Suggested next steps: flood-fill sky light (so caves under overhangs darken properly), B2 edge-strip
+AO, a lit furnace giving off light, doors, more animals.
 
 ## 0. Which ScuffedMinecraft?
 

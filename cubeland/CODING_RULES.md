@@ -64,6 +64,7 @@ global arrays, each owned by one module:
 | render scratch buffers, `g_view_*` frame copies | `render_world.4dm` | per-frame working memory, filled from records by `render_view_from` |
 | block edit list `g_edit_*`              | `save.4dm`       | up to 65,536 entries                  |
 | byte buffers `g_pack_*`, `g_inflate_*`  | `resource_pack.4dm` | hundreds of thousands of bytes while decoding a pack |
+| relighting queue `g_light_q*`           | `world.4dm`      | up to 65,536 cells per light update   |
 | icon polygon scratch `g_icon_*`         | `render_hud.4dm` | point lists for `Draw_polygon`        |
 
 Rules for these tables:
@@ -76,8 +77,8 @@ Rules for these tables:
 - Read-only lookup tables that are filled once at start-up (textures,
   recipes) count as constants once they are built.
 
-At the time of writing, 380 of the 471 functions are honest: they touch no
-global at all. The other 91 are table functions or controllers. (The
+At the time of writing, 421 of the 522 functions are honest: they touch no
+global at all. The other 101 are table functions or controllers. (The
 resource pack decoder added many table functions: it works on byte buffers
 far too big to pass around as records.)
 
