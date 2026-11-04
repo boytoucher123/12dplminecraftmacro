@@ -101,7 +101,7 @@ void mesh_build_section(Integer p_sx, Integer p_sy, Integer p_sz)
       l_column = world_index(l_x, 0, l_z);
       for (l_y = l_y0; l_y < l_y0 + SECTION_SIZE; ++l_y) {
         l_cell  = l_column + l_y;
-        l_block = g_world[l_cell];
+        l_block = world_cell_block(g_world[l_cell]);
         if (l_block == BLOCK_AIR) continue;
 
         if (block_is_plant(l_block)) {
@@ -123,21 +123,22 @@ void mesh_build_section(Integer p_sx, Integer p_sy, Integer p_sz)
         for (l_direction = DIR_PX; l_direction <= DIR_NZ; ++l_direction) {
           l_neighbour = BLOCK_STONE;
           if (l_direction == DIR_PX) {
-            if (l_x + 1 < WORLD_SIZE_X) l_neighbour = g_world[l_cell + WORLD_STRIDE_X];
+            if (l_x + 1 < WORLD_SIZE_X) l_neighbour = world_cell_block(g_world[l_cell + WORLD_STRIDE_X]);
           } else if (l_direction == DIR_NX) {
-            if (l_x > 0) l_neighbour = g_world[l_cell - WORLD_STRIDE_X];
+            if (l_x > 0) l_neighbour = world_cell_block(g_world[l_cell - WORLD_STRIDE_X]);
           } else if (l_direction == DIR_PY) {
             l_neighbour = BLOCK_AIR;
-            if (l_y + 1 < WORLD_HEIGHT) l_neighbour = g_world[l_cell + 1];
+            if (l_y + 1 < WORLD_HEIGHT) l_neighbour = world_cell_block(g_world[l_cell + 1]);
           } else if (l_direction == DIR_NY) {
-            if (l_y > 0) l_neighbour = g_world[l_cell - 1];
+            if (l_y > 0) l_neighbour = world_cell_block(g_world[l_cell - 1]);
           } else if (l_direction == DIR_PZ) {
-            if (l_z + 1 < WORLD_SIZE_Z) l_neighbour = g_world[l_cell + WORLD_STRIDE_Z];
+            if (l_z + 1 < WORLD_SIZE_Z) l_neighbour = world_cell_block(g_world[l_cell + WORLD_STRIDE_Z]);
           } else {
-            if (l_z > 0) l_neighbour = g_world[l_cell - WORLD_STRIDE_Z];
+            if (l_z > 0) l_neighbour = world_cell_block(g_world[l_cell - WORLD_STRIDE_Z]);
           }
 
           if (block_hides_faces(l_neighbour)) continue;
+          if (l_neighbour == l_block && block_is_see_through(l_block)) continue;   // glass against glass
           l_flag = 0;
           if (l_neighbour == BLOCK_WATER) {
             if (l_is_water) continue;
@@ -166,8 +167,10 @@ void mesh_build_section(Integer p_sx, Integer p_sy, Integer p_sz)
 
 Integer mesh_face_light(Integer p_x, Integer p_y, Integer p_z, Integer p_direction)
 // ----------------------------------------------------------------
-// Light level (0..LIGHT_FULL) of the face of cell (x, y, z) facing
-// direction, or of the cell itself for direction 0 (plants)
+// Light of the face of cell (x, y, z) facing direction, or of the
+// cell itself for direction 0 (plants), as sky + FACE_TORCH_SCALE *
+// torch, both 0..LIGHT_FULL. The renderer dims the sky part at night
+// and uses whichever part is brighter.
 // Daylight fades with depth below the sky top of the column in
 // front of the face; then the face is darkened by solid blocks
 // around the cell in front: 4 edge neighbours count 2, 4 corner
@@ -182,6 +185,7 @@ Integer mesh_face_light(Integer p_x, Integer p_y, Integer p_z, Integer p_directi
   Integer l_enclosed = 0;
   Integer l_a        = 0;
   Integer l_b        = 0;
+  Integer l_torch    = 0;
 
   if (p_direction == DIR_PX) l_front_x = p_x + 1;
   if (p_direction == DIR_NX) l_front_x = p_x - 1;
@@ -195,7 +199,8 @@ Integer mesh_face_light(Integer p_x, Integer p_y, Integer p_z, Integer p_directi
     l_light = LIGHT_FULL - (l_sky_top - l_front_y + 1) * LIGHT_DEPTH_STEP;
     if (l_light < LIGHT_MIN) l_light = LIGHT_MIN;
   }
-  if (p_direction == 0) return l_light;
+  l_torch = floor_divide(world_get_light(l_front_x, l_front_y, l_front_z) * LIGHT_FULL, LIGHT_MAX_LEVEL);
+  if (p_direction == 0) return l_light + FACE_TORCH_SCALE * l_torch;
 
   // The two axes across the face, a and b, each -1..1
   for (l_a = -1; l_a <= 1; ++l_a) {
@@ -216,7 +221,9 @@ Integer mesh_face_light(Integer p_x, Integer p_y, Integer p_z, Integer p_directi
     }
   }
 
-  return l_light - floor_divide(l_light * l_enclosed * LIGHT_AO_STRENGTH, 1200);
+  l_light = l_light - floor_divide(l_light * l_enclosed * LIGHT_AO_STRENGTH, 1200);
+  l_torch = l_torch - floor_divide(l_torch * l_enclosed * LIGHT_AO_STRENGTH, 1200);
+  return l_light + FACE_TORCH_SCALE * l_torch;
 }
 
 void mesh_group_faces(Integer p_section)

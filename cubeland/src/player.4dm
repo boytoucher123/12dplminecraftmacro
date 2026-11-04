@@ -339,6 +339,24 @@ void player_turn(Attributes &p_player, Real p_yaw_change, Real p_pitch_change)
   player_set_look(p_player, wrap_angle(l_yaw + p_yaw_change), clamp_real(l_pitch + p_pitch_change, -MAX_PITCH, MAX_PITCH));
 }
 
+void player_on_event(Attributes &p_event, Attributes &p_player, Attributes &p_events)
+// ----------------------------------------------------------------
+// EVT_ZOMBIE_ATTACK: a zombie hit the player (i1 damage, r1 and r3
+// the direction it was facing), which hurts and knocks back
+// ----------------------------------------------------------------
+{
+  Real l_vx = 0.0;
+  Real l_vy = 0.0;
+  Real l_vz = 0.0;
+
+  if (event_type(p_event) != EVT_ZOMBIE_ATTACK) return;
+  if (player_is_dead(p_player)) return;
+
+  player_damage(p_player, p_events, event_integer(p_event, 1));
+  player_velocity(p_player, l_vx, l_vy, l_vz);
+  player_set_velocity(p_player, event_real(p_event, 1) * 6.0, 4.5, event_real(p_event, 3) * 6.0);
+}
+
 Integer player_flying(Attributes &p_player)
 // ----------------------------------------------------------------
 // TRUE while fly mode is on (no gravity, Space rises, C sinks)
@@ -873,6 +891,10 @@ void player_secondary_action(Attributes &p_player, Attributes &p_inventory, Attr
       emit_event(p_events, EVT_OPEN_SCREEN, SCREEN_FURNACE, l_x, l_y, l_z, 0.0, 0.0, 0.0, "");
       return;
     }
+    if (l_block == BLOCK_BED) {
+      emit_event(p_events, EVT_SLEEP, l_x, l_y, l_z, 0, 0.0, 0.0, 0.0, "");
+      return;
+    }
   }
 
   l_food = item_food_value(l_held);
@@ -909,8 +931,13 @@ void player_secondary_action(Attributes &p_player, Attributes &p_inventory, Attr
   l_existing = world_get_block(l_cell_x, l_cell_y, l_cell_z);
   if (l_existing != BLOCK_AIR && l_existing != BLOCK_WATER && !block_is_plant(l_existing)) return;
 
-  // Plants need ground to stand on
-  if (block_is_plant(l_place)) {
+  // Plants need ground to stand on; a torch needs any solid block
+  if (l_place == BLOCK_TORCH) {
+    if (!world_is_solid(l_cell_x, l_cell_y - 1, l_cell_z)) {
+      emit_toast(p_events, "Torches go on top of a block");
+      return;
+    }
+  } else if (block_is_plant(l_place)) {
     if (world_get_block(l_cell_x, l_cell_y - 1, l_cell_z) != BLOCK_GRASS && world_get_block(l_cell_x, l_cell_y - 1, l_cell_z) != BLOCK_DIRT) return;
   } else {
     // Not inside the player or a cow

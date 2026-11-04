@@ -86,6 +86,7 @@ Integer player_break_stage     (Attributes &p_player, Real p_now);
 // ---------------------------------------------------------------- behaviour
 void    player_turn            (Attributes &p_player, Real p_yaw_change, Real p_pitch_change);
 void    player_key_pressed     (Attributes &p_player, Text p_key, Real p_now);
+void    player_on_event        (Attributes &p_event, Attributes &p_player, Attributes &p_events);
 Integer player_flying          (Attributes &p_player);
 void    player_set_flying      (Attributes &p_player, Integer p_flying);
 Integer player_pick_block      (Attributes &p_player, Attributes &p_inventory, Text &p_report);

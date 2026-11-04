@@ -34,7 +34,11 @@
 #define BLOCK_DANDELION       22   // with them and placing a block
 #define BLOCK_DEAD_BUSH       23   // replaces them
 #define BLOCK_IRON_ORE        24
-#define MAX_BLOCK_ID          24
+#define BLOCK_TORCH           25   // drawn like a plant; gives light
+#define BLOCK_GLASS           26   // solid, but you see through it
+#define BLOCK_BED             27   // right click at night to sleep
+#define MAX_BLOCK_ID          27
+#define TORCH_LIGHT           14
 
 #define ITEM_NONE             0
 #define ITEM_BEDROCK          1
@@ -55,6 +59,9 @@
 #define ITEM_POPPY            21
 #define ITEM_DANDELION        22
 #define ITEM_IRON_ORE         24
+#define ITEM_TORCH            25
+#define ITEM_GLASS            26
+#define ITEM_BED              27
 #define FIRST_PURE_ITEM       64   // items from here on are not blocks
 #define ITEM_STICK            64
 #define ITEM_RAW_BEEF         65
@@ -73,7 +80,8 @@
 #define ITEM_IRON_AXE         78
 #define ITEM_IRON_SHOVEL      79
 #define ITEM_IRON_SWORD       80
-#define MAX_ITEM_ID           80
+#define ITEM_ROTTEN_FLESH     81
+#define MAX_ITEM_ID           81
 
 // Tool kinds and tiers
 #define TOOL_NONE             0
@@ -100,6 +108,8 @@
 Integer block_is_solid       (Integer p_block);
 Integer block_is_plant       (Integer p_block);
 Integer block_hides_faces    (Integer p_block);
+Integer block_light_emission (Integer p_block);
+Integer block_is_see_through (Integer p_block);
 Integer block_is_furnace     (Integer p_block);
 Integer block_furnace_front  (Integer p_block);
 Integer block_falls          (Integer p_block);

@@ -33,6 +33,8 @@
 #define EVT_SPAWN_DROP        13   // i1 item, i2 count, i3 tool wear, r1..r3 position
 #define EVT_WORLD_SAVED       14   // text world name
 #define EVT_PLAYER_RESPAWNED  15
+#define EVT_SLEEP             16   // i1..i3 cell of the bed used
+#define EVT_ZOMBIE_ATTACK     17   // i1 damage (a zombie hit the player)
 
 // Screens that EVT_OPEN_SCREEN can open
 #define SCREEN_NONE           0

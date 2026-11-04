@@ -39,6 +39,8 @@
 #define DETAIL_MAJOR       1       // base colour and the larger patches
 #define DETAIL_FULL        2       // every pixel of the texture
 #define MAJOR_RECT_AREA    3       // patches of fewer pixels are left out at DETAIL_MAJOR
+#define VERTICAL_RANGE     40      // sections further than this above or below the eye are skipped
+#define NUM_STARS          70
 
 /*Global variables*/ {
   // Copied from the settings and the player at the start of a frame
@@ -59,6 +61,13 @@
   Integer g_view_target_x     = 0;
   Integer g_view_target_y     = 0;
   Integer g_view_target_z     = 0;
+  Real    g_view_daylight     = 1.0;   // 0..1, dims sky light at night
+  Real    g_view_time         = 0.25;
+  Real    g_view_now          = 0.0;   // clock for animation (water shimmer)  // time of day, 0 sunrise, 0.25 noon, 0.5 sunset, 0.75 midnight
+  Real    g_box_light         = 1.0;   // light of the entity being queued
+  Real    g_sky_top_r = 92.0;
+  Real    g_sky_top_g = 146.0;
+  Real    g_sky_top_b = 232.0;
 
   // Camera, rebuilt every frame
   Real    g_cam_x = 0.0;
@@ -183,9 +192,16 @@ void    render_draw_face       (Draw_Box p_box, Integer p_face);
 void    render_draw_faces      (Draw_Box p_box);
 void    render_sky             (Draw_Box p_box);
 void    render_target_outline  (Draw_Box p_box);
-void    render_view_from       (Attributes &p_player, Attributes &p_settings, Real p_now);
+void    render_view_from       (Attributes &p_player, Attributes &p_settings, Real p_time_of_day, Real p_now);
 Text    render_stats_text      ();
+Real    render_light_at        (Real p_x, Real p_y, Real p_z);
+void    render_mob_part        (Real p_mob_x, Real p_mob_y, Real p_mob_z, Real p_yaw, Real p_along, Real p_up, Real p_across,
+                                Real p_half_f, Real p_half_y, Real p_half_s, Integer p_tex_side, Integer p_tex_top, Integer p_tex_front, Real p_tint);
+void    render_zombie          (Real p_x, Real p_y, Real p_z, Real p_yaw, Real p_swing, Real p_tint);
+void    render_sky_colours     (Real p_time_of_day);
+void    render_sky_disc        (Draw_Box p_box, Real p_dir_x, Real p_dir_y, Real p_dir_z, Real p_size, Integer p_moon);
+void    render_stars           (Draw_Box p_box, Real p_brightness);
 void    render_world           (Draw_Box p_box, Real p_w, Real p_h, Real p_view_bottom, Attributes &p_player, Attributes &p_cows,
-                                Attributes &p_drops, Attributes &p_furnaces, Attributes &p_settings, Real p_now);
+                                Attributes &p_drops, Attributes &p_furnaces, Attributes &p_settings, Real p_time_of_day, Real p_now);
 
 #endif

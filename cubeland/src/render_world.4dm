@@ -57,7 +57,7 @@ void render_set_detail(Integer p_level)
   }
 }
 
-void render_view_from(Attributes &p_player, Attributes &p_settings, Real p_now)
+void render_view_from(Attributes &p_player, Attributes &p_settings, Real p_time_of_day, Real p_now)
 // ----------------------------------------------------------------
 // Copy what this frame needs from the player and settings records
 // into the renderer's frame globals (the only place they're set)
@@ -74,6 +74,9 @@ void render_view_from(Attributes &p_player, Attributes &p_settings, Real p_now)
   g_view_break_z      = record_integer(p_player, ATTR_BREAK_Z);
   player_target_cell(p_player, g_view_target_x, g_view_target_y, g_view_target_z);
   render_set_detail(settings_detail(p_settings));
+  g_view_time     = p_time_of_day;
+  g_view_now      = p_now;
+  g_view_daylight = world_daylight(p_time_of_day);
 
   // Spread the squared distances out over the buckets
   g_bucket_scale = (MAX_BUCKETS - 1.0) / (g_render_distance * g_render_distance + 60.0);
@@ -192,9 +195,7 @@ void render_setup_camera(Real p_w, Real p_h, Real p_view_bottom, Real p_eye_x, R
   // Fog
   g_fog_end   = g_render_distance;
   g_fog_start = g_render_distance * 0.55;
-  g_fog_r     = 170.0;
-  g_fog_g     = 205.0;
-  g_fog_b     = 245.0;
+  render_sky_colours(g_view_time);
   if (g_view_eye_in_water) {
     g_fog_start = 2.0;
     g_fog_end   = min_real(16.0, g_fog_end);
@@ -316,7 +317,14 @@ void render_add_block_face(Attributes &p_furnaces, Integer p_x, Integer p_y, Int
   Integer l_tex   = block_face_texture(p_block, p_direction);
   Real    l_shade = block_face_shade(p_direction) * p_light;
 
-  if (p_block == BLOCK_WATER) l_top = WATER_TOP;
+  if (p_block == BLOCK_WATER) {
+    l_top = WATER_TOP;
+    // Ripples: light and dark bands drift across the surface
+    if (p_direction == DIR_PY) {
+      l_shade = l_shade * (1.0 + 0.08 * Sin(p_x * 0.9 + p_z * 0.6 + g_view_now * 1.8)
+                               + 0.05 * Sin(p_z * 1.3 - p_x * 0.4 + g_view_now * 2.7));
+    }
+  }
   if (l_tex == TEX_FURNACE_FRONT) {
     if (furnace_is_lit(p_furnaces, p_x, p_y, p_z)) {
       l_tex   = TEX_FURNACE_FRONT_LIT;
@@ -401,6 +409,10 @@ void render_collect_blocks(Attributes &p_furnaces)
   Integer l_plant_sq  = g_view_plant_range * g_view_plant_range;
   Integer l_entry_tex = 0;
   Real    l_light     = 1.0;
+  Integer l_code      = 0;
+  Integer l_torch     = 0;
+  Integer l_sky       = 0;
+  Integer l_vertical  = min_integer(l_range, VERTICAL_RANGE);
   Real    l_centre_x  = 0.0;
   Real    l_centre_y  = 0.0;
   Real    l_centre_z  = 0.0;
@@ -414,6 +426,10 @@ void render_collect_blocks(Attributes &p_furnaces)
   Real    l_normal_z  = 0.0;
 
   l_reach = l_range + SECTION_RADIUS;
+
+  // Not much is worth drawing far above or below the eye
+  l_sy0 = clamp_integer(floor_integer((g_cam_y - l_vertical) / SECTION_SIZE), 0, SECTIONS_Y - 1);
+  l_sy1 = clamp_integer(floor_integer((g_cam_y + l_vertical) / SECTION_SIZE), 0, SECTIONS_Y - 1);
 
   for (l_sx = l_sx0; l_sx <= l_sx1; ++l_sx) {
     for (l_sz = l_sz0; l_sz <= l_sz1; ++l_sz) {
@@ -453,15 +469,20 @@ void render_collect_blocks(Attributes &p_furnaces)
             l_rel_x = l_x - g_cam_x;
             l_rel_y = l_y - g_cam_y;
             l_rel_z = l_z - g_cam_z;
-            l_light = 1.0;
-            if (g_view_shading) l_light = g_face_light[l_entry] / 100.0;
+            // Sky light (dimmed at night) or torch light, whichever is brighter
+            l_code  = g_face_light[l_entry];
+            l_torch = 0;
+            if (l_code >= FACE_TORCH_SCALE) l_torch = Floor(l_code / (1.0 * FACE_TORCH_SCALE));
+            l_sky   = l_code - FACE_TORCH_SCALE * l_torch;
+            if (!g_view_shading) l_sky = LIGHT_FULL;
+            l_light = max_real(l_sky * g_view_daylight, l_torch * 1.0) / LIGHT_FULL;
 
             // Plants: a picture facing the camera, only fairly close
             if (l_direction == DIR_PLANT) {
               l_dist_sq = (l_rel_x + 0.5) * (l_rel_x + 0.5) + (l_rel_y + 0.5) * (l_rel_y + 0.5) + (l_rel_z + 0.5) * (l_rel_z + 0.5);
               if (l_dist_sq > l_plant_sq || l_dist_sq > l_range_sq) continue;
               if (!render_sphere_visible(l_rel_x + 0.5, l_rel_y + 0.5, l_rel_z + 0.5, 0.72)) continue;
-              l_entry_tex = block_plant_texture(g_world[world_index(l_x, l_y, l_z)]);
+              l_entry_tex = block_plant_texture(world_cell_block(g_world[world_index(l_x, l_y, l_z)]));
               if (l_entry_tex > 0) render_add_sprite(l_rel_x + 0.5, l_rel_y, l_rel_z + 0.5, PLANT_HALF_WIDTH, 0.9, l_entry_tex, l_light, l_dist_sq);
               continue;
             }
@@ -480,7 +501,7 @@ void render_collect_blocks(Attributes &p_furnaces)
             } else if (l_direction == DIR_PY) {
               if (l_rel_y + 1.0 >= 0.0) {
                 if (!g_view_eye_in_water) continue;
-                if (g_world[world_index(l_x, l_y, l_z)] != BLOCK_WATER) continue;
+                if (world_cell_block(g_world[world_index(l_x, l_y, l_z)]) != BLOCK_WATER) continue;
               }
               l_normal_y = 1.0;
             } else if (l_direction == DIR_NY) {
@@ -498,7 +519,7 @@ void render_collect_blocks(Attributes &p_furnaces)
             if (l_dist_sq > l_range_sq) continue;
             if (!render_sphere_visible(l_rel_x + 0.5 + l_normal_x * 0.5, l_rel_y + 0.5 + l_normal_y * 0.5, l_rel_z + 0.5 + l_normal_z * 0.5, 0.72)) continue;
 
-            l_block = g_world[world_index(l_x, l_y, l_z)];
+            l_block = world_cell_block(g_world[world_index(l_x, l_y, l_z)]);
             l_crack = 0;
             if (l_stage > 0) {
               if (l_x == g_view_break_x && l_y == g_view_break_y && l_z == g_view_break_z) l_crack = l_stage;
@@ -578,27 +599,27 @@ void render_add_box(Real p_centre_x, Real p_centre_y, Real p_centre_z, Real p_ya
 
   if (l_eye_f > p_half_f) {
     render_add_face(l_m_x + l_f_x + l_s_x, l_m_y + l_f_y + l_s_y, l_m_z + l_f_z + l_s_z, -l_s_x, -l_s_y, -l_s_z, l_u_x, l_u_y, l_u_z,
-                    p_tex_front, render_side_shade(l_facing_x, l_facing_z), l_dist_sq, l_size, p_tint, 0);
+                    p_tex_front, g_box_light * render_side_shade(l_facing_x, l_facing_z), l_dist_sq, l_size, p_tint, 0);
   }
   if (l_eye_f < -p_half_f) {
     render_add_face(l_m_x, l_m_y, l_m_z, l_s_x, l_s_y, l_s_z, l_u_x, l_u_y, l_u_z,
-                    p_tex_side, render_side_shade(l_facing_x, l_facing_z), l_dist_sq, l_size, p_tint, 0);
+                    p_tex_side, g_box_light * render_side_shade(l_facing_x, l_facing_z), l_dist_sq, l_size, p_tint, 0);
   }
   if (l_eye_s > p_half_s) {
     render_add_face(l_m_x + l_s_x, l_m_y + l_s_y, l_m_z + l_s_z, l_f_x, l_f_y, l_f_z, l_u_x, l_u_y, l_u_z,
-                    p_tex_side, render_side_shade(l_side_x, l_side_z), l_dist_sq, l_size, p_tint, 0);
+                    p_tex_side, g_box_light * render_side_shade(l_side_x, l_side_z), l_dist_sq, l_size, p_tint, 0);
   }
   if (l_eye_s < -p_half_s) {
     render_add_face(l_m_x + l_f_x, l_m_y + l_f_y, l_m_z + l_f_z, -l_f_x, -l_f_y, -l_f_z, l_u_x, l_u_y, l_u_z,
-                    p_tex_side, render_side_shade(l_side_x, l_side_z), l_dist_sq, l_size, p_tint, 0);
+                    p_tex_side, g_box_light * render_side_shade(l_side_x, l_side_z), l_dist_sq, l_size, p_tint, 0);
   }
   if (l_eye_y > p_half_y) {
     render_add_face(l_m_x + l_u_x, l_m_y + l_u_y, l_m_z + l_u_z, l_f_x, l_f_y, l_f_z, l_s_x, l_s_y, l_s_z,
-                    p_tex_top, 1.0, l_dist_sq, l_size, p_tint, 0);
+                    p_tex_top, g_box_light, l_dist_sq, l_size, p_tint, 0);
   }
   if (l_eye_y < -p_half_y) {
     render_add_face(l_m_x + l_s_x, l_m_y + l_s_y, l_m_z + l_s_z, l_f_x, l_f_y, l_f_z, -l_s_x, -l_s_y, -l_s_z,
-                    p_tex_top, 0.55, l_dist_sq, l_size, p_tint, 0);
+                    p_tex_top, 0.55 * g_box_light, l_dist_sq, l_size, p_tint, 0);
   }
 }
 
@@ -615,6 +636,46 @@ void render_cow_part(Real p_cow_x, Real p_cow_y, Real p_cow_z, Real p_yaw, Real 
                  p_cow_y + p_up,
                  p_cow_z + l_facing_z * p_along + l_facing_x * p_across,
                  p_yaw, p_half_f, p_half_y, p_half_s, TEX_COW_HIDE, TEX_COW_HIDE, p_tex_front, p_tint);
+}
+
+Real render_light_at(Real p_x, Real p_y, Real p_z)
+// ----------------------------------------------------------------
+// Light (0..1) for an entity at a point: daylight, or the torch
+// light of its cell if that is brighter
+// ----------------------------------------------------------------
+{
+  Real l_torch = world_get_light(floor_integer(p_x), floor_integer(p_y), floor_integer(p_z)) / (1.0 * LIGHT_MAX_LEVEL);
+
+  return max_real(g_view_daylight, l_torch);
+}
+
+void render_mob_part(Real p_mob_x, Real p_mob_y, Real p_mob_z, Real p_yaw, Real p_along, Real p_up, Real p_across,
+                     Real p_half_f, Real p_half_y, Real p_half_s, Integer p_tex_side, Integer p_tex_top, Integer p_tex_front, Real p_tint)
+// ----------------------------------------------------------------
+// One box of an animal with its own textures, placed relative to
+// its feet and facing
+// ----------------------------------------------------------------
+{
+  Real l_facing_x = Cos(p_yaw);
+  Real l_facing_z = Sin(p_yaw);
+
+  render_add_box(p_mob_x + l_facing_x * p_along - l_facing_z * p_across,
+                 p_mob_y + p_up,
+                 p_mob_z + l_facing_z * p_along + l_facing_x * p_across,
+                 p_yaw, p_half_f, p_half_y, p_half_s, p_tex_side, p_tex_top, p_tex_front, p_tint);
+}
+
+void render_zombie(Real p_x, Real p_y, Real p_z, Real p_yaw, Real p_swing, Real p_tint)
+// ----------------------------------------------------------------
+// A zombie: two legs, a body, arms held out in front and a head
+// ----------------------------------------------------------------
+{
+  render_mob_part(p_x, p_y, p_z, p_yaw,  p_swing, 0.375,  0.12, 0.12, 0.375, 0.12, TEX_ZOMBIE_PANTS, TEX_ZOMBIE_PANTS, TEX_ZOMBIE_PANTS, p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw, -p_swing, 0.375, -0.12, 0.12, 0.375, 0.12, TEX_ZOMBIE_PANTS, TEX_ZOMBIE_PANTS, TEX_ZOMBIE_PANTS, p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.0    , 1.125,  0.0 , 0.13, 0.375, 0.25, TEX_ZOMBIE_SHIRT, TEX_ZOMBIE_SHIRT, TEX_ZOMBIE_SHIRT, p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.30   , 1.38 ,  0.37, 0.32, 0.11, 0.11, TEX_ZOMBIE_SKIN , TEX_ZOMBIE_SHIRT, TEX_ZOMBIE_SKIN , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.30   , 1.38 , -0.37, 0.32, 0.11, 0.11, TEX_ZOMBIE_SKIN , TEX_ZOMBIE_SHIRT, TEX_ZOMBIE_SKIN , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.0    , 1.65 ,  0.0 , 0.25, 0.25, 0.25, TEX_ZOMBIE_SKIN , TEX_ZOMBIE_SKIN , TEX_ZOMBIE_FACE , p_tint);
 }
 
 void render_collect_cows(Attributes &p_cows)
@@ -635,10 +696,15 @@ void render_collect_cows(Attributes &p_cows)
     cow_position(p_cows, l_cow, l_x, l_y, l_z);
     if ((l_x - g_cam_x) * (l_x - g_cam_x) + (l_z - g_cam_z) * (l_z - g_cam_z) > (g_render_distance + 2.0) * (g_render_distance + 2.0)) continue;
 
+    g_box_light = render_light_at(l_x, l_y + 1.0, l_z);
     l_yaw  = cow_yaw(p_cows, l_cow);
     l_tint = 0.0;
     if (cow_flash(p_cows, l_cow) > 0.0) l_tint = 0.55;
     l_swing = Sin(cow_step(p_cows, l_cow)) * 0.09;
+    if (mob_kind(p_cows, l_cow) == MOB_ZOMBIE) {
+      render_zombie(l_x, l_y, l_z, l_yaw, l_swing * 1.6, l_tint);
+      continue;
+    }
 
     render_cow_part(l_x, l_y, l_z, l_yaw,  0.00        , 0.95, 0.00, 0.60, 0.30, 0.38, TEX_COW_HIDE, l_tint);
     render_cow_part(l_x, l_y, l_z, l_yaw,  0.80        , 1.12, 0.00, 0.20, 0.22, 0.25, TEX_COW_FACE, l_tint);
@@ -670,6 +736,7 @@ void render_collect_drops(Attributes &p_drops)
     l_age  = drop_age (p_drops, l_drop);
     drop_position(p_drops, l_drop, l_x, l_y, l_z);
     l_bob = 0.06 + Sin(l_age * 3.0) * 0.05;
+    g_box_light = render_light_at(l_x, l_y + 0.3, l_z);
 
     if (item_is_block(l_item)) {
       render_add_box(l_x, l_y + DROP_HALF_SIZE + l_bob, l_z, l_age * 1.8, DROP_HALF_SIZE, DROP_HALF_SIZE, DROP_HALF_SIZE,
@@ -678,7 +745,7 @@ void render_collect_drops(Attributes &p_drops)
       l_dist_sq = (l_x - g_cam_x) * (l_x - g_cam_x) + (l_y - g_cam_y) * (l_y - g_cam_y) + (l_z - g_cam_z) * (l_z - g_cam_z);
       if (l_dist_sq > g_render_distance * g_render_distance) continue;
       if (!render_sphere_visible(l_x - g_cam_x, l_y + 0.2 - g_cam_y, l_z - g_cam_z, 0.3)) continue;
-      render_add_sprite(l_x - g_cam_x, l_y + l_bob - g_cam_y, l_z - g_cam_z, 0.2, 0.4, item_sprite_texture(l_item), 0.95, l_dist_sq);
+      render_add_sprite(l_x - g_cam_x, l_y + l_bob - g_cam_y, l_z - g_cam_z, 0.2, 0.4, item_sprite_texture(l_item), 0.95 * g_box_light, l_dist_sq);
     }
   }
 }
@@ -1032,10 +1099,90 @@ void render_draw_faces(Draw_Box p_box)
 
 // ---------------------------------------------------------------- sky and overlays
 
+void render_sky_colours(Real p_time_of_day)
+// ----------------------------------------------------------------
+// Horizon (fog) and overhead sky colours for a time of day: blue by
+// day, dark navy at night, orange at the horizon around sunrise and
+// sunset
+// ----------------------------------------------------------------
+{
+  Real l_day    = clamp_real((world_sun_height(p_time_of_day) + 0.15) / 0.45, 0.0, 1.0);
+  Real l_glow   = 1.0 - clamp_real(Absolute(world_sun_height(p_time_of_day)) / 0.25, 0.0, 1.0);
+
+  g_fog_r     = lerp_real(14.0, 170.0, l_day);
+  g_fog_g     = lerp_real(18.0, 205.0, l_day);
+  g_fog_b     = lerp_real(34.0, 245.0, l_day);
+  g_sky_top_r = lerp_real(4.0 , 92.0 , l_day);
+  g_sky_top_g = lerp_real(6.0 , 146.0, l_day);
+  g_sky_top_b = lerp_real(18.0, 232.0, l_day);
+
+  // sunrise and sunset glow at the horizon
+  g_fog_r = lerp_real(g_fog_r, 236.0, l_glow * 0.65);
+  g_fog_g = lerp_real(g_fog_g, 140.0, l_glow * 0.65);
+  g_fog_b = lerp_real(g_fog_b, 84.0 , l_glow * 0.65);
+}
+
+void render_sky_disc(Draw_Box p_box, Real p_dir_x, Real p_dir_y, Real p_dir_z, Real p_size, Integer p_moon)
+// ----------------------------------------------------------------
+// The sun (a bright square with a paler core) or the moon (a pale
+// square with darker patches) in a direction from the eye
+// ----------------------------------------------------------------
+{
+  Real l_px   = 0.0;
+  Real l_py   = 0.0;
+  Real l_size = g_focal * p_size;
+
+  render_to_camera(p_dir_x, p_dir_y, p_dir_z);
+  if (g_tc_z <= 0.1) return;
+  l_px = g_centre_x + g_tc_x * g_focal / g_tc_z;
+  l_py = g_centre_y + g_tc_y * g_focal / g_tc_z;
+  if (p_moon) {
+    render_set_colour(p_box, 214.0, 218.0, 226.0);
+    render_fill_rect(p_box, l_px - l_size, l_py - l_size, l_px + l_size, l_py + l_size);
+    render_set_colour(p_box, 168.0, 172.0, 184.0);
+    render_fill_rect(p_box, l_px - l_size * 0.5, l_py + l_size * 0.1, l_px - l_size * 0.1, l_py + l_size * 0.5);
+    render_fill_rect(p_box, l_px + l_size * 0.2, l_py - l_size * 0.5, l_px + l_size * 0.55, l_py - l_size * 0.2);
+  } else {
+    render_set_colour(p_box, 255.0, 246.0, 200.0);
+    render_fill_rect(p_box, l_px - l_size, l_py - l_size, l_px + l_size, l_py + l_size);
+    render_set_colour(p_box, 255.0, 255.0, 236.0);
+    render_fill_rect(p_box, l_px - l_size * 0.6, l_py - l_size * 0.6, l_px + l_size * 0.6, l_py + l_size * 0.6);
+  }
+}
+
+void render_stars(Draw_Box p_box, Real p_brightness)
+// ----------------------------------------------------------------
+// Fixed stars over the sky, fading in as the light goes
+// ----------------------------------------------------------------
+{
+  Integer l_star  = 0;
+  Real    l_x     = 0.0;
+  Real    l_y     = 0.0;
+  Real    l_z     = 0.0;
+  Real    l_px    = 0.0;
+  Real    l_py    = 0.0;
+  Real    l_level = 0.0;
+
+  for (l_star = 1; l_star <= NUM_STARS; ++l_star) {
+    l_x = hash_real(l_star * 1.0, 3.7, 11.0) * 2.0 - 1.0;
+    l_z = hash_real(l_star * 1.0, 8.1, 5.0) * 2.0 - 1.0;
+    l_y = 0.15 + hash_real(l_star * 1.0, 1.3, 7.0);
+    render_to_camera(l_x, l_y, l_z);
+    if (g_tc_z <= 0.1) continue;
+    l_px = g_centre_x + g_tc_x * g_focal / g_tc_z;
+    l_py = g_centre_y + g_tc_y * g_focal / g_tc_z;
+    if (l_px < 0.0 || l_px > g_screen_w || l_py < g_view_bottom || l_py > g_screen_h) continue;
+    l_level = p_brightness * (150.0 + 100.0 * hash_real(l_star * 1.0, 2.0, 2.0));
+    render_set_colour(p_box, lerp_real(g_sky_top_r, 255.0, l_level / 255.0), lerp_real(g_sky_top_g, 255.0, l_level / 255.0), lerp_real(g_sky_top_b, 240.0, l_level / 255.0));
+    render_fill_rect(p_box, l_px - 1.0, l_py - 1.0, l_px + 1.0, l_py + 1.0);
+  }
+}
+
 void render_sky(Draw_Box p_box)
 // ----------------------------------------------------------------
-// Sky gradient (pale at the horizon, deep blue overhead), a haze
-// below the horizon and the sun. Under water: murky blue.
+// Sky gradient (pale at the horizon, deep blue overhead, both
+// following the time of day), a haze below the horizon, stars, the
+// sun and the moon. Under water: murky blue.
 // ----------------------------------------------------------------
 {
   Real    l_horizon  = g_centre_y - g_focal * Sin(g_view_pitch) / Cos(g_view_pitch);
@@ -1047,9 +1194,6 @@ void render_sky(Draw_Box p_box)
   Real    l_sun_x    = 0.42;
   Real    l_sun_y    = 0.62;
   Real    l_sun_z    = 0.66;
-  Real    l_sun_size = 0.0;
-  Real    l_px       = 0.0;
-  Real    l_py       = 0.0;
   Integer l_band     = 0;
 
   if (g_view_eye_in_water) {
@@ -1064,25 +1208,22 @@ void render_sky(Draw_Box p_box)
     l_height = (l_y0 + l_band_h / 2.0 - l_horizon) / (g_screen_h - g_view_bottom);
     if (l_height >= 0.0) {
       l_amount = clamp_real(l_height * 1.7, 0.0, 1.0);
-      render_set_colour(p_box, lerp_real(g_fog_r, 92.0, l_amount), lerp_real(g_fog_g, 146.0, l_amount), lerp_real(g_fog_b, 232.0, l_amount));
+      render_set_colour(p_box, lerp_real(g_fog_r, g_sky_top_r, l_amount), lerp_real(g_fog_g, g_sky_top_g, l_amount), lerp_real(g_fog_b, g_sky_top_b, l_amount));
     } else {
       l_amount = clamp_real(-l_height * 2.0, 0.0, 1.0);
-      render_set_colour(p_box, lerp_real(g_fog_r, 120.0, l_amount), lerp_real(g_fog_g, 150.0, l_amount), lerp_real(g_fog_b, 190.0, l_amount));
+      render_set_colour(p_box, lerp_real(g_fog_r, g_fog_r * 0.75, l_amount), lerp_real(g_fog_g, g_fog_g * 0.78, l_amount), lerp_real(g_fog_b, g_fog_b * 0.8, l_amount));
     }
     render_fill_rect(p_box, 0.0, l_y0, g_screen_w, l_y1);
   }
 
-  // The sun: a square in a fixed direction in the sky
-  render_to_camera(l_sun_x, l_sun_y, l_sun_z);
-  if (g_tc_z > 0.1) {
-    l_px       = g_centre_x + g_tc_x * g_focal / g_tc_z;
-    l_py       = g_centre_y + g_tc_y * g_focal / g_tc_z;
-    l_sun_size = g_focal * 0.07;
-    render_set_colour(p_box, 255.0, 246.0, 200.0);
-    render_fill_rect(p_box, l_px - l_sun_size, l_py - l_sun_size, l_px + l_sun_size, l_py + l_sun_size);
-    render_set_colour(p_box, 255.0, 255.0, 236.0);
-    render_fill_rect(p_box, l_px - l_sun_size * 0.6, l_py - l_sun_size * 0.6, l_px + l_sun_size * 0.6, l_py + l_sun_size * 0.6);
-  }
+  // Stars at night, then the sun and moon, which cross the sky from
+  // east (+x) to west through the day
+  if (g_view_daylight < 0.6) render_stars(p_box, clamp_real((0.6 - g_view_daylight) / 0.4, 0.0, 1.0));
+  l_sun_x = Cos(g_view_time * TWO_PI);
+  l_sun_y = Sin(g_view_time * TWO_PI);
+  l_sun_z = 0.3;
+  render_sky_disc(p_box,  l_sun_x,  l_sun_y,  l_sun_z, 0.07, FALSE);
+  render_sky_disc(p_box, -l_sun_x, -l_sun_y, -l_sun_z, 0.05, TRUE);
 }
 
 void render_target_outline(Draw_Box p_box)
@@ -1153,7 +1294,7 @@ void render_target_outline(Draw_Box p_box)
 }
 
 void render_world(Draw_Box p_box, Real p_w, Real p_h, Real p_view_bottom, Attributes &p_player, Attributes &p_cows,
-                  Attributes &p_drops, Attributes &p_furnaces, Attributes &p_settings, Real p_now)
+                  Attributes &p_drops, Attributes &p_furnaces, Attributes &p_settings, Real p_time_of_day, Real p_now)
 // ----------------------------------------------------------------
 // Draw the 3D view from the player's eyes: sky, then every face far
 // to near, then the outline of the targeted block. Must be inside a
@@ -1167,7 +1308,7 @@ void render_world(Draw_Box p_box, Real p_w, Real p_h, Real p_view_bottom, Attrib
   Real    l_yaw    = 0.0;
   Real    l_pitch  = 0.0;
 
-  render_view_from(p_player, p_settings, p_now);
+  render_view_from(p_player, p_settings, p_time_of_day, p_now);
   player_position (p_player, l_x, l_y, l_z);
   player_look     (p_player, l_yaw, l_pitch);
   render_setup_camera(p_w, p_h, p_view_bottom, l_x, player_eye_y(p_player), l_z, l_yaw, l_pitch, settings_fov_radians(p_settings));
@@ -1182,6 +1323,7 @@ void render_world(Draw_Box p_box, Real p_w, Real p_h, Real p_view_bottom, Attrib
   render_collect_blocks(p_furnaces);
   render_collect_cows  (p_cows);
   render_collect_drops (p_drops);
+  g_box_light = 1.0;
   g_stat_faces = g_face_total;
 
   render_draw_faces(p_box);

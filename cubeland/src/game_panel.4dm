@@ -108,7 +108,7 @@ void game_panel_dispatch(Real p_now)
 // Dispatch the events an action caused, straight away
 // ----------------------------------------------------------------
 {
-  game_dispatch_events(g_events, g_event, g_player, g_inventory, g_grid, g_furnaces, g_drops, g_random, g_hud, g_ui, p_now);
+  game_dispatch_events(g_events, g_event, g_info, g_player, g_inventory, g_grid, g_furnaces, g_drops, g_random, g_hud, g_ui, p_now);
 }
 
 Integer game_panel_save()
@@ -149,12 +149,12 @@ void game_panel_render(Draw_Box p_box, Integer p_captured, Real p_frame_ms, Real
   Start_batch_draw(p_box);
   if (ui_screen(g_ui) != SCREEN_NONE) {
     hud_draw(p_box, l_w, l_h, p_captured, TRUE, g_hud, g_player, g_inventory, g_settings, world_info_seed(g_info),
-             p_frame_ms, render_stats_text(), p_now);
+             world_time_of_day(g_info), p_frame_ms, render_stats_text(), p_now);
     ui_draw (p_box, l_w, l_h, g_ui, g_inventory, g_grid, g_furnaces, g_book);
   } else {
-    render_world(p_box, l_w, l_h, STATUS_STRIP_HEIGHT, g_player, g_cows, g_drops, g_furnaces, g_settings, p_now);
+    render_world(p_box, l_w, l_h, STATUS_STRIP_HEIGHT, g_player, g_cows, g_drops, g_furnaces, g_settings, world_time_of_day(g_info), p_now);
     hud_draw    (p_box, l_w, l_h, p_captured, FALSE, g_hud, g_player, g_inventory, g_settings, world_info_seed(g_info),
-                 p_frame_ms, render_stats_text(), p_now);
+                 world_time_of_day(g_info), p_frame_ms, render_stats_text(), p_now);
   }
   End_batch_draw(p_box);
 }

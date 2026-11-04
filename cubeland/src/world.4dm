@@ -7,6 +7,7 @@
 #include "../include/records.h"
 #include "../include/events.h"
 #include "../include/blocks.h"
+#include "../include/physics.h"
 #include "../include/world.h"
 
 // ---------------------------------------------------------------- grid access
@@ -17,6 +18,20 @@ Integer world_index(Integer p_x, Integer p_y, Integer p_z)
 // ----------------------------------------------------------------
 {
   return (p_x * WORLD_SIZE_Z + p_z) * WORLD_HEIGHT + p_y + 1;
+}
+
+void world_cell_of_index(Integer p_index, Integer &p_x, Integer &p_y, Integer &p_z)
+// ----------------------------------------------------------------
+// The cell at an array position (the opposite of world_index)
+// index = (x * WORLD_SIZE_Z + z) * WORLD_HEIGHT + y + 1
+// ----------------------------------------------------------------
+{
+  Integer l_cell = p_index - 1;
+
+  p_y    = positive_mod(l_cell, WORLD_HEIGHT);
+  l_cell = floor_divide(l_cell, WORLD_HEIGHT);
+  p_z    = positive_mod(l_cell, WORLD_SIZE_Z);
+  p_x    = floor_divide(l_cell, WORLD_SIZE_Z);
 }
 
 Integer world_column(Integer p_x, Integer p_z)
@@ -42,9 +57,44 @@ Integer world_get_block(Integer p_x, Integer p_y, Integer p_z)
 // Block at a cell; air outside the world (bedrock below it)
 // ----------------------------------------------------------------
 {
+  Integer l_cell = 0;
+
   if (p_y < 0) return BLOCK_BEDROCK;
   if (!world_in_bounds(p_x, p_y, p_z)) return BLOCK_AIR;
-  return g_world[world_index(p_x, p_y, p_z)];
+  l_cell = g_world[world_index(p_x, p_y, p_z)];
+  if (l_cell < LIGHT_SHIFT) return l_cell;
+  return world_cell_block(l_cell);
+}
+
+Integer world_cell_block(Integer p_cell)
+// ----------------------------------------------------------------
+// Block number of a g_world value (which may carry block light)
+// ----------------------------------------------------------------
+{
+  Integer l_block = p_cell;
+
+  if (p_cell >= LIGHT_SHIFT) l_block = p_cell - LIGHT_SHIFT * Floor(p_cell / (1.0 * LIGHT_SHIFT));
+  return l_block;
+}
+
+Integer world_cell_light(Integer p_cell)
+// ----------------------------------------------------------------
+// Block light level (0..LIGHT_MAX_LEVEL) of a g_world value
+// ----------------------------------------------------------------
+{
+  Integer l_light = 0;
+
+  if (p_cell >= LIGHT_SHIFT) l_light = Floor(p_cell / (1.0 * LIGHT_SHIFT));
+  return l_light;
+}
+
+Integer world_get_light(Integer p_x, Integer p_y, Integer p_z)
+// ----------------------------------------------------------------
+// Block light (from torches) at a cell, 0 outside the world
+// ----------------------------------------------------------------
+{
+  if (!world_in_bounds(p_x, p_y, p_z)) return 0;
+  return world_cell_light(g_world[world_index(p_x, p_y, p_z)]);
 }
 
 void world_set_block(Integer p_x, Integer p_y, Integer p_z, Integer p_block)
@@ -54,8 +104,11 @@ void world_set_block(Integer p_x, Integer p_y, Integer p_z, Integer p_block)
 // world_place_block so that other modules hear about them.
 // ----------------------------------------------------------------
 {
+  Integer l_index = 0;
+
   if (!world_in_bounds(p_x, p_y, p_z)) return;
-  g_world[world_index(p_x, p_y, p_z)] = p_block;
+  l_index = world_index(p_x, p_y, p_z);
+  g_world[l_index] = p_block + LIGHT_SHIFT * world_cell_light(g_world[l_index]);   // keep the light
 }
 
 Integer world_is_solid(Integer p_x, Integer p_y, Integer p_z)
@@ -67,7 +120,7 @@ Integer world_is_solid(Integer p_x, Integer p_y, Integer p_z)
   if (p_y < 0) return TRUE;
   if (p_y >= WORLD_HEIGHT) return FALSE;
   if (p_x < 0 || p_z < 0 || p_x >= WORLD_SIZE_X || p_z >= WORLD_SIZE_Z) return TRUE;
-  return block_is_solid(g_world[world_index(p_x, p_y, p_z)]);
+  return block_is_solid(world_cell_block(g_world[world_index(p_x, p_y, p_z)]));
 }
 
 Integer world_top_solid_y(Integer p_x, Integer p_z)
@@ -82,7 +135,25 @@ Integer world_top_solid_y(Integer p_x, Integer p_z)
 
   l_base = world_index(p_x, 0, p_z);
   for (l_y = WORLD_HEIGHT - 1; l_y >= 0; --l_y) {
-    if (block_is_solid(g_world[l_base + l_y])) return l_y;
+    if (block_is_solid(world_cell_block(g_world[l_base + l_y]))) return l_y;
+  }
+  return -1;
+}
+
+Integer world_top_opaque_y(Integer p_x, Integer p_z)
+// ----------------------------------------------------------------
+// y of the highest block in a column that keeps daylight out (glass
+// lets it through), -1 if there is none
+// ----------------------------------------------------------------
+{
+  Integer l_y    = 0;
+  Integer l_base = 0;
+
+  if (!world_in_bounds(p_x, 0, p_z)) return -1;
+
+  l_base = world_index(p_x, 0, p_z);
+  for (l_y = WORLD_HEIGHT - 1; l_y >= 0; --l_y) {
+    if (block_hides_faces(world_cell_block(g_world[l_base + l_y]))) return l_y;
   }
   return -1;
 }
@@ -122,7 +193,7 @@ void world_update_column_top(Integer p_x, Integer p_z)
 // ----------------------------------------------------------------
 {
   if (!world_in_bounds(p_x, 0, p_z)) return;
-  g_column_top[world_column(p_x, p_z)] = world_top_solid_y(p_x, p_z);
+  g_column_top[world_column(p_x, p_z)] = world_top_opaque_y(p_x, p_z);
 }
 
 void world_break_block(Attributes &p_events, Integer p_x, Integer p_y, Integer p_z, Integer p_tool_item)
@@ -148,6 +219,7 @@ void world_break_block(Attributes &p_events, Integer p_x, Integer p_y, Integer p
 
   world_set_block        (p_x, p_y, p_z, l_new_block);
   world_update_column_top(p_x, p_z);
+  world_light_update     (p_x, p_y, p_z);
   emit_event(p_events, EVT_BLOCK_BROKEN, p_x, p_y, p_z, l_old_block, p_tool_item * 1.0, 0.0, 0.0, "");
   if (l_new_block == BLOCK_WATER) emit_cell_event(p_events, EVT_BLOCK_PLACED, p_x, p_y, p_z, BLOCK_WATER);
 
@@ -165,7 +237,237 @@ void world_place_block(Attributes &p_events, Integer p_x, Integer p_y, Integer p
 
   world_set_block        (p_x, p_y, p_z, p_block);
   world_update_column_top(p_x, p_z);
+  world_light_update     (p_x, p_y, p_z);
   emit_cell_event(p_events, EVT_BLOCK_PLACED, p_x, p_y, p_z, p_block);
+}
+
+// ---------------------------------------------------------------- day and night
+
+Real world_time_of_day(Attributes &p_info)
+// ----------------------------------------------------------------
+// Time of day, 0..1 (0 sunrise, 0.25 noon, 0.5 sunset, 0.75 midnight)
+// ----------------------------------------------------------------
+{
+  return record_real(p_info, ATTR_WORLD_TIME);
+}
+
+void world_set_time_of_day(Attributes &p_info, Real p_time)
+// ----------------------------------------------------------------
+// Set the time of day (wrapped into 0..1)
+// ----------------------------------------------------------------
+{
+  record_set_real(p_info, ATTR_WORLD_TIME, p_time - Floor(p_time));
+}
+
+void world_advance_time(Attributes &p_info, Real p_dt)
+// ----------------------------------------------------------------
+// Move the clock on by p_dt seconds, counting whole days
+// ----------------------------------------------------------------
+{
+  Real l_time = world_time_of_day(p_info) + p_dt / DAY_SECONDS;
+
+  if (l_time >= 1.0) record_set_integer(p_info, ATTR_WORLD_DAYS, record_integer(p_info, ATTR_WORLD_DAYS) + 1);
+  world_set_time_of_day(p_info, l_time);
+}
+
+Real world_sun_height(Real p_time_of_day)
+// ----------------------------------------------------------------
+// Height of the sun, -1 (midnight) to 1 (noon)
+// ----------------------------------------------------------------
+{
+  return Sin(p_time_of_day * TWO_PI);
+}
+
+Real world_daylight(Real p_time_of_day)
+// ----------------------------------------------------------------
+// How bright the sky light is, NIGHT_LIGHT..1; dawn and dusk fade
+// while the sun is near the horizon
+// ----------------------------------------------------------------
+{
+  Real l_amount = clamp_real((world_sun_height(p_time_of_day) + 0.1) / 0.4, 0.0, 1.0);
+
+  return NIGHT_LIGHT + (1.0 - NIGHT_LIGHT) * smooth_curve(l_amount);
+}
+
+Integer world_is_night(Real p_time_of_day)
+// ----------------------------------------------------------------
+// TRUE when it is dark enough for zombies and for sleeping
+// ----------------------------------------------------------------
+{
+  if (world_daylight(p_time_of_day) < NIGHT_DAYLIGHT) return TRUE;
+  return FALSE;
+}
+
+Text world_clock_text(Real p_time_of_day)
+// ----------------------------------------------------------------
+// The time as "hh:mm" on a 24 hour clock (sunrise at 06:00)
+// ----------------------------------------------------------------
+{
+  Integer l_minutes = Floor(p_time_of_day * 1440.0) + 360;
+  Integer l_hours   = 0;
+
+  if (l_minutes >= 1440) l_minutes = l_minutes - 1440;
+  l_hours   = Floor(l_minutes / 60.0);
+  l_minutes = l_minutes - l_hours * 60;
+  return two_digits(l_hours) + ":" + two_digits(l_minutes);
+}
+
+void world_on_event(Attributes &p_event, Attributes &p_info, Attributes &p_events)
+// ----------------------------------------------------------------
+// EVT_SLEEP: a bed was used. At night the clock jumps to the next
+// morning; either way the bed becomes the place to respawn.
+// ----------------------------------------------------------------
+{
+  Integer l_x = event_integer(p_event, 1);
+  Integer l_y = event_integer(p_event, 2);
+  Integer l_z = event_integer(p_event, 3);
+
+  if (event_type(p_event) != EVT_SLEEP) return;
+
+  world_info_set_spawn(p_info, l_x + 0.5, l_y + 1.0 + COLLISION_EPSILON, l_z + 0.5);
+  if (world_is_night(world_time_of_day(p_info))) {
+    world_set_time_of_day(p_info, WAKE_UP_TIME);
+    record_set_integer(p_info, ATTR_WORLD_DAYS, record_integer(p_info, ATTR_WORLD_DAYS) + 1);
+    emit_toast(p_events, "You slept until morning. You'll wake up here.");
+  } else {
+    emit_toast(p_events, "You can only sleep at night - but you'll respawn here.");
+  }
+}
+
+// ---------------------------------------------------------------- block light
+
+void world_set_light_index(Integer p_index, Integer p_light)
+// ----------------------------------------------------------------
+// Set the light part of g_world[p_index], keeping its block
+// ----------------------------------------------------------------
+{
+  g_world[p_index] = world_cell_block(g_world[p_index]) + LIGHT_SHIFT * p_light;
+}
+
+Integer world_light_push(Integer p_tail, Integer p_x, Integer p_y, Integer p_z)
+// ----------------------------------------------------------------
+// Add a cell to the relighting queue; returns the new tail
+// ----------------------------------------------------------------
+{
+  if (p_tail >= LIGHT_QUEUE_SIZE) return p_tail;
+  g_light_qx[p_tail + 1] = p_x;
+  g_light_qy[p_tail + 1] = p_y;
+  g_light_qz[p_tail + 1] = p_z;
+  return p_tail + 1;
+}
+
+Integer world_light_seed_outside(Integer p_tail, Integer p_x, Integer p_y, Integer p_z)
+// ----------------------------------------------------------------
+// A lit cell just outside the relighting box shines into it, so it
+// goes in the queue (its own light doesn't change)
+// ----------------------------------------------------------------
+{
+  if (!world_in_bounds(p_x, p_y, p_z)) return p_tail;
+  if (world_get_light(p_x, p_y, p_z) <= 1) return p_tail;
+  return world_light_push(p_tail, p_x, p_y, p_z);
+}
+
+void world_light_update(Integer p_x, Integer p_y, Integer p_z)
+// ----------------------------------------------------------------
+// Work block light out again after the cell (x, y, z) changed.
+// A change can only alter light within LIGHT_MAX_LEVEL - 1 cells of
+// it, so: clear the light in a box of LIGHT_RADIUS round the cell,
+// relight it from the light sources inside and from the lit cells
+// just outside, then spread it with a breadth-first flood. Quick
+// when there is no light nearby (the usual case in daylight).
+// ----------------------------------------------------------------
+{
+  Integer l_x0    = max_integer(p_x - LIGHT_RADIUS, 0);
+  Integer l_x1    = min_integer(p_x + LIGHT_RADIUS, WORLD_SIZE_X - 1);
+  Integer l_y0    = max_integer(p_y - LIGHT_RADIUS, 0);
+  Integer l_y1    = min_integer(p_y + LIGHT_RADIUS, WORLD_HEIGHT - 1);
+  Integer l_z0    = max_integer(p_z - LIGHT_RADIUS, 0);
+  Integer l_z1    = min_integer(p_z + LIGHT_RADIUS, WORLD_SIZE_Z - 1);
+  Integer l_x     = 0;
+  Integer l_y     = 0;
+  Integer l_z     = 0;
+  Integer l_index = 0;
+  Integer l_light = 0;
+  Integer l_head  = 0;
+  Integer l_tail  = 0;
+  Integer l_side  = 0;
+  Integer l_nx    = 0;
+  Integer l_ny    = 0;
+  Integer l_nz    = 0;
+  Integer l_block = 0;
+  Integer l_near  = 0;
+
+  if (!world_in_bounds(p_x, p_y, p_z)) return;
+
+  // Nothing to do if nothing near the cell is or gives light
+  l_near = block_light_emission(world_get_block(p_x, p_y, p_z)) + world_get_light(p_x, p_y, p_z)
+         + world_get_light(p_x + 1, p_y, p_z) + world_get_light(p_x - 1, p_y, p_z)
+         + world_get_light(p_x, p_y + 1, p_z) + world_get_light(p_x, p_y - 1, p_z)
+         + world_get_light(p_x, p_y, p_z + 1) + world_get_light(p_x, p_y, p_z - 1);
+  if (l_near == 0) return;
+
+  // Clear the box and light its sources
+  for (l_x = l_x0; l_x <= l_x1; ++l_x) {
+    for (l_z = l_z0; l_z <= l_z1; ++l_z) {
+      l_index = world_index(l_x, l_y0, l_z);
+      for (l_y = l_y0; l_y <= l_y1; ++l_y) {
+        if (g_world[l_index] >= LIGHT_SHIFT) world_set_light_index(l_index, 0);
+        l_light = block_light_emission(g_world[l_index]);
+        if (l_light > 0) {
+          world_set_light_index(l_index, l_light);
+          l_tail = world_light_push(l_tail, l_x, l_y, l_z);
+        }
+        ++l_index;
+      }
+    }
+  }
+
+  // Light coming in from just outside the box
+  for (l_y = l_y0; l_y <= l_y1; ++l_y) {
+    for (l_z = l_z0; l_z <= l_z1; ++l_z) {
+      l_tail = world_light_seed_outside(l_tail, l_x0 - 1, l_y, l_z);
+      l_tail = world_light_seed_outside(l_tail, l_x1 + 1, l_y, l_z);
+    }
+    for (l_x = l_x0; l_x <= l_x1; ++l_x) {
+      l_tail = world_light_seed_outside(l_tail, l_x, l_y, l_z0 - 1);
+      l_tail = world_light_seed_outside(l_tail, l_x, l_y, l_z1 + 1);
+    }
+  }
+  for (l_x = l_x0; l_x <= l_x1; ++l_x) {
+    for (l_z = l_z0; l_z <= l_z1; ++l_z) {
+      l_tail = world_light_seed_outside(l_tail, l_x, l_y0 - 1, l_z);
+      l_tail = world_light_seed_outside(l_tail, l_x, l_y1 + 1, l_z);
+    }
+  }
+
+  // Flood: each step into a see-through cell inside the box loses 1
+  while (l_head < l_tail) {
+    ++l_head;
+    l_x     = g_light_qx[l_head];
+    l_y     = g_light_qy[l_head];
+    l_z     = g_light_qz[l_head];
+    l_light = world_get_light(l_x, l_y, l_z) - 1;
+    if (l_light < 1) continue;
+    for (l_side = 1; l_side <= 6; ++l_side) {
+      l_nx = l_x;
+      l_ny = l_y;
+      l_nz = l_z;
+      if (l_side == 1) l_nx = l_x + 1;
+      if (l_side == 2) l_nx = l_x - 1;
+      if (l_side == 3) l_ny = l_y + 1;
+      if (l_side == 4) l_ny = l_y - 1;
+      if (l_side == 5) l_nz = l_z + 1;
+      if (l_side == 6) l_nz = l_z - 1;
+      if (l_nx < l_x0 || l_nx > l_x1 || l_ny < l_y0 || l_ny > l_y1 || l_nz < l_z0 || l_nz > l_z1) continue;
+      l_index = world_index(l_nx, l_ny, l_nz);
+      l_block = world_cell_block(g_world[l_index]);
+      if (block_hides_faces(l_block)) continue;
+      if (world_cell_light(g_world[l_index]) >= l_light) continue;
+      world_set_light_index(l_index, l_light);
+      l_tail = world_light_push(l_tail, l_nx, l_ny, l_nz);
+    }
+  }
+  g_light_steps = l_tail;
 }
 
 // ---------------------------------------------------------------- world record
@@ -185,6 +487,8 @@ void world_info_clear(Attributes &p_info, Integer p_seed)
   record_set_real   (p_info, ATTR_SHIFT_A,    l_shift_a);
   record_set_real   (p_info, ATTR_SHIFT_B,    l_shift_b);
   world_info_set_spawn(p_info, WORLD_SIZE_X * 0.5, SEA_LEVEL + 8.0, WORLD_SIZE_Z * 0.5);
+  record_set_real   (p_info, ATTR_WORLD_TIME, WORLD_START_TIME);
+  record_set_integer(p_info, ATTR_WORLD_DAYS, 0);
 }
 
 Integer world_info_seed(Attributes &p_info)
@@ -736,10 +1040,10 @@ void world_add_ponds(Attributes &p_random)
 
 void world_build_house(Attributes &p_info, Integer p_origin_x, Integer p_ground_y, Integer p_origin_z)
 // ----------------------------------------------------------------
-// The starter house: a 7 x 7 cabin with a cobblestone floor_y, log
+// The starter house: a 7 x 7 cabin with a cobblestone floor, log
 // corner posts, plank walls, a doorway facing -z, a window in each
-// other wall and a stepped plank roof. Inside are a crafting table
-// and a furnace. The ground is levelled under it and cleared around
+// other wall and a stepped plank roof. Inside are a crafting table,
+// a furnace, a bed and two torches. The ground is levelled under it and cleared around
 // it. The spawn point is put inside.
 // ----------------------------------------------------------------
 {
@@ -799,6 +1103,9 @@ void world_build_house(Attributes &p_info, Integer p_origin_x, Integer p_ground_
   // Furniture along the back wall; the furnace faces the door
   world_set_block(l_x0 + 1, l_floor_y + 1, l_z1 - 1, BLOCK_CRAFTING_TABLE);
   world_set_block(l_x1 - 1, l_floor_y + 1, l_z1 - 1, BLOCK_FURNACE_NZ);
+  world_set_block(l_x1 - 1, l_floor_y + 1, l_z0 + 3, BLOCK_BED);
+  world_set_block(l_x0 + 1, l_floor_y + 1, l_z0 + 1, BLOCK_TORCH);
+  world_set_block(l_x1 - 1, l_floor_y + 1, l_z0 + 1, BLOCK_TORCH);
 
   record_set_integer(p_info, ATTR_HOUSE_X, l_x0);
   record_set_integer(p_info, ATTR_HOUSE_Y, l_floor_y);
@@ -887,7 +1194,7 @@ void world_finish_maps()
 
   for (l_x = 0; l_x < WORLD_SIZE_X; ++l_x) {
     for (l_z = 0; l_z < WORLD_SIZE_Z; ++l_z) {
-      g_column_top[world_column(l_x, l_z)] = world_top_solid_y(l_x, l_z);
+      g_column_top[world_column(l_x, l_z)] = world_top_opaque_y(l_x, l_z);
     }
   }
 }
@@ -924,6 +1231,10 @@ void world_generate(Attributes &p_info, Integer p_seed)
   world_place_house_near(p_info, l_spawn_x, l_spawn_z);
 
   world_finish_maps();
+
+  // The house torches light it (light is only worked out on changes)
+  world_light_update(record_integer(p_info, ATTR_HOUSE_X) + 1, record_integer(p_info, ATTR_HOUSE_Y) + 1, record_integer(p_info, ATTR_HOUSE_Z) + 1);
+  world_light_update(record_integer(p_info, ATTR_HOUSE_X) + 5, record_integer(p_info, ATTR_HOUSE_Y) + 1, record_integer(p_info, ATTR_HOUSE_Z) + 1);
 }
 
 #endif

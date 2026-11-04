@@ -364,7 +364,7 @@ void hud_draw_help(Draw_Box p_box, Real p_w, Real p_h)
 // ----------------------------------------------------------------
 {
   Real l_panel_w = min_real(620.0, p_w - 30.0);
-  Real l_panel_h = min_real(370.0, p_h - STATUS_STRIP_HEIGHT - 16.0);
+  Real l_panel_h = min_real(386.0, p_h - STATUS_STRIP_HEIGHT - 16.0);
   Real l_centre  = p_w / 2.0;
   Real l_middle  = STATUS_STRIP_HEIGHT + (p_h - STATUS_STRIP_HEIGHT) / 2.0;
   Real l_left    = l_centre - l_panel_w / 2.0;
@@ -399,6 +399,8 @@ void hud_draw_help(Draw_Box p_box, Real p_w, Real p_h)
   hud_text(p_box, l_x, l_y, 12.0, TEXT_ALIGN_LEFT, 228, 228, 228, "Your house has a crafting table and a furnace. Punch trees for logs, lay out planks");
   l_y = l_y - 15.0;
   hud_text(p_box, l_x, l_y, 12.0, TEXT_ALIGN_LEFT, 228, 228, 228, "and sticks in the grid for a pickaxe - stone only drops if you mine it with one.");
+  l_y = l_y - 15.0;
+  hud_text(p_box, l_x, l_y, 12.0, TEXT_ALIGN_LEFT, 228, 228, 228, "Zombies come out at night: make torches (coal over a stick) or sleep in a bed.");
 
   hud_text(p_box, l_centre, l_middle - l_panel_h / 2.0 + 22.0, 13.0, TEXT_ALIGN_CENTRE, 250, 215, 90, "Click the view to play");
 }
@@ -487,7 +489,7 @@ void hud_draw_health(Draw_Box p_box, Real p_x0, Real p_y0, Real p_width, Integer
 
 void hud_draw(Draw_Box p_box, Real p_w, Real p_h, Integer p_captured, Integer p_screen_open,
               Attributes &p_hud, Attributes &p_player, Attributes &p_inventory, Attributes &p_settings,
-              Integer p_seed, Real p_frame_ms, Text p_render_stats, Real p_now)
+              Integer p_seed, Real p_time_of_day, Real p_frame_ms, Text p_render_stats, Real p_now)
 // ----------------------------------------------------------------
 // Draw the HUD over the 3D view (or just the status strip behind an
 // inventory screen)
@@ -517,6 +519,8 @@ void hud_draw(Draw_Box p_box, Real p_w, Real p_h, Integer p_captured, Integer p_
   render_set_colour(p_box, 22.0, 24.0, 28.0);
   render_fill_rect (p_box, 0.0, 0.0, p_w, l_strip);
   l_info = GAME_TITLE;
+  l_info = l_info + "   " + world_clock_text(p_time_of_day);
+  if (world_is_night(p_time_of_day)) l_info = l_info + " (night)";
   l_info = l_info + "   seed " + To_text(p_seed) + "   view " + To_text(settings_render_distance(p_settings))
        + "   " + To_text(p_frame_ms, 1) + " ms";
   if (settings_flag(p_settings, ATTR_SET_SHOW_DEBUG) && hud_frame_stats(p_hud) != "") l_info = l_info + "   " + hud_frame_stats(p_hud);

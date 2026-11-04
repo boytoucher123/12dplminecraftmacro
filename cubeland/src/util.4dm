@@ -17,6 +17,58 @@ Real clamp_real(Real p_value, Real p_low, Real p_high)
   return l_result;
 }
 
+Real angle_of(Real p_y, Real p_x)
+// ----------------------------------------------------------------
+// Angle of the direction (x, y) in radians, -PI..PI, like atan2
+// (12dPL has no arctangent). A polynomial approximation, good to
+// about 0.005 radians, which is plenty for turning animals.
+// ----------------------------------------------------------------
+{
+  Real l_ax    = Absolute(p_x);
+  Real l_ay    = Absolute(p_y);
+  Real l_ratio = 0.0;
+  Real l_angle = 0.0;
+
+  if (l_ax < 1.0e-9 && l_ay < 1.0e-9) return 0.0;
+  if (l_ax >= l_ay) {
+    l_ratio = l_ay / l_ax;
+    l_angle = l_ratio * (PI / 4.0) + 0.273 * l_ratio * (1.0 - l_ratio);
+  } else {
+    l_ratio = l_ax / l_ay;
+    l_angle = HALF_PI - (l_ratio * (PI / 4.0) + 0.273 * l_ratio * (1.0 - l_ratio));
+  }
+  if (p_x < 0.0) l_angle = PI - l_angle;
+  if (p_y < 0.0) l_angle = -l_angle;
+  return l_angle;
+}
+
+Text two_digits(Integer p_value)
+// ----------------------------------------------------------------
+// A number 0..99 as two digits ("07")
+// ----------------------------------------------------------------
+{
+  if (p_value < 10) return "0" + To_text(p_value);
+  return To_text(p_value);
+}
+
+Integer max_integer(Integer p_a, Integer p_b)
+// ----------------------------------------------------------------
+// The larger of two Integers
+// ----------------------------------------------------------------
+{
+  if (p_a > p_b) return p_a;
+  return p_b;
+}
+
+Integer min_integer(Integer p_a, Integer p_b)
+// ----------------------------------------------------------------
+// The smaller of two Integers
+// ----------------------------------------------------------------
+{
+  if (p_a < p_b) return p_a;
+  return p_b;
+}
+
 Integer clamp_integer(Integer p_value, Integer p_low, Integer p_high)
 // ----------------------------------------------------------------
 // Limit value to the range [low, high]

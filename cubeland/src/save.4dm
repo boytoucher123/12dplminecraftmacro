@@ -390,7 +390,7 @@ Integer load_world(Text p_name, Attributes &p_info, Attributes &p_player, Attrib
   Integer      l_index    = 0;
   Integer      l_block    = 0;
   Integer      l_furnace  = 0;
-  Integer      l_cell     = 0;
+  Integer      l_edit     = 0;
   Integer      l_cell_x   = 0;
   Integer      l_cell_y   = 0;
   Integer      l_cell_z   = 0;
@@ -463,12 +463,7 @@ Integer load_world(Text p_name, Attributes &p_info, Attributes &p_player, Attrib
         l_block = save_word_integer(l_words, l_word + 1);
         if (l_index < 1 || l_index > WORLD_CELLS) continue;
         save_record_edit(l_index, l_block);
-        // index = (x * WORLD_SIZE_Z + z) * WORLD_HEIGHT + y + 1
-        l_cell   = l_index - 1;
-        l_cell_y = positive_mod(l_cell, WORLD_HEIGHT);
-        l_cell   = floor_divide(l_cell, WORLD_HEIGHT);
-        l_cell_z = positive_mod(l_cell, WORLD_SIZE_Z);
-        l_cell_x = floor_divide(l_cell, WORLD_SIZE_Z);
+        world_cell_of_index(l_index, l_cell_x, l_cell_y, l_cell_z);
         world_set_block(l_cell_x, l_cell_y, l_cell_z, l_block);
         mesh_mark_dirty(l_cell_x, l_cell_y, l_cell_z);
       }
@@ -481,6 +476,13 @@ Integer load_world(Text p_name, Attributes &p_info, Attributes &p_player, Attrib
     return FAILURE;
   }
   world_finish_maps();
+
+  // Torches light their surroundings again
+  for (l_edit = 1; l_edit <= g_edit_count; ++l_edit) {
+    if (block_light_emission(g_edit_block[l_edit]) == 0) continue;
+    world_cell_of_index(g_edit_index[l_edit], l_cell_x, l_cell_y, l_cell_z);
+    world_light_update(l_cell_x, l_cell_y, l_cell_z);
+  }
 
   // Furnaces that lost their block (shouldn't happen) are forgotten
   for (l_furnace = 1; l_furnace <= MAX_FURNACES; ++l_furnace) {

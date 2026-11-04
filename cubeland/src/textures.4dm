@@ -1001,6 +1001,164 @@ void make_texture_item_ingot(Integer p_tex)
   texture_row(p_tex, 16, "................");
 }
 
+void make_texture_bed_top(Integer p_tex)
+// ----------------------------------------------------------------
+// Top of a bed: a red blanket with a white pillow at one end
+// ----------------------------------------------------------------
+{
+  texture_set_palette(p_tex, 1, 176, 36 , 36 );
+  texture_set_palette(p_tex, 2, 140, 24 , 26 );
+  texture_set_palette(p_tex, 3, 236, 232, 226);
+  texture_set_palette(p_tex, 4, 200, 196, 190);
+  texture_set_palette(p_tex, 5, 120, 86 , 50 );
+  texture_fill     (p_tex, 1);
+  texture_fill_rect(p_tex, 1 , 1 , 16, 1 , 5);
+  texture_fill_rect(p_tex, 1 , 16, 16, 16, 5);
+  texture_fill_rect(p_tex, 1 , 1 , 1 , 16, 5);
+  texture_fill_rect(p_tex, 16, 1 , 16, 16, 5);
+  texture_fill_rect(p_tex, 3 , 2 , 14, 5 , 3);
+  texture_fill_rect(p_tex, 3 , 5 , 14, 5 , 4);
+  texture_fill_rect(p_tex, 2 , 7 , 15, 7 , 2);
+  texture_fill_rect(p_tex, 2 , 11, 15, 11, 2);
+}
+
+void make_texture_bed_side(Integer p_tex)
+// ----------------------------------------------------------------
+// Side of a bed: red blanket over a wooden frame with legs
+// ----------------------------------------------------------------
+{
+  texture_set_palette(p_tex, 1, 176, 36 , 36 );
+  texture_set_palette(p_tex, 2, 140, 24 , 26 );
+  texture_set_palette(p_tex, 3, 150, 112, 66 );
+  texture_set_palette(p_tex, 4, 104, 76 , 44 );
+  texture_set_palette(p_tex, 5, 236, 232, 226);
+  texture_fill     (p_tex, 3);
+  texture_fill_rect(p_tex, 1 , 1 , 16, 8 , 1);
+  texture_fill_rect(p_tex, 1 , 8 , 16, 8 , 2);
+  texture_fill_rect(p_tex, 1 , 1 , 4 , 3 , 5);
+  texture_fill_rect(p_tex, 1 , 9 , 16, 9 , 4);
+  texture_fill_rect(p_tex, 1 , 13, 3 , 16, 4);
+  texture_fill_rect(p_tex, 14, 13, 16, 16, 4);
+  texture_fill_rect(p_tex, 4 , 13, 13, 16, 4);
+}
+
+void make_texture_zombie(Integer p_tex, Integer p_part)
+// ----------------------------------------------------------------
+// The undead walker: green skin (p_part 1), its face (2), a torn
+// blue shirt (3) and dark trousers (4)
+// ----------------------------------------------------------------
+{
+  if (p_part == 3) {
+    texture_set_palette(p_tex, 1, 40 , 120, 136);
+    texture_set_palette(p_tex, 2, 30 , 96 , 110);
+    texture_set_palette(p_tex, 3, 90 , 140, 80 );
+    texture_fill  (p_tex, 1);
+    texture_blotch(p_tex, 2, 4, 0.0, 0.30, 61);
+    texture_fill_rect(p_tex, 6, 14, 8, 16, 3);
+    return;
+  }
+  if (p_part == 4) {
+    texture_set_palette(p_tex, 1, 58 , 52 , 120);
+    texture_set_palette(p_tex, 2, 44 , 40 , 96 );
+    texture_fill  (p_tex, 1);
+    texture_blotch(p_tex, 2, 4, 0.0, 0.30, 67);
+    return;
+  }
+  texture_set_palette(p_tex, 1, 96 , 150, 82 );
+  texture_set_palette(p_tex, 2, 78 , 126, 66 );
+  texture_set_palette(p_tex, 3, 20 , 24 , 20 );
+  texture_set_palette(p_tex, 4, 60 , 96 , 50 );
+  texture_fill  (p_tex, 1);
+  texture_blotch(p_tex, 2, 4, 0.0, 0.32, 71);
+  if (p_part == 2) {
+    texture_fill_rect(p_tex, 3 , 6 , 6 , 8 , 3);
+    texture_fill_rect(p_tex, 11, 6 , 14, 8 , 3);
+    texture_fill_rect(p_tex, 7 , 10, 10, 11, 4);
+    texture_fill_rect(p_tex, 5 , 13, 12, 14, 3);
+  }
+}
+
+void make_texture_torch(Integer p_tex)
+// ----------------------------------------------------------------
+// Picture of a torch: a stick with a glowing tip
+// ----------------------------------------------------------------
+{
+  texture_set_palette(p_tex, 1, 104, 76 , 44 );
+  texture_set_palette(p_tex, 2, 150, 112, 66 );
+  texture_set_palette(p_tex, 3, 255, 236, 120);
+  texture_set_palette(p_tex, 4, 255, 170, 40 );
+  texture_set_palette(p_tex, 5, 210, 90 , 20 );
+  texture_row(p_tex,  1, "................");
+  texture_row(p_tex,  2, "................");
+  texture_row(p_tex,  3, ".......5........");
+  texture_row(p_tex,  4, "......545.......");
+  texture_row(p_tex,  5, "......4345......");
+  texture_row(p_tex,  6, ".....54334......");
+  texture_row(p_tex,  7, "......4334......");
+  texture_row(p_tex,  8, "......5445......");
+  texture_row(p_tex,  9, ".......21.......");
+  texture_row(p_tex, 10, ".......21.......");
+  texture_row(p_tex, 11, ".......21.......");
+  texture_row(p_tex, 12, ".......21.......");
+  texture_row(p_tex, 13, ".......21.......");
+  texture_row(p_tex, 14, ".......21.......");
+  texture_row(p_tex, 15, ".......21.......");
+  texture_row(p_tex, 16, ".......21.......");
+}
+
+void make_texture_glass(Integer p_tex)
+// ----------------------------------------------------------------
+// Glass: a pale frame and a few streaks; the middle is see-through
+// ----------------------------------------------------------------
+{
+  texture_set_palette(p_tex, 1, 206, 232, 238);
+  texture_set_palette(p_tex, 2, 160, 196, 206);
+  texture_set_palette(p_tex, 3, 244, 252, 252);
+  texture_row(p_tex,  1, "1111111111111111");
+  texture_row(p_tex,  2, "1..............2");
+  texture_row(p_tex,  3, "1.3............2");
+  texture_row(p_tex,  4, "1..3...........2");
+  texture_row(p_tex,  5, "1...3..........2");
+  texture_row(p_tex,  6, "1..............2");
+  texture_row(p_tex,  7, "1..............2");
+  texture_row(p_tex,  8, "1..............2");
+  texture_row(p_tex,  9, "1..............2");
+  texture_row(p_tex, 10, "1..........3...2");
+  texture_row(p_tex, 11, "1...........3..2");
+  texture_row(p_tex, 12, "1............3.2");
+  texture_row(p_tex, 13, "1..............2");
+  texture_row(p_tex, 14, "1..............2");
+  texture_row(p_tex, 15, "1..............2");
+  texture_row(p_tex, 16, "2222222222222222");
+}
+
+void make_texture_item_rotten_flesh(Integer p_tex)
+// ----------------------------------------------------------------
+// Item picture: a greenish lump of rotten flesh
+// ----------------------------------------------------------------
+{
+  texture_set_palette(p_tex, 1, 70 , 40 , 30 );
+  texture_set_palette(p_tex, 2, 150, 84 , 60 );
+  texture_set_palette(p_tex, 3, 110, 130, 70 );
+  texture_set_palette(p_tex, 4, 190, 120, 90 );
+  texture_row(p_tex,  1, "................");
+  texture_row(p_tex,  2, "................");
+  texture_row(p_tex,  3, "................");
+  texture_row(p_tex,  4, "......111.......");
+  texture_row(p_tex,  5, "....11223111....");
+  texture_row(p_tex,  6, "...1224223321...");
+  texture_row(p_tex,  7, "..12332222241...");
+  texture_row(p_tex,  8, "..12222432221...");
+  texture_row(p_tex,  9, ".122342223321...");
+  texture_row(p_tex, 10, ".123322222221...");
+  texture_row(p_tex, 11, "..1222234321....");
+  texture_row(p_tex, 12, "...112222211....");
+  texture_row(p_tex, 13, ".....11111......");
+  texture_row(p_tex, 14, "................");
+  texture_row(p_tex, 15, "................");
+  texture_row(p_tex, 16, "................");
+}
+
 void make_texture_item_coal(Integer p_tex)
 // ----------------------------------------------------------------
 // Item picture: a lump of coal
@@ -1230,6 +1388,15 @@ void textures_generate()
   make_texture_item_axe      (TEX_ITEM_IRON_AXE, TIER_IRON);
   make_texture_item_shovel   (TEX_ITEM_IRON_SHOVEL, TIER_IRON);
   make_texture_item_sword    (TEX_ITEM_IRON_SWORD, TIER_IRON);
+  make_texture_bed_top       (TEX_BED_TOP);
+  make_texture_bed_side      (TEX_BED_SIDE);
+  make_texture_zombie        (TEX_ZOMBIE_SKIN, 1);
+  make_texture_zombie        (TEX_ZOMBIE_FACE, 2);
+  make_texture_zombie        (TEX_ZOMBIE_SHIRT, 3);
+  make_texture_zombie        (TEX_ZOMBIE_PANTS, 4);
+  make_texture_torch         (TEX_TORCH);
+  make_texture_glass         (TEX_GLASS);
+  make_texture_item_rotten_flesh(TEX_ITEM_ROTTEN_FLESH);
 }
 
 #endif

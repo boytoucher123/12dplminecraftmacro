@@ -30,6 +30,7 @@
 #define LIGHT_MIN          45
 #define LIGHT_DEPTH_STEP   6      // light lost per block below the sky top
 #define LIGHT_AO_STRENGTH  35     // percent lost when fully enclosed
+#define FACE_TORCH_SCALE   1000   // g_face_light = sky + FACE_TORCH_SCALE * torch light
 
 /*Global variables*/ {
   Integer g_section_state[NUM_SECTIONS];
@@ -40,7 +41,7 @@
   Integer g_face_y  [FACE_POOL_SIZE];
   Integer g_face_z  [FACE_POOL_SIZE];
   Integer g_face_dir[FACE_POOL_SIZE];   // DIR_* plus DIR_WET_FLAG if it touches water
-  Integer g_face_light[FACE_POOL_SIZE]; // 0..LIGHT_FULL
+  Integer g_face_light[FACE_POOL_SIZE]; // sky + FACE_TORCH_SCALE * torch, each 0..LIGHT_FULL
 
   // Each section's faces are grouped by direction: group d of
   // section s starts at entry g_section_dir_start[(s - 1) * 7 + d]
