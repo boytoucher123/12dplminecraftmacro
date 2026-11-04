@@ -914,6 +914,7 @@ void world_generate(Attributes &p_info, Integer p_seed)
   world_carve_caves (l_random);
   world_place_veins (l_random, BLOCK_COAL_ORE, COAL_VEINS, 6, 56);
   world_place_veins (l_random, BLOCK_GRAVEL, GRAVEL_POCKETS, 10, 50);
+  world_place_veins (l_random, BLOCK_IRON_ORE, IRON_VEINS, 5, 44);
   world_add_ponds   (l_random);
   world_plant_trees (l_shift_a, l_shift_b);
   world_add_plants  (l_random, l_shift_a, l_shift_b);

@@ -956,6 +956,51 @@ void make_texture_item_beef(Integer p_tex, Integer p_cooked)
   texture_row(p_tex, 16, "................");
 }
 
+void make_texture_iron_ore(Integer p_tex)
+// ----------------------------------------------------------------
+// Stone with tan and rusty flecks of iron
+// ----------------------------------------------------------------
+{
+  make_texture_stone(p_tex);
+  texture_set_palette(p_tex, 4, 216, 175, 147);
+  texture_set_palette(p_tex, 5, 175, 140, 119);
+  texture_fill_rect(p_tex, 3 , 3 , 4 , 4 , 4);
+  texture_fill_rect(p_tex, 5 , 4 , 5 , 5 , 5);
+  texture_fill_rect(p_tex, 11, 4 , 12, 5 , 4);
+  texture_fill_rect(p_tex, 12, 6 , 13, 6 , 5);
+  texture_fill_rect(p_tex, 6 , 10, 7 , 11, 4);
+  texture_fill_rect(p_tex, 8 , 11, 8 , 12, 5);
+  texture_fill_rect(p_tex, 12, 12, 13, 13, 4);
+  texture_fill_rect(p_tex, 2 , 13, 3 , 13, 5);
+}
+
+void make_texture_item_ingot(Integer p_tex)
+// ----------------------------------------------------------------
+// Item picture: an iron ingot
+// ----------------------------------------------------------------
+{
+  texture_set_palette(p_tex, 1, 60 , 60 , 64 );
+  texture_set_palette(p_tex, 2, 160, 160, 164);
+  texture_set_palette(p_tex, 3, 214, 214, 218);
+  texture_set_palette(p_tex, 4, 250, 250, 252);
+  texture_row(p_tex,  1, "................");
+  texture_row(p_tex,  2, "................");
+  texture_row(p_tex,  3, "................");
+  texture_row(p_tex,  4, "................");
+  texture_row(p_tex,  5, "................");
+  texture_row(p_tex,  6, ".......1111111..");
+  texture_row(p_tex,  7, ".....1144433331.");
+  texture_row(p_tex,  8, "...113333333221.");
+  texture_row(p_tex,  9, ".11333333332221.");
+  texture_row(p_tex, 10, "1433333332221...");
+  texture_row(p_tex, 11, "13333332221.....");
+  texture_row(p_tex, 12, "1222222211......");
+  texture_row(p_tex, 13, ".1111111........");
+  texture_row(p_tex, 14, "................");
+  texture_row(p_tex, 15, "................");
+  texture_row(p_tex, 16, "................");
+}
+
 void make_texture_item_coal(Integer p_tex)
 // ----------------------------------------------------------------
 // Item picture: a lump of coal
@@ -992,7 +1037,10 @@ void make_tool_palette(Integer p_tex, Integer p_tier)
   texture_set_palette(p_tex, 1, 40 , 28 , 12 );
   texture_set_palette(p_tex, 4, 104, 76 , 44 );
   texture_set_palette(p_tex, 5, 150, 112, 66 );
-  if (p_tier == TIER_STONE) {
+  if (p_tier == TIER_IRON) {
+    texture_set_palette(p_tex, 2, 196, 196, 196);
+    texture_set_palette(p_tex, 3, 236, 236, 236);
+  } else if (p_tier == TIER_STONE) {
     texture_set_palette(p_tex, 2, 118, 118, 118);
     texture_set_palette(p_tex, 3, 170, 170, 170);
   } else {
@@ -1097,16 +1145,43 @@ void make_texture_item_sword(Integer p_tex, Integer p_tier)
   texture_row(p_tex, 16, "................");
 }
 
+Integer texture_is_sprite(Integer p_tex)
+// ----------------------------------------------------------------
+// TRUE for the textures drawn as pictures with see-through pixels
+// (plants and items) rather than block faces
+// ----------------------------------------------------------------
+{
+  if (p_tex >= TEX_FIRST_SPRITE) return TRUE;
+  return FALSE;
+}
+
 void textures_init()
 // ----------------------------------------------------------------
-// Generate every texture and its drawing data
-// Order matters where one texture starts as a copy of another
+// Generate every built-in texture and its drawing data
+// ----------------------------------------------------------------
+{
+  textures_generate();
+  textures_finish_all();
+}
+
+void textures_finish_all()
+// ----------------------------------------------------------------
+// Work out the drawing data of every texture (after generating them
+// and after a resource pack has replaced some)
 // ----------------------------------------------------------------
 {
   Integer l_tex = 0;
 
   g_rect_total = 0;
+  for (l_tex = 1; l_tex <= NUM_TEXTURES; ++l_tex) texture_finish(l_tex);
+}
 
+void textures_generate()
+// ----------------------------------------------------------------
+// Draw the pixels of every built-in texture
+// Order matters where one texture starts as a copy of another
+// ----------------------------------------------------------------
+{
   make_texture_bedrock      (TEX_BEDROCK);
   make_texture_stone        (TEX_STONE);
   make_texture_cobblestone  (TEX_COBBLESTONE);
@@ -1149,8 +1224,12 @@ void textures_init()
   make_texture_item_shovel   (TEX_ITEM_STONE_SHOVEL, TIER_STONE);
   make_texture_item_sword    (TEX_ITEM_WOODEN_SWORD, TIER_WOOD);
   make_texture_item_sword    (TEX_ITEM_STONE_SWORD, TIER_STONE);
-
-  for (l_tex = 1; l_tex <= NUM_TEXTURES; ++l_tex) texture_finish(l_tex);
+  make_texture_iron_ore      (TEX_IRON_ORE);
+  make_texture_item_ingot    (TEX_ITEM_IRON_INGOT);
+  make_texture_item_pickaxe  (TEX_ITEM_IRON_PICKAXE, TIER_IRON);
+  make_texture_item_axe      (TEX_ITEM_IRON_AXE, TIER_IRON);
+  make_texture_item_shovel   (TEX_ITEM_IRON_SHOVEL, TIER_IRON);
+  make_texture_item_sword    (TEX_ITEM_IRON_SWORD, TIER_IRON);
 }
 
 #endif

@@ -6,6 +6,7 @@
 #include "../include/settings.h"
 #include "../include/save.h"
 #include "../include/panels.h"
+#include "../include/game.h"
 
 // ----------------------------------------------------------------
 // The settings panel: every setting is a line showing its value and
@@ -18,7 +19,7 @@
 void settings_panel_show(Attributes &p_settings, Colour_Message_Box p_render_row, Colour_Message_Box p_detail_row,
                          Colour_Message_Box p_fov_row, Colour_Message_Box p_mouse_row, Colour_Message_Box p_plants_row,
                          Colour_Message_Box p_shading_row, Colour_Message_Box p_jump_row, Colour_Message_Box p_hud_row,
-                         Colour_Message_Box p_debug_row)
+                         Colour_Message_Box p_debug_row, Colour_Message_Box p_pack_row)
 // ----------------------------------------------------------------
 // Show the current value of every setting
 // ----------------------------------------------------------------
@@ -32,6 +33,7 @@ void settings_panel_show(Attributes &p_settings, Colour_Message_Box p_render_row
   Set_data(p_jump_row   , settings_describe(p_settings, ATTR_SET_AUTO_JUMP));
   Set_data(p_hud_row    , settings_describe(p_settings, ATTR_SET_SHOW_HUD));
   Set_data(p_debug_row  , settings_describe(p_settings, ATTR_SET_SHOW_DEBUG));
+  Set_data(p_pack_row   , settings_describe(p_settings, ATTR_SET_RESOURCE_PACK));
 }
 
 Integer settings_panel_run(Attributes &p_settings)
@@ -80,6 +82,12 @@ Integer settings_panel_run(Attributes &p_settings)
   Button             l_hud_toggle     = Create_button("HUD", "set_hud");
   Button             l_debug_toggle   = Create_button("Statistics", "set_debug");
 
+  Colour_Message_Box l_pack_row       = Create_colour_message_box("");
+  File_Box           l_pack_box       = Create_file_box("Resource pack (.zip file or unzipped folder)", l_message, PACK_FILE_BOX_MODE, "*.zip");
+  Horizontal_Group   l_pack_buttons   = Create_button_group();
+  Button             l_pack_load      = Create_button("Use this resource pack", "set_pack_load");
+  Button             l_pack_clear     = Create_button("Built-in textures", "set_pack_clear");
+
   Horizontal_Group   l_end_buttons    = Create_button_group();
   Button             l_reset_button   = Create_button("Reset to defaults", "set_defaults");
   Button             l_done_button    = Create_finish_button("Done", "set_done");
@@ -89,6 +97,8 @@ Integer settings_panel_run(Attributes &p_settings)
   Integer64          l_id             = 0;
   Text               l_cmd            = "";
   Text               l_msg            = "";
+  Text               l_pack           = "";
+  Text               l_report         = "";
 
   Append(l_render_less, l_render_buttons);
   Append(l_render_more, l_render_buttons);
@@ -105,6 +115,8 @@ Integer settings_panel_run(Attributes &p_settings)
   Append(l_jump_toggle   , l_toggle_buttons);
   Append(l_hud_toggle    , l_toggle_buttons);
   Append(l_debug_toggle  , l_toggle_buttons);
+  Append(l_pack_load , l_pack_buttons);
+  Append(l_pack_clear, l_pack_buttons);
   Append(l_reset_button, l_end_buttons);
   Append(l_done_button , l_end_buttons);
 
@@ -122,12 +134,16 @@ Integer settings_panel_run(Attributes &p_settings)
   Append(l_hud_row       , l_vgroup);
   Append(l_debug_row     , l_vgroup);
   Append(l_toggle_buttons, l_vgroup);
+  Append(l_pack_row      , l_vgroup);
+  Append(l_pack_box      , l_vgroup);
+  Append(l_pack_buttons  , l_vgroup);
   Append(l_end_buttons   , l_vgroup);
   Append(l_message       , l_vgroup);
   Append(l_vgroup        , l_panel);
 
   Show_widget(l_panel);
-  settings_panel_show(p_settings, l_render_row, l_detail_row, l_fov_row, l_mouse_row, l_plants_row, l_shading_row, l_jump_row, l_hud_row, l_debug_row);
+  settings_panel_show(p_settings, l_render_row, l_detail_row, l_fov_row, l_mouse_row, l_plants_row, l_shading_row, l_jump_row, l_hud_row, l_debug_row, l_pack_row);
+  Set_data(l_pack_box, settings_resource_pack(p_settings));
   Set_data(l_message, "Longer views and higher detail look better but draw more slowly.");
 
   while (l_doit) {
@@ -172,12 +188,30 @@ Integer settings_panel_run(Attributes &p_settings)
       settings_toggle(p_settings, ATTR_SET_SHOW_HUD);
     } else if (l_cmd == "set_debug") {
       settings_toggle(p_settings, ATTR_SET_SHOW_DEBUG);
+    } else if (l_cmd == "set_pack_load") {
+      l_pack = "";
+      Get_data(l_pack_box, l_pack);
+      settings_set_resource_pack(p_settings, l_pack);
+      Set_data(l_message, "Loading the resource pack ...");
+      if (game_load_textures(p_settings, l_report) == 0) {
+        // nothing usable: go back to the built-in textures
+        settings_set_resource_pack(p_settings, "");
+        l_report = l_report + " Using the built-in textures.";
+      }
+      Set_data(l_message, l_report);
+    } else if (l_cmd == "set_pack_clear") {
+      settings_set_resource_pack(p_settings, "");
+      Set_data(l_pack_box, "");
+      game_load_textures(p_settings, l_report);
+      Set_data(l_message, "Using the built-in textures.");
     } else if (l_cmd == "set_defaults") {
+      l_pack = settings_resource_pack(p_settings);
       settings_defaults(p_settings);
+      settings_set_resource_pack(p_settings, l_pack);   // keep the textures: there's a button for that
     } else {
       continue;
     }
-    settings_panel_show(p_settings, l_render_row, l_detail_row, l_fov_row, l_mouse_row, l_plants_row, l_shading_row, l_jump_row, l_hud_row, l_debug_row);
+    settings_panel_show(p_settings, l_render_row, l_detail_row, l_fov_row, l_mouse_row, l_plants_row, l_shading_row, l_jump_row, l_hud_row, l_debug_row, l_pack_row);
   }
 
   save_ensure_folder();

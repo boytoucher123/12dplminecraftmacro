@@ -33,7 +33,8 @@
 #define BLOCK_POPPY           21   // faces the camera, nothing collides
 #define BLOCK_DANDELION       22   // with them and placing a block
 #define BLOCK_DEAD_BUSH       23   // replaces them
-#define MAX_BLOCK_ID          23
+#define BLOCK_IRON_ORE        24
+#define MAX_BLOCK_ID          24
 
 #define ITEM_NONE             0
 #define ITEM_BEDROCK          1
@@ -53,6 +54,7 @@
 #define ITEM_GRAVEL           19
 #define ITEM_POPPY            21
 #define ITEM_DANDELION        22
+#define ITEM_IRON_ORE         24
 #define FIRST_PURE_ITEM       64   // items from here on are not blocks
 #define ITEM_STICK            64
 #define ITEM_RAW_BEEF         65
@@ -66,7 +68,12 @@
 #define ITEM_STONE_SHOVEL     73
 #define ITEM_WOODEN_SWORD     74
 #define ITEM_STONE_SWORD      75
-#define MAX_ITEM_ID           75
+#define ITEM_IRON_INGOT       76
+#define ITEM_IRON_PICKAXE     77
+#define ITEM_IRON_AXE         78
+#define ITEM_IRON_SHOVEL      79
+#define ITEM_IRON_SWORD       80
+#define MAX_ITEM_ID           80
 
 // Tool kinds and tiers
 #define TOOL_NONE             0
@@ -77,6 +84,7 @@
 #define TIER_NONE             0
 #define TIER_WOOD             1
 #define TIER_STONE            2
+#define TIER_IRON             3
 
 // Face directions (outward normal of a block face)
 #define DIR_PX                1
@@ -98,6 +106,7 @@ Integer block_falls          (Integer p_block);
 Integer block_hand_hits      (Integer p_block);
 Integer block_tool_kind      (Integer p_block);
 Integer block_needs_tool     (Integer p_block);
+Integer block_tier_needed    (Integer p_block);
 Integer block_hits_with      (Integer p_block, Integer p_tool_item);
 Integer block_drop_item      (Integer p_block, Integer p_tool_item);
 Integer block_face_texture   (Integer p_block, Integer p_direction);

@@ -86,6 +86,9 @@ Integer menu_panel_run(Attributes &p_game, Attributes &p_random, Attributes &p_s
   } else {
     Set_data(l_message, "Pick a world and press Play, or make a new one.");
   }
+  if (record_text(p_game, ATTR_GAME_PACK_REPORT) != "") {
+    Set_data(l_message, record_text(p_game, ATTR_GAME_PACK_REPORT));
+  }
 
   while (l_doit) {
     l_id  = 0;

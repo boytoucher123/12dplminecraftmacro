@@ -70,7 +70,7 @@ for k,l in enumerate(lines):
 func_re=re.compile(r'^(?:void|Integer|Real|Text|Integer64)\s+(\w+)\s*\(([^)]*)\)\s*$',re.M)
 funcs=set(m.group(1) for m in func_re.finditer(code))
 builtin_used=set(re.findall(r'\b([A-Z][a-z]+(?:_[a-z0-9]+)*)\s*\(',code))
-decl_re=re.compile(r'\b(Integer|Real|Text|Integer64|File|Dynamic_Text|Attributes|Draw_Box|Panel|Button|Input_Box|List_Box|Vertical_Group|Horizontal_Group|Colour_Message_Box)\s+&?\s*(\w+)\s*(?:=|;|\[|,|\))')
+decl_re=re.compile(r'\b(Integer|Real|Text|Integer64|File|Dynamic_Text|Attributes|Draw_Box|Panel|Button|Input_Box|File_Box|List_Box|Vertical_Group|Horizontal_Group|Colour_Message_Box)\s+&?\s*(\w+)\s*(?:=|;|\[|,|\))')
 # split into function bodies
 pos=0
 for m in func_re.finditer(code):

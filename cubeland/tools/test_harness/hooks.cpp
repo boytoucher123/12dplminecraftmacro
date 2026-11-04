@@ -31,6 +31,15 @@ static void place_in_grid(int item,int grid_slot){ // pick up the stack, right c
   ui_click_slot(s,"click"); }
 static void register_hooks(){
   g_calls["dump"]=dump;
+  g_calls["dump_textures"]=[]{ // every texture pixel as r,g,b ("-" see-through), for make_test_pack.py check
+    FILE*f=fopen("out/textures.txt","w");
+    for(int t=1;t<=NUM_TEXTURES;t++){ fprintf(f,"%d",t);
+      for(int v=1;v<=16;v++) for(int u=1;u<=16;u++){ int i=texture_get(t,u,v);
+        if(i==0) fprintf(f," -"); else { int s=texture_palette_index(t,i); fprintf(f," %d,%d,%d",g_tex_pal_r[s],g_tex_pal_g[s],g_tex_pal_b[s]); } }
+      fprintf(f,"\n"); }
+    fclose(f); printf("[hook] wrote out/textures.txt (%d rectangles)\n",g_rect_total); };
+  g_calls["rename_texture_dump"]=[]{ rename("out/textures.txt","out/textures_folder.txt"); };
+  g_calls["give_iron"]=[]{ inventory_add(g_inventory,ITEM_IRON_INGOT,6); inventory_add(g_inventory,ITEM_STICK,4); inventory_add(g_inventory,ITEM_STONE_PICKAXE,1); };
   g_calls["texstats"]=[]{ int total=0; for(int t=1;t<=NUM_TEXTURES;t++){ printf("[tex] %d rects %d base %d sprite %d\n",t,g_tex_rect_count[t],g_tex_base[t],g_tex_is_sprite[t]); total+=g_tex_rect_count[t]; } printf("[tex] total %d (%d)\n",total,g_rect_total); };
   g_calls["give"]=[]{ inventory_add(g_inventory,6,4); inventory_add(g_inventory,3,16); inventory_add(g_inventory,65,3); inventory_add(g_inventory,4,10); };
   g_calls["give_wood"]=[]{ inventory_add(g_inventory,ITEM_OAK_LOG,5); };

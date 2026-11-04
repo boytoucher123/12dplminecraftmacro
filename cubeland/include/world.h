@@ -25,6 +25,7 @@
 #define MAX_CAVE_WORMS      14
 #define CAVE_WORM_STEPS     90
 #define COAL_VEINS          110
+#define IRON_VEINS          60
 #define GRAVEL_POCKETS      40
 #define MAX_PONDS           4
 

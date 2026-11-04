@@ -62,6 +62,10 @@ void crafting_init_book(Attributes &p_book)
   crafting_add_recipe(p_book, ITEM_STONE_SHOVEL  , 1, 1, 3, "ABB"      , ITEM_COBBLESTONE, ITEM_STICK);
   crafting_add_recipe(p_book, ITEM_WOODEN_SWORD  , 1, 1, 3, "AAB"      , ITEM_PLANKS     , ITEM_STICK);
   crafting_add_recipe(p_book, ITEM_STONE_SWORD   , 1, 1, 3, "AAB"      , ITEM_COBBLESTONE, ITEM_STICK);
+  crafting_add_recipe(p_book, ITEM_IRON_PICKAXE  , 1, 3, 3, "AAA.B..B.", ITEM_IRON_INGOT , ITEM_STICK);
+  crafting_add_recipe(p_book, ITEM_IRON_AXE      , 1, 2, 3, "AAAB.B"   , ITEM_IRON_INGOT , ITEM_STICK);
+  crafting_add_recipe(p_book, ITEM_IRON_SHOVEL   , 1, 1, 3, "ABB"      , ITEM_IRON_INGOT , ITEM_STICK);
+  crafting_add_recipe(p_book, ITEM_IRON_SWORD    , 1, 1, 3, "AAB"      , ITEM_IRON_INGOT , ITEM_STICK);
 }
 
 Integer crafting_recipe_count(Attributes &p_book)

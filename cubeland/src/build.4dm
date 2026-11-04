@@ -45,6 +45,7 @@
 #include "render_world.4dm"
 #include "render_hud.4dm"
 #include "render_ui.4dm"
+#include "resource_pack.4dm"
 #include "save.4dm"
 #include "game.4dm"
 #include "menu_panel.4dm"

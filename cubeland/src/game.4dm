@@ -8,6 +8,8 @@
 #include "../include/events.h"
 #include "../include/blocks.h"
 #include "../include/textures.h"
+#include "../include/resource_pack.h"
+#include "../include/settings.h"
 #include "../include/world.h"
 #include "../include/mesh.h"
 #include "../include/physics.h"
@@ -30,17 +32,37 @@ void game_init_once(Attributes &p_game, Attributes &p_book, Attributes &p_settin
 // tables, the settings and the random sequence for gameplay
 // ----------------------------------------------------------------
 {
+  Text l_report = "";
+
   if (record_integer(p_game, ATTR_GAME_READY)) return;
 
   record_clear(p_game, DATATYPE_GAME);
   random_seed(p_random, p_time_seed);
 
-  textures_init();
   crafting_init_book(p_book);
   render_init();
   settings_load(p_settings, save_settings_path());
+  game_load_textures(p_settings, l_report);
+  record_set_text(p_game, ATTR_GAME_PACK_REPORT, l_report);
 
   record_set_integer(p_game, ATTR_GAME_READY, TRUE);
+}
+
+Integer game_load_textures(Attributes &p_settings, Text &p_report)
+// ----------------------------------------------------------------
+// Build the textures: the built-in ones, then the chosen resource
+// pack's images over them. Returns how many textures came from the
+// pack; p_report says how loading it went ("" without a pack).
+// ----------------------------------------------------------------
+{
+  Text    l_path   = settings_resource_pack(p_settings);
+  Integer l_loaded = 0;
+
+  p_report = "";
+  textures_generate();
+  if (l_path != "") l_loaded = pack_apply(l_path, p_report);
+  textures_finish_all();
+  return l_loaded;
 }
 
 void game_reset_state(Attributes &p_game, Attributes &p_player, Attributes &p_inventory, Attributes &p_grid,

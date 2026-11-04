@@ -1,6 +1,7 @@
 #ifndef SETTINGS_4DM_INCLUDED
 #define SETTINGS_4DM_INCLUDED
 
+#include "../include/safety.h"
 #include "../include/common.h"
 #include "../include/config.h"
 #include "../include/util.h"
@@ -22,6 +23,23 @@ void settings_defaults(Attributes &p_settings)
   record_set_integer(p_settings, ATTR_SET_SENSITIVITY,     SENSITIVITY_DEFAULT);
   record_set_integer(p_settings, ATTR_SET_SHOW_HUD,        TRUE);
   record_set_integer(p_settings, ATTR_SET_SHOW_DEBUG,      FALSE);
+  record_set_text   (p_settings, ATTR_SET_RESOURCE_PACK,   "");
+}
+
+Text settings_resource_pack(Attributes &p_settings)
+// ----------------------------------------------------------------
+// The resource pack in use (a .zip file or a folder), "" for none
+// ----------------------------------------------------------------
+{
+  return record_text(p_settings, ATTR_SET_RESOURCE_PACK);
+}
+
+void settings_set_resource_pack(Attributes &p_settings, Text p_path)
+// ----------------------------------------------------------------
+// Choose a resource pack ("" for the built-in textures)
+// ----------------------------------------------------------------
+{
+  record_set_text(p_settings, ATTR_SET_RESOURCE_PACK, p_path);
 }
 
 Integer settings_render_distance(Attributes &p_settings)
@@ -107,9 +125,15 @@ Text settings_describe(Attributes &p_settings, Text p_field)
 // One line describing the current value of a setting
 // ----------------------------------------------------------------
 {
-  Integer l_value  = record_integer(p_settings, p_field);
+  Integer l_value  = 0;
   Text    l_on_off = "Off";
 
+  if (p_field == ATTR_SET_RESOURCE_PACK) {
+    if (settings_resource_pack(p_settings) == "") return "Textures: built in";
+    return "Textures: " + settings_resource_pack(p_settings);
+  }
+
+  l_value = record_integer(p_settings, p_field);
   if (l_value) l_on_off = "On";
 
   if (p_field == ATTR_SET_RENDER_DISTANCE) return "Render distance: " + To_text(settings_render_distance(p_settings)) + " blocks";
@@ -139,10 +163,12 @@ Text settings_line(Text p_name, Integer p_value)
 Integer settings_save(Attributes &p_settings, Text p_path)
 // ----------------------------------------------------------------
 // Write the settings as "name value" lines. Returns SUCCESS or
-// FAILURE.
+// FAILURE. The resource pack line keeps the rest of the line as
+// the path, so the path may contain spaces.
 // ----------------------------------------------------------------
 {
   File l_file;
+  Text l_pack_line = "";
 
   if (safe_file_open(p_path, "w", l_file) != 0) return FAILURE;
 
@@ -155,6 +181,8 @@ Integer settings_save(Attributes &p_settings, Text p_path)
   File_write_line(l_file, settings_line(ATTR_SET_SENSITIVITY, record_integer(p_settings, ATTR_SET_SENSITIVITY)));
   File_write_line(l_file, settings_line(ATTR_SET_SHOW_HUD, settings_flag(p_settings, ATTR_SET_SHOW_HUD)));
   File_write_line(l_file, settings_line(ATTR_SET_SHOW_DEBUG, settings_flag(p_settings, ATTR_SET_SHOW_DEBUG)));
+  l_pack_line = ATTR_SET_RESOURCE_PACK;
+  File_write_line(l_file, l_pack_line + " " + settings_resource_pack(p_settings));
 
   File_close(l_file);
   return SUCCESS;
@@ -173,13 +201,23 @@ Integer settings_load(Attributes &p_settings, Text p_path)
   Text         l_word  = "";
   Integer      l_value = 0;
   Integer      l_count = 0;
+  Text         l_pack  = ATTR_SET_RESOURCE_PACK;
+  Integer      l_skip  = 0;
   Dynamic_Text l_words;
 
   settings_defaults(p_settings);
   if (!File_exists(p_path)) return FAILURE;
   if (safe_file_open(p_path, "r", l_file) != 0) return FAILURE;
 
+  l_pack = l_pack + " ";
+  l_skip = Text_length(l_pack);
   while (File_read_line(l_file, l_line) == 0) {
+    if (Text_length(l_line) > l_skip) {
+      if (Get_subtext(l_line, 1, l_skip) == l_pack) {
+        settings_set_resource_pack(p_settings, Get_subtext(l_line, l_skip + 1, Text_length(l_line)));
+        continue;
+      }
+    }
     Null(l_words);
     l_count = From_text(l_line, l_words);
     if (l_count < 2) continue;

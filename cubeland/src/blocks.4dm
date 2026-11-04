@@ -101,6 +101,7 @@ Integer block_hand_hits(Integer p_block)
   if (p_block == BLOCK_CRAFTING_TABLE) return 4;
   if (p_block == BLOCK_SANDSTONE     ) return 6;
   if (p_block == BLOCK_COAL_ORE      ) return 10;
+  if (p_block == BLOCK_IRON_ORE      ) return 12;
   return 8;
 }
 
@@ -120,6 +121,7 @@ Integer block_tool_kind(Integer p_block)
   if (p_block == BLOCK_COBBLESTONE   ) return TOOL_PICKAXE;
   if (p_block == BLOCK_SANDSTONE     ) return TOOL_PICKAXE;
   if (p_block == BLOCK_COAL_ORE      ) return TOOL_PICKAXE;
+  if (p_block == BLOCK_IRON_ORE      ) return TOOL_PICKAXE;
   if (block_is_furnace(p_block)      ) return TOOL_PICKAXE;
   return TOOL_NONE;
 }
@@ -134,10 +136,21 @@ Integer block_needs_tool(Integer p_block)
   return FALSE;
 }
 
+Integer block_tier_needed(Integer p_block)
+// ----------------------------------------------------------------
+// The lowest tool tier that collects a block: iron ore needs a stone
+// pickaxe or better, everything else any tier of its tool
+// ----------------------------------------------------------------
+{
+  if (p_block == BLOCK_IRON_ORE) return TIER_STONE;
+  return TIER_WOOD;
+}
+
 Integer block_hits_with(Integer p_block, Integer p_tool_item)
 // ----------------------------------------------------------------
 // Number of hits to break a block holding tool_item
-// The right tool divides the hand hits by 2 (wood) or 3 (stone)
+// The right tool divides the hand hits by 3 (wood), 4 (stone) or 6
+// (iron)
 // ----------------------------------------------------------------
 {
   Integer l_hits  = block_hand_hits(p_block);
@@ -148,6 +161,7 @@ Integer block_hits_with(Integer p_block, Integer p_tool_item)
   if (item_tool_kind(p_tool_item) == block_tool_kind(p_block)) {
     if (item_tool_tier(p_tool_item) == TIER_WOOD ) l_speed = 3;
     if (item_tool_tier(p_tool_item) == TIER_STONE) l_speed = 4;
+    if (item_tool_tier(p_tool_item) == TIER_IRON ) l_speed = 6;
   }
 
   l_hits = Floor((l_hits + l_speed - 1.0) / l_speed);
@@ -164,6 +178,7 @@ Integer block_drop_item(Integer p_block, Integer p_tool_item)
 {
   if (block_needs_tool(p_block)) {
     if (item_tool_kind(p_tool_item) != block_tool_kind(p_block)) return ITEM_NONE;
+    if (item_tool_tier(p_tool_item) < block_tier_needed(p_block)) return ITEM_NONE;
   }
 
   if (p_block == BLOCK_GRASS   ) return ITEM_DIRT;
@@ -194,6 +209,7 @@ Integer block_face_texture(Integer p_block, Integer p_direction)
   if (p_block == BLOCK_PLANKS     ) return TEX_PLANKS;
   if (p_block == BLOCK_SAND       ) return TEX_SAND;
   if (p_block == BLOCK_COAL_ORE   ) return TEX_COAL_ORE;
+  if (p_block == BLOCK_IRON_ORE   ) return TEX_IRON_ORE;
   if (p_block == BLOCK_GRAVEL     ) return TEX_GRAVEL;
 
   if (p_block == BLOCK_GRASS) {
@@ -260,6 +276,12 @@ Text item_name(Integer p_item)
   if (p_item == ITEM_SANDSTONE      ) return "Sandstone";
   if (p_item == ITEM_CACTUS         ) return "Cactus";
   if (p_item == ITEM_COAL_ORE       ) return "Coal Ore";
+  if (p_item == ITEM_IRON_ORE       ) return "Iron Ore";
+  if (p_item == ITEM_IRON_INGOT     ) return "Iron Ingot";
+  if (p_item == ITEM_IRON_PICKAXE   ) return "Iron Pickaxe";
+  if (p_item == ITEM_IRON_AXE       ) return "Iron Axe";
+  if (p_item == ITEM_IRON_SHOVEL    ) return "Iron Shovel";
+  if (p_item == ITEM_IRON_SWORD     ) return "Iron Sword";
   if (p_item == ITEM_GRAVEL         ) return "Gravel";
   if (p_item == ITEM_POPPY          ) return "Poppy";
   if (p_item == ITEM_DANDELION      ) return "Dandelion";
@@ -317,22 +339,24 @@ Integer item_tool_kind(Integer p_item)
 // TOOL_* kind of a tool item, TOOL_NONE for everything else
 // ----------------------------------------------------------------
 {
-  if (p_item == ITEM_WOODEN_PICKAXE || p_item == ITEM_STONE_PICKAXE) return TOOL_PICKAXE;
-  if (p_item == ITEM_WOODEN_AXE     || p_item == ITEM_STONE_AXE    ) return TOOL_AXE;
-  if (p_item == ITEM_WOODEN_SHOVEL  || p_item == ITEM_STONE_SHOVEL ) return TOOL_SHOVEL;
-  if (p_item == ITEM_WOODEN_SWORD   || p_item == ITEM_STONE_SWORD  ) return TOOL_SWORD;
+  if (p_item == ITEM_WOODEN_PICKAXE || p_item == ITEM_STONE_PICKAXE || p_item == ITEM_IRON_PICKAXE) return TOOL_PICKAXE;
+  if (p_item == ITEM_WOODEN_AXE     || p_item == ITEM_STONE_AXE     || p_item == ITEM_IRON_AXE    ) return TOOL_AXE;
+  if (p_item == ITEM_WOODEN_SHOVEL  || p_item == ITEM_STONE_SHOVEL  || p_item == ITEM_IRON_SHOVEL ) return TOOL_SHOVEL;
+  if (p_item == ITEM_WOODEN_SWORD   || p_item == ITEM_STONE_SWORD   || p_item == ITEM_IRON_SWORD  ) return TOOL_SWORD;
   return TOOL_NONE;
 }
 
 Integer item_tool_tier(Integer p_item)
 // ----------------------------------------------------------------
-// TIER_WOOD or TIER_STONE for tools, TIER_NONE otherwise
+// TIER_WOOD, TIER_STONE or TIER_IRON for tools, TIER_NONE otherwise
 // ----------------------------------------------------------------
 {
   if (p_item == ITEM_WOODEN_PICKAXE || p_item == ITEM_WOODEN_AXE ) return TIER_WOOD;
   if (p_item == ITEM_WOODEN_SHOVEL  || p_item == ITEM_WOODEN_SWORD) return TIER_WOOD;
   if (p_item == ITEM_STONE_PICKAXE  || p_item == ITEM_STONE_AXE  ) return TIER_STONE;
   if (p_item == ITEM_STONE_SHOVEL   || p_item == ITEM_STONE_SWORD ) return TIER_STONE;
+  if (p_item == ITEM_IRON_PICKAXE   || p_item == ITEM_IRON_AXE   ) return TIER_IRON;
+  if (p_item == ITEM_IRON_SHOVEL    || p_item == ITEM_IRON_SWORD  ) return TIER_IRON;
   return TIER_NONE;
 }
 
@@ -343,6 +367,7 @@ Integer item_max_uses(Integer p_item)
 {
   if (item_tool_tier(p_item) == TIER_WOOD ) return 60;
   if (item_tool_tier(p_item) == TIER_STONE) return 132;
+  if (item_tool_tier(p_item) == TIER_IRON ) return 251;
   return 0;
 }
 
@@ -393,6 +418,7 @@ Integer item_smelt_result(Integer p_item)
   if (p_item == ITEM_RAW_BEEF   ) return ITEM_COOKED_BEEF;
   if (p_item == ITEM_COBBLESTONE) return ITEM_STONE;
   if (p_item == ITEM_SAND       ) return ITEM_SANDSTONE;
+  if (p_item == ITEM_IRON_ORE   ) return ITEM_IRON_INGOT;
   if (p_item == ITEM_OAK_LOG    ) return ITEM_COAL;
   return ITEM_NONE;
 }
@@ -425,6 +451,11 @@ Integer item_sprite_texture(Integer p_item)
   if (p_item == ITEM_RAW_BEEF      ) return TEX_ITEM_RAW_BEEF;
   if (p_item == ITEM_COOKED_BEEF   ) return TEX_ITEM_COOKED_BEEF;
   if (p_item == ITEM_COAL          ) return TEX_ITEM_COAL;
+  if (p_item == ITEM_IRON_INGOT    ) return TEX_ITEM_IRON_INGOT;
+  if (p_item == ITEM_IRON_PICKAXE  ) return TEX_ITEM_IRON_PICKAXE;
+  if (p_item == ITEM_IRON_AXE      ) return TEX_ITEM_IRON_AXE;
+  if (p_item == ITEM_IRON_SHOVEL   ) return TEX_ITEM_IRON_SHOVEL;
+  if (p_item == ITEM_IRON_SWORD    ) return TEX_ITEM_IRON_SWORD;
   if (p_item == ITEM_WOODEN_PICKAXE) return TEX_ITEM_WOODEN_PICKAXE;
   if (p_item == ITEM_STONE_PICKAXE ) return TEX_ITEM_STONE_PICKAXE;
   if (p_item == ITEM_WOODEN_AXE    ) return TEX_ITEM_WOODEN_AXE;
