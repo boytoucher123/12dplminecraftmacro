@@ -10,14 +10,17 @@
 // furnace, and cook beef from the cows that wander the grassland.
 //
 //   Blocks      16 x 16 pixel textures, generated when the macro
-//               starts; dirt, grass, stone, cobblestone, sand,
-//               oak logs, leaves, planks, water, bedrock, crafting
-//               table and furnace
+//               starts or read from a resource pack (.zip or
+//               folder); dirt, grass, stone, cobblestone, sand,
+//               sandstone, gravel, coal and iron ore, oak logs,
+//               leaves, planks, water, bedrock, crafting table and
+//               furnace, plus grass and flowers
 //   Player      1.8 blocks tall, 5 blocks of reach, gravity and
-//               collision, swimming, fall damage and a health bar
+//               collision, swimming, flying, fall damage and a
+//               health bar
 //   Inventory   9 slot hotbar and 27 slot (9 x 3) inventory, 2 x 2
 //               crafting in the inventory and 3 x 3 at a table,
-//               wooden and stone tools
+//               wooden, stone and iron tools
 //   Worlds      saved in the "cubeland_worlds" folder of the 12d
 //               working folder, made from a seed you can type in
 //
@@ -25,7 +28,8 @@
 //
 // Structure
 //   cubeland.4dm      this file: main()
-//   src/build.4dm     includes every source file
+//   src/build.4dm     includes include/safety.h (which blocks every
+//                     dangerous 12d call) and then every source file
 //   include/*.h       constants, global data and prototypes
 //   src/*.4dm         model (world, player, cows, ...), views
 //                     (render_*) and controllers (*_panel)
@@ -49,22 +53,22 @@ void main()
 // Entry point: world menu, then the game, until Quit
 // --------------------------------------------------------
 {
-  Integer running   = TRUE;
-  Integer result    = 0;
-  Integer time_seed = 0;
+  Integer l_running   = TRUE;
+  Integer l_result    = 0;
+  Integer l_time_seed = 0;
 
-  Get_time(time_seed);
-  game_init_once(g_game, g_book, g_settings, g_random, time_seed);
+  Get_time(l_time_seed);
+  game_init_once(g_game, g_book, g_settings, g_random, l_time_seed);
 
-  while (running) {
-    result = menu_panel_run(g_game, g_random, g_settings);
+  while (l_running) {
+    l_result = menu_panel_run(g_game, g_random, g_settings);
 
-    if (result == MENU_RESULT_QUIT || result == SHUTDOWN_CODE) {
-      running = FALSE;
+    if (l_result == MENU_RESULT_QUIT || l_result == SHUTDOWN_CODE) {
+      l_running = FALSE;
     } else {
-      result = game_panel_run(record_text(g_game, ATTR_MENU_WORLD), result == MENU_RESULT_CREATE,
+      l_result = game_panel_run(record_text(g_game, ATTR_MENU_WORLD), l_result == MENU_RESULT_CREATE,
                               record_integer(g_game, ATTR_MENU_SEED));
-      if (result == SHUTDOWN_CODE) running = FALSE;
+      if (l_result == SHUTDOWN_CODE) l_running = FALSE;
     }
   }
 }

@@ -61,14 +61,14 @@
   Integer g_mesh_builds   = 0;
 }
 
-Integer mesh_section_index (Integer sx, Integer sy, Integer sz);
+Integer mesh_section_index (Integer p_sx, Integer p_sy, Integer p_sz);
 void    mesh_reset         ();
-Integer mesh_section_buried(Integer sx, Integer sy, Integer sz);
-void    mesh_build_section (Integer sx, Integer sy, Integer sz);
-void    mesh_group_faces   (Integer section);
-Integer mesh_ensure_section(Integer sx, Integer sy, Integer sz);
-Integer mesh_face_light    (Integer x, Integer y, Integer z, Integer direction);
-void    mesh_mark_dirty    (Integer x, Integer y, Integer z);
-void    mesh_on_event      (Attributes &event);
+Integer mesh_section_buried(Integer p_sx, Integer p_sy, Integer p_sz);
+void    mesh_build_section (Integer p_sx, Integer p_sy, Integer p_sz);
+void    mesh_group_faces   (Integer p_section);
+Integer mesh_ensure_section(Integer p_sx, Integer p_sy, Integer p_sz);
+Integer mesh_face_light    (Integer p_x, Integer p_y, Integer p_z, Integer p_direction);
+void    mesh_mark_dirty    (Integer p_x, Integer p_y, Integer p_z);
+void    mesh_on_event      (Attributes &p_event);
 
 #endif

@@ -2,7 +2,9 @@
 #define TEXTURES_H_INCLUDED
 
 // ----------------------------------------------------------------
-// 16 x 16 pixel textures, generated when the macro starts
+// 16 x 16 pixel textures, generated when the macro starts (and
+// replaced by a resource pack's images if one is chosen, see
+// resource_pack.h)
 // Each texture is a grid of palette indices. For drawing, the most
 // common index is the base colour and every other colour is merged
 // into rectangles, so a face is one base polygon plus a few rects.
@@ -42,29 +44,36 @@
 #define TEX_CACTUS_SIDE        24
 #define TEX_COAL_ORE           25
 #define TEX_GRAVEL             26
-#define TEX_PLANT_GRASS        27     // plants and items are sprites:
-#define TEX_PLANT_POPPY        28     // they have see-through pixels and
-#define TEX_PLANT_DANDELION    29     // no base colour
-#define TEX_PLANT_DEAD_BUSH    30
-#define TEX_ITEM_STICK         31
-#define TEX_ITEM_RAW_BEEF      32
-#define TEX_ITEM_COOKED_BEEF   33
-#define TEX_ITEM_COAL          34
-#define TEX_ITEM_WOODEN_PICKAXE 35
-#define TEX_ITEM_STONE_PICKAXE 36
-#define TEX_ITEM_WOODEN_AXE    37
-#define TEX_ITEM_STONE_AXE     38
-#define TEX_ITEM_WOODEN_SHOVEL 39
-#define TEX_ITEM_STONE_SHOVEL  40
-#define TEX_ITEM_WOODEN_SWORD  41
-#define TEX_ITEM_STONE_SWORD   42
-#define NUM_TEXTURES           42
+#define TEX_IRON_ORE           27
+#define TEX_PLANT_GRASS        28     // plants and items are sprites:
+#define TEX_PLANT_POPPY        29     // they have see-through pixels and
+#define TEX_PLANT_DANDELION    30     // no base colour
+#define TEX_PLANT_DEAD_BUSH    31
+#define TEX_ITEM_STICK         32
+#define TEX_ITEM_RAW_BEEF      33
+#define TEX_ITEM_COOKED_BEEF   34
+#define TEX_ITEM_COAL          35
+#define TEX_ITEM_IRON_INGOT    36
+#define TEX_ITEM_WOODEN_PICKAXE 37
+#define TEX_ITEM_STONE_PICKAXE 38
+#define TEX_ITEM_IRON_PICKAXE  39
+#define TEX_ITEM_WOODEN_AXE    40
+#define TEX_ITEM_STONE_AXE     41
+#define TEX_ITEM_IRON_AXE      42
+#define TEX_ITEM_WOODEN_SHOVEL 43
+#define TEX_ITEM_STONE_SHOVEL  44
+#define TEX_ITEM_IRON_SHOVEL   45
+#define TEX_ITEM_WOODEN_SWORD  46
+#define TEX_ITEM_STONE_SWORD   47
+#define TEX_ITEM_IRON_SWORD    48
+#define NUM_TEXTURES           48
+#define TEX_FIRST_SPRITE       TEX_PLANT_GRASS   // every texture from here on is a sprite
 
-#define TEXTURE_PIXELS         10752  // NUM_TEXTURES * 256
+#define TEXTURE_PIXELS         12288  // NUM_TEXTURES * 256
 #define PALETTE_SIZE           8      // colours per texture
-#define TEXTURE_PALETTES       336    // NUM_TEXTURES * PALETTE_SIZE
-#define TEXTURE_QUADRANTS      168    // NUM_TEXTURES * 4
-#define MAX_TEXTURE_RECTS      6000
+#define TEXTURE_PALETTES       384    // NUM_TEXTURES * PALETTE_SIZE
+#define TEXTURE_QUADRANTS      192    // NUM_TEXTURES * 4
+#define MAX_TEXTURE_RECTS      12000  // resource pack images can need more than the built-in ones
 
 /*Global variables*/ {
   Integer g_tex_pixel     [TEXTURE_PIXELS];
@@ -102,16 +111,19 @@
 }
 
 void    textures_init          ();
-void    texture_set_palette    (Integer tex, Integer index, Integer red, Integer green, Integer blue);
-void    texture_set            (Integer tex, Integer u, Integer v, Integer index);
-Integer texture_get            (Integer tex, Integer u, Integer v);
-void    texture_fill           (Integer tex, Integer index);
-void    texture_fill_rect      (Integer tex, Integer u0, Integer v0, Integer u1, Integer v1, Integer index);
-Real    texture_random         (Integer tex, Integer u, Integer v, Integer salt);
-Real    texture_noise          (Integer tex, Integer u, Integer v, Integer cell, Integer salt);
-void    texture_copy           (Integer from_tex, Integer to_tex);
-void    texture_row            (Integer tex, Integer v, Text pixels);
-void    texture_finish         (Integer tex);
-Integer texture_palette_index  (Integer tex, Integer index);
+void    textures_generate      ();
+void    textures_finish_all    ();
+Integer texture_is_sprite      (Integer p_tex);
+void    texture_set_palette    (Integer p_tex, Integer p_index, Integer p_red, Integer p_green, Integer p_blue);
+void    texture_set            (Integer p_tex, Integer p_u, Integer p_v, Integer p_index);
+Integer texture_get            (Integer p_tex, Integer p_u, Integer p_v);
+void    texture_fill           (Integer p_tex, Integer p_index);
+void    texture_fill_rect      (Integer p_tex, Integer p_u0, Integer p_v0, Integer p_u1, Integer p_v1, Integer p_index);
+Real    texture_random         (Integer p_tex, Integer p_u, Integer p_v, Integer p_salt);
+Real    texture_noise          (Integer p_tex, Integer p_u, Integer p_v, Integer p_cell, Integer p_salt);
+void    texture_copy           (Integer p_from_tex, Integer p_to_tex);
+void    texture_row            (Integer p_tex, Integer p_v, Text p_pixels);
+void    texture_finish         (Integer p_tex);
+Integer texture_palette_index  (Integer p_tex, Integer p_index);
 
 #endif

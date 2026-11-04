@@ -36,21 +36,21 @@
 // passes them to the model and view functions it calls.
 // ----------------------------------------------------------------
 
-Integer game_panel_split_xy(Text msg, Real &x, Real &y)
+Integer game_panel_split_xy(Text p_msg, Real &p_x, Real &p_y)
 // ----------------------------------------------------------------
 // Read "x y" from a Draw_Box event message; SUCCESS if found
 // ----------------------------------------------------------------
 {
-  Integer space = Find_text(msg, " ");
+  Integer l_space = Find_text(p_msg, " ");
 
-  if (space <= 1) return FAILURE;
+  if (l_space <= 1) return FAILURE;
 
-  From_text(Get_subtext(msg, 1, space - 1), x);
-  From_text(Get_subtext(msg, space + 1, Text_length(msg)), y);
+  From_text(Get_subtext(p_msg, 1, l_space - 1), p_x);
+  From_text(Get_subtext(p_msg, l_space + 1, Text_length(p_msg)), p_y);
   return SUCCESS;
 }
 
-Integer game_panel_calibrate(Draw_Box box, Real box_x, Real box_y, Integer width, Integer height, Integer &origin_x, Integer &origin_y)
+Integer game_panel_calibrate(Draw_Box p_box, Real p_box_x, Real p_box_y, Integer p_width, Integer p_height, Integer &p_origin_x, Integer &p_origin_y)
 // ----------------------------------------------------------------
 // Work out how Draw_Box coordinates map to the screen from an event
 // at box point (box_x, box_y) and the cursor's screen position:
@@ -60,55 +60,55 @@ Integer game_panel_calibrate(Draw_Box box, Real box_x, Real box_y, Integer width
 // mapping looks wrong.
 // ----------------------------------------------------------------
 {
-  Integer screen_x = 0;
-  Integer screen_y = 0;
-  Integer widget_x = 0;
-  Integer widget_y = 0;
-  Integer guess_x  = 0;
-  Integer guess_y  = 0;
+  Integer l_screen_x = 0;
+  Integer l_screen_y = 0;
+  Integer l_widget_x = 0;
+  Integer l_widget_y = 0;
+  Integer l_guess_x  = 0;
+  Integer l_guess_y  = 0;
 
-  if (box_x < 0.0 || box_x > width || box_y < 0.0 || box_y > height) return 1;
+  if (p_box_x < 0.0 || p_box_x > p_width || p_box_y < 0.0 || p_box_y > p_height) return 1;
 
-  Get_cursor_position(screen_x, screen_y);
-  guess_x = screen_x - Floor(box_x);
-  guess_y = screen_y + Floor(box_y);
+  Get_cursor_position(l_screen_x, l_screen_y);
+  l_guess_x = l_screen_x - Floor(p_box_x);
+  l_guess_y = l_screen_y + Floor(p_box_y);
 
-  Get_position(box, widget_x, widget_y);
-  if (Absolute(guess_x - widget_x) > 60 || Absolute(guess_y - widget_y - height) > 80) return 2;
+  Get_position(p_box, l_widget_x, l_widget_y);
+  if (Absolute(l_guess_x - l_widget_x) > 60 || Absolute(l_guess_y - l_widget_y - p_height) > 80) return 2;
 
-  origin_x = guess_x;
-  origin_y = guess_y;
+  p_origin_x = l_guess_x;
+  p_origin_y = l_guess_y;
   return 0;
 }
 
-void game_panel_notice(Draw_Box box, Text title, Text line)
+void game_panel_notice(Draw_Box p_box, Text p_title, Text p_line)
 // ----------------------------------------------------------------
 // A plain frame with a message (loading, errors)
 // ----------------------------------------------------------------
 {
-  Integer width  = 0;
-  Integer height = 0;
-  Real    w      = 0.0;
-  Real    h      = 0.0;
+  Integer l_width  = 0;
+  Integer l_height = 0;
+  Real    l_w      = 0.0;
+  Real    l_h      = 0.0;
 
-  Get_size(box, width, height);
-  w = width;
-  h = height;
+  Get_size(p_box, l_width, l_height);
+  l_w = l_width;
+  l_h = l_height;
 
-  Start_batch_draw(box);
-  render_set_colour(box, 24.0, 28.0, 36.0);
-  render_fill_rect (box, 0.0, 0.0, w, h);
-  hud_text(box, w / 2.0, h / 2.0 + 30.0, 26.0, TEXT_ALIGN_CENTRE, 132, 220, 116, title);
-  hud_text(box, w / 2.0, h / 2.0 - 10.0, 14.0, TEXT_ALIGN_CENTRE, 228, 228, 228, line);
-  End_batch_draw(box);
+  Start_batch_draw(p_box);
+  render_set_colour(p_box, 24.0, 28.0, 36.0);
+  render_fill_rect (p_box, 0.0, 0.0, l_w, l_h);
+  hud_text(p_box, l_w / 2.0, l_h / 2.0 + 30.0, 26.0, TEXT_ALIGN_CENTRE, 132, 220, 116, p_title);
+  hud_text(p_box, l_w / 2.0, l_h / 2.0 - 10.0, 14.0, TEXT_ALIGN_CENTRE, 228, 228, 228, p_line);
+  End_batch_draw(p_box);
 }
 
-void game_panel_dispatch(Real now)
+void game_panel_dispatch(Real p_now)
 // ----------------------------------------------------------------
 // Dispatch the events an action caused, straight away
 // ----------------------------------------------------------------
 {
-  game_dispatch_events(g_events, g_event, g_player, g_inventory, g_grid, g_furnaces, g_drops, g_random, g_hud, g_ui, now);
+  game_dispatch_events(g_events, g_event, g_player, g_inventory, g_grid, g_furnaces, g_drops, g_random, g_hud, g_ui, p_now);
 }
 
 Integer game_panel_save()
@@ -124,42 +124,42 @@ void game_panel_close_screen()
 // Close the open screen, returning carried and grid items
 // ----------------------------------------------------------------
 {
-  Real x = 0.0;
-  Real y = 0.0;
-  Real z = 0.0;
+  Real l_x = 0.0;
+  Real l_y = 0.0;
+  Real l_z = 0.0;
 
-  player_position(g_player, x, y, z);
-  if (ui_screen(g_ui) != SCREEN_NONE) ui_close(g_ui, g_inventory, g_grid, g_events, x, y + 1.3, z);
+  player_position(g_player, l_x, l_y, l_z);
+  if (ui_screen(g_ui) != SCREEN_NONE) ui_close(g_ui, g_inventory, g_grid, g_events, l_x, l_y + 1.3, l_z);
 }
 
-void game_panel_render(Draw_Box box, Integer captured, Real frame_ms, Real now)
+void game_panel_render(Draw_Box p_box, Integer p_captured, Real p_frame_ms, Real p_now)
 // ----------------------------------------------------------------
 // Draw one frame: the 3D view and HUD, or the open screen
 // ----------------------------------------------------------------
 {
-  Integer width  = 0;
-  Integer height = 0;
-  Real    w      = 0.0;
-  Real    h      = 0.0;
+  Integer l_width  = 0;
+  Integer l_height = 0;
+  Real    l_w      = 0.0;
+  Real    l_h      = 0.0;
 
-  Get_size(box, width, height);
-  w = width;
-  h = height;
+  Get_size(p_box, l_width, l_height);
+  l_w = l_width;
+  l_h = l_height;
 
-  Start_batch_draw(box);
+  Start_batch_draw(p_box);
   if (ui_screen(g_ui) != SCREEN_NONE) {
-    hud_draw(box, w, h, captured, TRUE, g_hud, g_player, g_inventory, g_settings, world_info_seed(g_info),
-             frame_ms, render_stats_text(), now);
-    ui_draw (box, w, h, g_ui, g_inventory, g_grid, g_furnaces, g_book);
+    hud_draw(p_box, l_w, l_h, p_captured, TRUE, g_hud, g_player, g_inventory, g_settings, world_info_seed(g_info),
+             p_frame_ms, render_stats_text(), p_now);
+    ui_draw (p_box, l_w, l_h, g_ui, g_inventory, g_grid, g_furnaces, g_book);
   } else {
-    render_world(box, w, h, STATUS_STRIP_HEIGHT, g_player, g_cows, g_drops, g_furnaces, g_settings, now);
-    hud_draw    (box, w, h, captured, FALSE, g_hud, g_player, g_inventory, g_settings, world_info_seed(g_info),
-                 frame_ms, render_stats_text(), now);
+    render_world(p_box, l_w, l_h, STATUS_STRIP_HEIGHT, g_player, g_cows, g_drops, g_furnaces, g_settings, p_now);
+    hud_draw    (p_box, l_w, l_h, p_captured, FALSE, g_hud, g_player, g_inventory, g_settings, world_info_seed(g_info),
+                 p_frame_ms, render_stats_text(), p_now);
   }
-  End_batch_draw(box);
+  End_batch_draw(p_box);
 }
 
-Integer game_panel_run(Text world_name, Integer create, Integer seed)
+Integer game_panel_run(Text p_world_name, Integer p_create, Integer p_seed)
 // ----------------------------------------------------------------
 // Play a world until the player quits to the menu
 // create = TRUE generates a new world from seed, otherwise the
@@ -167,449 +167,470 @@ Integer game_panel_run(Text world_name, Integer create, Integer seed)
 // the macro to stop.
 // ----------------------------------------------------------------
 {
-  Text               title          = GAME_TITLE;
-  Panel              panel          = Create_panel(title + " - " + world_name, 1);
-  Vertical_Group     vgroup         = Create_vertical_group(0);
-  Colour_Message_Box message        = Create_colour_message_box("");
-  Draw_Box           draw_box       = Create_draw_box(GAME_VIEW_WIDTH, GAME_VIEW_HEIGHT, 0);
-  Input_Box          key_box        = Create_input_box("Keys (click here if the keys stop working)", message);
-  Horizontal_Group   buttons        = Create_button_group();
-  Button             save_button    = Create_button("&Save", "save");
-  Button             settings_button= Create_button("Se&ttings", "game_settings");
-  Button             quit_button    = Create_button("Save and &quit to menu", "quit");
+  Text               l_title          = GAME_TITLE;
+  Panel              l_panel          = Create_panel(l_title + " - " + p_world_name, 1);
+  Vertical_Group     l_vgroup         = Create_vertical_group(0);
+  Colour_Message_Box l_message        = Create_colour_message_box("");
+  Draw_Box           l_draw_box       = Create_draw_box(GAME_VIEW_WIDTH, GAME_VIEW_HEIGHT, 0);
+  Input_Box          l_key_box        = Create_input_box("Keys (click here if the keys stop working)", l_message);
+  Horizontal_Group   l_buttons        = Create_button_group();
+  Button             l_save_button    = Create_button("&Save", "save");
+  Button             l_settings_button= Create_button("Se&ttings", "game_settings");
+  Button             l_quit_button    = Create_button("Save and &quit to menu", "quit");
 
-  Integer   result          = 0;
-  Integer   running         = TRUE;
-  Integer   loaded          = FAILURE;
-  Integer64 id              = 0;
-  Text      cmd             = "";
-  Text      msg             = "";
-  Text      key             = "";
-  Text      why             = "";
-  Real      now             = 0.0;
-  Real      frame_start     = 0.0;
-  Real      frame_end       = 0.0;
-  Real      last_frame      = 0.0;
-  Real      real_dt         = 0.0;
-  Real      dt              = 0.0;
-  Real      box_x           = 0.0;
-  Real      box_y           = 0.0;
-  Real      move_x          = 0.0;
-  Real      move_y          = 0.0;
-  Real      leave_window    = 0.0;
-  Real      last_input      = 0.0;
-  Integer   want_frame      = TRUE;
-  Integer   playing         = FALSE;
-  Integer   captured        = FALSE;
-  Integer   start_request   = FALSE;
-  Integer   start_by_click  = FALSE;
-  Integer   release         = FALSE;
-  Integer   has_xy          = FALSE;
-  Integer   width           = 0;
-  Integer   height          = 0;
-  Integer   last_w          = 0;
-  Integer   last_h          = 0;
-  Integer   resize_pending  = FALSE;
-  Integer   origin_x        = 0;
-  Integer   origin_y        = 0;
-  Integer   request_x       = 0;
-  Integer   request_y       = 0;
-  Integer   seen_x          = 0;
-  Integer   seen_y          = 0;
-  Integer   have_seen       = FALSE;
-  Integer   have_origin     = FALSE;
-  Integer   warp_x          = 0;
-  Integer   warp_y          = 0;
-  Integer   jiggle          = 0;
-  Integer   confirmed       = FALSE;
-  Integer   leaves          = 0;
-  Integer   calibration     = 0;
-  Real      frame_ms        = 0.0;
-  Integer   open_settings   = FALSE;
-  Text      problem         = "";
+  Integer   l_result          = 0;
+  Integer   l_running         = TRUE;
+  Integer   l_loaded          = FAILURE;
+  Integer64 l_id              = 0;
+  Text      l_cmd             = "";
+  Text      l_msg             = "";
+  Text      l_key             = "";
+  Text      l_why             = "";
+  Real      l_now             = 0.0;
+  Real      l_frame_start     = 0.0;
+  Real      l_frame_end       = 0.0;
+  Real      l_last_frame      = 0.0;
+  Real      l_real_dt         = 0.0;
+  Real      l_dt              = 0.0;
+  Real      l_box_x           = 0.0;
+  Real      l_box_y           = 0.0;
+  Real      l_move_x          = 0.0;
+  Real      l_move_y          = 0.0;
+  Real      l_leave_window    = 0.0;
+  Real      l_last_input      = 0.0;
+  Integer   l_want_frame      = TRUE;
+  Integer   l_playing         = FALSE;
+  Integer   l_captured        = FALSE;
+  Integer   l_start_request   = FALSE;
+  Integer   l_start_by_click  = FALSE;
+  Integer   l_release         = FALSE;
+  Integer   l_has_xy          = FALSE;
+  Integer   l_width           = 0;
+  Integer   l_height          = 0;
+  Integer   l_last_w          = 0;
+  Integer   l_last_h          = 0;
+  Integer   l_resize_pending  = FALSE;
+  Integer   l_origin_x        = 0;
+  Integer   l_origin_y        = 0;
+  Integer   l_request_x       = 0;
+  Integer   l_request_y       = 0;
+  Integer   l_seen_x          = 0;
+  Integer   l_seen_y          = 0;
+  Integer   l_have_seen       = FALSE;
+  Integer   l_have_origin     = FALSE;
+  Integer   l_warp_x          = 0;
+  Integer   l_warp_y          = 0;
+  Integer   l_jiggle          = 0;
+  Integer   l_confirmed       = FALSE;
+  Integer   l_leaves          = 0;
+  Integer   l_calibration     = 0;
+  Real      l_frame_ms        = 0.0;
+  Text      l_report          = "";
+  Integer   l_open_settings   = FALSE;
+  Text      l_problem         = "";
 
-  Append(save_button    , buttons);
-  Append(settings_button, buttons);
-  Append(quit_button    , buttons);
-  Append(draw_box   , vgroup);
-  Append(key_box    , vgroup);
-  Append(buttons    , vgroup);
-  Append(message    , vgroup);
-  Append(vgroup     , panel);
+  Append(l_save_button    , l_buttons);
+  Append(l_settings_button, l_buttons);
+  Append(l_quit_button    , l_buttons);
+  Append(l_draw_box   , l_vgroup);
+  Append(l_key_box    , l_vgroup);
+  Append(l_buttons    , l_vgroup);
+  Append(l_message    , l_vgroup);
+  Append(l_vgroup     , l_panel);
 
   // The view fills the panel when it is resized
-  Set_sizing_constraints(draw_box, 2, 2);
-  Set_sizing_constraints(vgroup  , 2, 2);
-  Set_notify_resizing(panel);
-  Show_widget(panel);
-  Set_focus(key_box);
+  Set_sizing_constraints(l_draw_box, 2, 2);
+  Set_sizing_constraints(l_vgroup  , 2, 2);
+  Set_notify_resizing(l_panel);
+  Show_widget(l_panel);
+  Set_focus(l_key_box);
 
   // Generate or load the world
-  if (create) {
-    Set_data(message, "Generating " + world_name + " from seed " + To_text(seed) + " ...");
-    game_panel_notice(draw_box, "Generating world", "Seed " + To_text(seed) + " - this takes a few seconds");
-    loaded = game_new_world(world_name, seed, g_game, g_info, g_player, g_inventory, g_grid, g_furnaces, g_cows,
+  if (p_create) {
+    Set_data(l_message, "Generating " + p_world_name + " from seed " + To_text(p_seed) + " ...");
+    game_panel_notice(l_draw_box, "Generating world", "Seed " + To_text(p_seed) + " - this takes a few seconds");
+    l_loaded = game_new_world(p_world_name, p_seed, g_game, g_info, g_player, g_inventory, g_grid, g_furnaces, g_cows,
                             g_drops, g_events, g_hud, g_ui);
-    problem = "it could not be saved";
+    l_problem = "it could not be saved";
   } else {
-    Set_data(message, "Loading " + world_name + " ...");
-    game_panel_notice(draw_box, "Loading world", world_name);
-    loaded = game_load_world(world_name, g_game, g_info, g_player, g_inventory, g_grid, g_furnaces, g_cows,
-                             g_drops, g_events, g_hud, g_ui, problem);
+    Set_data(l_message, "Loading " + p_world_name + " ...");
+    game_panel_notice(l_draw_box, "Loading world", p_world_name);
+    l_loaded = game_load_world(p_world_name, g_game, g_info, g_player, g_inventory, g_grid, g_furnaces, g_cows,
+                             g_drops, g_events, g_hud, g_ui, l_problem);
   }
 
-  if (loaded != SUCCESS) {
-    Set_data(message, "Couldn't open the world " + world_name + ": " + problem + ". Close this panel to go back to the menu.");
-    game_panel_notice(draw_box, "Something went wrong", "The world could not be opened: " + problem);
-    while (running) {
-      id = 0;
-      cmd = "";
-      msg = "";
-      if (Wait_on_events(id, cmd, msg) != 0) continue;
-      if (cmd == "CodeShutdown") {
-        Set_exit_code(cmd);
-        Hide_widget(panel);
+  if (l_loaded != SUCCESS) {
+    Set_data(l_message, "Couldn't open the world " + p_world_name + ": " + l_problem + ". Close this panel to go back to the menu.");
+    game_panel_notice(l_draw_box, "Something went wrong", "The world could not be opened: " + l_problem);
+    while (l_running) {
+      l_id = 0;
+      l_cmd = "";
+      l_msg = "";
+      if (Wait_on_events(l_id, l_cmd, l_msg) != 0) continue;
+      if (l_cmd == "CodeShutdown") {
+        Set_exit_code(l_cmd);
+        Hide_widget(l_panel);
         return SHUTDOWN_CODE;
       }
-      if (cmd == "Panel Quit" || cmd == "quit") running = FALSE;
+      if (l_cmd == "Panel Quit" || l_cmd == "quit") l_running = FALSE;
     }
-    Hide_widget(panel);
+    Hide_widget(l_panel);
     return 0;
   }
 
-  game_panel_notice(draw_box, "Building the view", "Nearly there");
+  game_panel_notice(l_draw_box, "Building the view", "Nearly there");
   game_build_nearby(g_player, settings_render_distance(g_settings));
 
-  Set_data(message, "Click the view to play. Press H for help.");
-  Get_size(draw_box, last_w, last_h);
-  Get_time(now);
-  last_frame = now;
-  last_input = now;
+  Set_data(l_message, "Click the view to play. Press H for help.");
+  Get_size(l_draw_box, l_last_w, l_last_h);
+  Get_time(l_now);
+  l_last_frame = l_now;
+  l_last_input = l_now;
 
-  while (running) {
+  while (l_running) {
     // ------------------------------------------------ frame
-    if (want_frame) {
-      Get_time(frame_start);
-      real_dt = frame_start - last_frame;
-      if (real_dt < 0.0) real_dt = 0.0;
-      dt = real_dt;
-      if (dt > MAX_FRAME_DT) dt = MAX_FRAME_DT;
-      last_frame = frame_start;
+    if (l_want_frame) {
+      Get_time(l_frame_start);
+      l_real_dt = l_frame_start - l_last_frame;
+      if (l_real_dt < 0.0) l_real_dt = 0.0;
+      l_dt = l_real_dt;
+      if (l_dt > MAX_FRAME_DT) l_dt = MAX_FRAME_DT;
+      l_last_frame = l_frame_start;
 
-      playing = captured && ui_screen(g_ui) == SCREEN_NONE && !hud_help_shown(g_hud) && !player_is_dead(g_player);
-      game_update(dt, real_dt, frame_start, playing, g_game, g_info, g_player, g_inventory, g_grid, g_furnaces,
+      l_playing = l_captured && ui_screen(g_ui) == SCREEN_NONE && !hud_help_shown(g_hud) && !player_is_dead(g_player);
+      game_update(l_dt, l_real_dt, l_frame_start, l_playing, g_game, g_info, g_player, g_inventory, g_grid, g_furnaces,
                   g_cows, g_drops, g_events, g_event, g_random, g_settings, g_hud, g_ui);
 
       // A screen is open (crafting table, furnace): free the mouse
-      if (ui_screen(g_ui) != SCREEN_NONE && captured) {
-        captured = FALSE;
-        Set_data(message, "Click slots to move items; lay items out in the grid and click the result to craft. E or Q closes the screen.");
+      if (ui_screen(g_ui) != SCREEN_NONE && l_captured) {
+        l_captured = FALSE;
+        Set_data(l_message, "Click slots to move items; lay items out in the grid and click the result to craft. E or Q closes the screen.");
       }
-      if (player_is_dead(g_player) && captured) {
-        captured = FALSE;
-        Set_data(message, "You died. Press R or click the view to respawn.");
+      if (player_is_dead(g_player) && l_captured) {
+        l_captured = FALSE;
+        Set_data(l_message, "You died. Press R or click the view to respawn.");
       }
 
-      game_panel_render(draw_box, captured, frame_ms, frame_start);
-      Get_time(frame_end);
-      frame_ms = (frame_end - frame_start) * 1000.0;
-      want_frame = FALSE;
+      game_panel_render(l_draw_box, l_captured, l_frame_ms, l_frame_start);
+      Get_time(l_frame_end);
+      l_frame_ms = (l_frame_end - l_frame_start) * 1000.0;
+      hud_note_frame(g_hud, l_frame_ms, l_frame_end);
+      l_want_frame = FALSE;
     }
 
     // ------------------------------------------------ next event
-    id  = 0;
-    cmd = "";
-    msg = "";
-    if (Wait_on_events(id, cmd, msg) != 0) continue;
-    Get_time(now);
+    l_id  = 0;
+    l_cmd = "";
+    l_msg = "";
+    if (Wait_on_events(l_id, l_cmd, l_msg) != 0) continue;
+    Get_time(l_now);
 
-    if (cmd == "CodeShutdown") {
+    if (l_cmd == "CodeShutdown") {
       game_panel_close_screen();
       game_panel_save();
-      Set_exit_code(cmd);
-      Hide_widget(panel);
+      Set_exit_code(l_cmd);
+      Hide_widget(l_panel);
       return SHUTDOWN_CODE;
     }
-    if (cmd == "Panel Quit") {
+    if (l_cmd == "Panel Quit") {
       game_panel_close_screen();
       game_panel_save();
-      running = FALSE;
+      l_running = FALSE;
       continue;
     }
 
-    Get_size(draw_box, width, height);
-    release        = FALSE;
-    start_request  = FALSE;
-    start_by_click = FALSE;
-    why            = "";
+    Get_size(l_draw_box, l_width, l_height);
+    l_release        = FALSE;
+    l_start_request  = FALSE;
+    l_start_by_click = FALSE;
+    l_why            = "";
 
     // The panel was resized: the parking spot moved with the view
-    if (width != last_w || height != last_h) {
-      last_w    = width;
-      last_h    = height;
-      have_seen = FALSE;
-      if (captured) {
-        release = TRUE;
-        why     = "the window was resized";
+    if (l_width != l_last_w || l_height != l_last_h) {
+      l_last_w    = l_width;
+      l_last_h    = l_height;
+      l_have_seen = FALSE;
+      if (l_captured) {
+        l_release = TRUE;
+        l_why     = "the window was resized";
       }
-      resize_pending = TRUE;
+      l_resize_pending = TRUE;
     }
-    if (cmd == "Panel_Resize") {
-      if (now - last_frame >= 0.1) {
-        want_frame     = TRUE;
-        resize_pending = FALSE;
+    if (l_cmd == "Panel_Resize") {
+      if (l_now - l_last_frame >= 0.1) {
+        l_want_frame     = TRUE;
+        l_resize_pending = FALSE;
       }
-    } else if (resize_pending) {
-      want_frame     = TRUE;
-      resize_pending = FALSE;
+    } else if (l_resize_pending) {
+      l_want_frame     = TRUE;
+      l_resize_pending = FALSE;
     }
 
-    if (id == Get_id64(draw_box)) {
+    if (l_id == Get_id64(l_draw_box)) {
       // ------------------------------------------------ mouse
-      has_xy = game_panel_split_xy(msg, box_x, box_y) == SUCCESS;
+      l_has_xy = game_panel_split_xy(l_msg, l_box_x, l_box_y) == SUCCESS;
 
-      if (cmd == "mouse_move" && has_xy && captured) {
-        move_x = box_x - (warp_x + jiggle);
-        move_y = box_y - warp_y;
-        if (Absolute(move_x) < 3.0 && Absolute(move_y) < 3.0) confirmed = TRUE;
-        if (Absolute(move_x) >= 1.0 || Absolute(move_y) >= 1.0) {
-          player_turn(g_player, move_x * settings_mouse_scale(g_settings), move_y * settings_mouse_scale(g_settings));
-          last_input = now;
+      if (l_cmd == "mouse_move" && l_has_xy && l_captured) {
+        l_move_x = l_box_x - (l_warp_x + l_jiggle);
+        l_move_y = l_box_y - l_warp_y;
+        if (Absolute(l_move_x) < 3.0 && Absolute(l_move_y) < 3.0) l_confirmed = TRUE;
+        if (Absolute(l_move_x) >= 1.0 || Absolute(l_move_y) >= 1.0) {
+          player_turn(g_player, l_move_x * settings_mouse_scale(g_settings), l_move_y * settings_mouse_scale(g_settings));
+          l_last_input = l_now;
         }
         // Park the cursor again, even if a quick move took it just
         // outside the view (the parking spot is near the bottom edge)
-        jiggle = 1 - jiggle;
-        Set_cursor_position(origin_x + warp_x + jiggle, origin_y - warp_y);
-        want_frame = TRUE;
+        l_jiggle = 1 - l_jiggle;
+        Set_cursor_position(l_origin_x + l_warp_x + l_jiggle, l_origin_y - l_warp_y);
+        l_want_frame = TRUE;
 
-      } else if (cmd == "mouse_move" && has_xy) {
+      } else if (l_cmd == "mouse_move" && l_has_xy) {
         // Remember a checked screen mapping so a key or closing a
         // screen can start play without a click
-        if (game_panel_calibrate(draw_box, box_x, box_y, width, height, request_x, request_y) == 0) {
-          seen_x    = request_x;
-          seen_y    = request_y;
-          have_seen = TRUE;
+        if (game_panel_calibrate(l_draw_box, l_box_x, l_box_y, l_width, l_height, l_request_x, l_request_y) == 0) {
+          l_seen_x    = l_request_x;
+          l_seen_y    = l_request_y;
+          l_have_seen = TRUE;
         }
         if (ui_screen(g_ui) != SCREEN_NONE) {
-          ui_set_mouse(g_ui, box_x, box_y);
-          want_frame = TRUE;
-        } else if (now - last_frame > PAUSED_FRAME_GAP) {
-          want_frame = TRUE;
+          ui_set_mouse(g_ui, l_box_x, l_box_y);
+          l_want_frame = TRUE;
+        } else if (l_now - l_last_frame > PAUSED_FRAME_GAP) {
+          l_want_frame = TRUE;
         }
 
-      } else if (cmd == "mouse_leave" && captured) {
+      } else if (l_cmd == "mouse_leave" && l_captured) {
         // A fast flick can leave the view between events: pull the
         // cursor back, unless it keeps happening
-        if (now - leave_window > 1.0) {
-          leave_window = now;
-          leaves       = 0;
+        if (l_now - l_leave_window > 1.0) {
+          l_leave_window = l_now;
+          l_leaves       = 0;
         }
-        ++leaves;
-        if (!confirmed || leaves > 4) {
-          release = TRUE;
-          why     = "the mouse left the view";
+        ++l_leaves;
+        if (!l_confirmed || l_leaves > 4) {
+          l_release = TRUE;
+          l_why     = "the mouse left the view";
         } else {
-          Set_cursor_position(origin_x + warp_x + jiggle, origin_y - warp_y);
+          Set_cursor_position(l_origin_x + l_warp_x + l_jiggle, l_origin_y - l_warp_y);
         }
 
-      } else if (captured && (cmd == "click_lb_down" || cmd == "double_click_lb")) {
-        player_primary_action(g_player, g_inventory, g_cows, g_events, g_random, now);
-        game_panel_dispatch(now);
-        last_input = now;
-        want_frame = TRUE;
+      } else if (l_captured && (l_cmd == "click_lb_down" || l_cmd == "double_click_lb")) {
+        player_primary_action(g_player, g_inventory, g_cows, g_events, g_random, l_now);
+        game_panel_dispatch(l_now);
+        l_last_input = l_now;
+        l_want_frame = TRUE;
 
-      } else if (captured && (cmd == "click_rb" || cmd == "double_click_rb")) {
-        player_secondary_action(g_player, g_inventory, g_cows, g_events, now);
-        game_panel_dispatch(now);
-        if (ui_screen(g_ui) != SCREEN_NONE) release = TRUE;
-        last_input = now;
-        want_frame = TRUE;
+      } else if (l_captured && (l_cmd == "click_rb" || l_cmd == "double_click_rb")) {
+        player_secondary_action(g_player, g_inventory, g_cows, g_events, l_now);
+        game_panel_dispatch(l_now);
+        if (ui_screen(g_ui) != SCREEN_NONE) l_release = TRUE;
+        l_last_input = l_now;
+        l_want_frame = TRUE;
 
-      } else if (!captured && ui_screen(g_ui) != SCREEN_NONE && has_xy) {
-        if (cmd == "click_lb" || cmd == "double_click_lb") {
-          ui_set_mouse(g_ui, box_x, box_y);
-          ui_click(g_ui, g_inventory, g_grid, g_furnaces, g_book, g_events, box_x, box_y, FALSE, width, height);
-          game_panel_dispatch(now);
-          want_frame = TRUE;
-        } else if (cmd == "click_rb" || cmd == "double_click_rb") {
-          ui_set_mouse(g_ui, box_x, box_y);
-          ui_click(g_ui, g_inventory, g_grid, g_furnaces, g_book, g_events, box_x, box_y, TRUE, width, height);
-          game_panel_dispatch(now);
-          want_frame = TRUE;
+      } else if (!l_captured && ui_screen(g_ui) != SCREEN_NONE && l_has_xy) {
+        if (l_cmd == "click_lb" || l_cmd == "double_click_lb") {
+          ui_set_mouse(g_ui, l_box_x, l_box_y);
+          ui_click(g_ui, g_inventory, g_grid, g_furnaces, g_book, g_events, l_box_x, l_box_y, FALSE, l_width, l_height);
+          game_panel_dispatch(l_now);
+          l_want_frame = TRUE;
+        } else if (l_cmd == "click_rb" || l_cmd == "double_click_rb") {
+          ui_set_mouse(g_ui, l_box_x, l_box_y);
+          ui_click(g_ui, g_inventory, g_grid, g_furnaces, g_book, g_events, l_box_x, l_box_y, TRUE, l_width, l_height);
+          game_panel_dispatch(l_now);
+          l_want_frame = TRUE;
         }
 
-      } else if (!captured && has_xy && (cmd == "click_lb" || cmd == "click_rb")) {
+      } else if (!l_captured && l_has_xy && (l_cmd == "click_lb" || l_cmd == "click_rb")) {
         // Clicking the view starts (or resumes) play
-        calibration = game_panel_calibrate(draw_box, box_x, box_y, width, height, request_x, request_y);
-        if (calibration == 1) {
-          Set_data(message, "Click inside the view to play.");
-        } else if (calibration == 2) {
-          Set_data(message, "Couldn't grab the mouse - try moving the panel, then click again.");
+        l_calibration = game_panel_calibrate(l_draw_box, l_box_x, l_box_y, l_width, l_height, l_request_x, l_request_y);
+        if (l_calibration == 1) {
+          Set_data(l_message, "Click inside the view to play.");
+        } else if (l_calibration == 2) {
+          Set_data(l_message, "Couldn't grab the mouse - try moving the panel, then click again.");
         } else {
           if (player_is_dead(g_player)) game_respawn(g_info, g_player, g_events);
-          start_request  = TRUE;
-          start_by_click = TRUE;
+          l_start_request  = TRUE;
+          l_start_by_click = TRUE;
         }
-        want_frame = TRUE;
+        l_want_frame = TRUE;
       }
 
-    } else if (id == Get_id64(key_box)) {
+    } else if (l_id == Get_id64(l_key_box)) {
       // ------------------------------------------------ keyboard
-      if (cmd == "keystroke") {
-        key = Text_lower(msg);
-        last_input = now;
+      if (l_cmd == "keystroke") {
+        l_key = Text_lower(l_msg);
+        l_last_input = l_now;
 
         if (ui_screen(g_ui) != SCREEN_NONE) {
-          if (key == "e" || key == "q") {
+          if (l_key == "e" || l_key == "q") {
             game_panel_close_screen();
-            game_panel_dispatch(now);
-            if (have_origin || have_seen) start_request = TRUE;
+            game_panel_dispatch(l_now);
+            if (l_have_origin || l_have_seen) l_start_request = TRUE;
           }
         } else if (player_is_dead(g_player)) {
-          if (key == "r") {
+          if (l_key == "r") {
             game_respawn(g_info, g_player, g_events);
-            if (have_origin || have_seen) start_request = TRUE;
+            if (l_have_origin || l_have_seen) l_start_request = TRUE;
           }
         } else {
-          if (key == "w" || key == "a" || key == "s" || key == "d" || key == " ") {
-            player_key_pressed(g_player, key, now);
-            if (!captured && hud_help_shown(g_hud) && (have_origin || have_seen)) start_request = TRUE;
+          if (l_key == "w" || l_key == "a" || l_key == "s" || l_key == "d" || l_key == " " || l_key == "c") {
+            player_key_pressed(g_player, l_key, l_now);
+            if (!l_captured && hud_help_shown(g_hud) && (l_have_origin || l_have_seen)) l_start_request = TRUE;
           }
-          if (Text_length(key) == 1 && Find_text("123456789", key) > 0) {
-            game_select_slot(g_player, g_hud, Find_text("123456789", key), now);
+          if (Text_length(l_key) == 1 && Find_text("123456789", l_key) > 0) {
+            game_select_slot(g_player, g_hud, Find_text("123456789", l_key), l_now);
           }
-          if (key == "e") {
+          if (l_key == "e") {
             emit_event(g_events, EVT_OPEN_SCREEN, SCREEN_INVENTORY, 0, 0, 0, 0.0, 0.0, 0.0, "");
-            game_panel_dispatch(now);
-            if (captured) release = TRUE;
+            game_panel_dispatch(l_now);
+            if (l_captured) l_release = TRUE;
           }
-          if (key == "q" && captured) release = TRUE;
-          if (key == "h") {
+          if (l_key == "q" && l_captured) l_release = TRUE;
+          if (l_key == "h") {
             hud_set_help(g_hud, !hud_help_shown(g_hud));
-            if (hud_help_shown(g_hud) && captured) release = TRUE;
+            if (hud_help_shown(g_hud) && l_captured) l_release = TRUE;
           }
-          if (key == "f") player_set_auto_walk(g_player, !player_auto_walk(g_player));
-          if (key == "j") {
+          if (l_key == "f") player_set_auto_walk(g_player, !player_auto_walk(g_player));
+          if (l_key == "j") {
             settings_toggle(g_settings, ATTR_SET_AUTO_JUMP);
-            hud_toast(g_hud, settings_describe(g_settings, ATTR_SET_AUTO_JUMP), now);
+            hud_toast(g_hud, settings_describe(g_settings, ATTR_SET_AUTO_JUMP), l_now);
             settings_save(g_settings, save_settings_path());
           }
-          if (key == "i") {
+          if (l_key == "i") {
             settings_toggle(g_settings, ATTR_SET_SHOW_DEBUG);
             settings_save(g_settings, save_settings_path());
           }
-          if (key == "-" || key == "=" || key == "+") {
-            if (key == "-") {
+          if (l_key == "-" || l_key == "=" || l_key == "+") {
+            if (l_key == "-") {
               settings_change(g_settings, ATTR_SET_RENDER_DISTANCE, -1);
             } else {
               settings_change(g_settings, ATTR_SET_RENDER_DISTANCE, 1);
             }
-            hud_toast(g_hud, settings_describe(g_settings, ATTR_SET_RENDER_DISTANCE), now);
+            hud_toast(g_hud, settings_describe(g_settings, ATTR_SET_RENDER_DISTANCE), l_now);
             settings_save(g_settings, save_settings_path());
           }
-          if (key == "o") open_settings = TRUE;
+          if (l_key == "o") l_open_settings = TRUE;
+          if (l_key == "g") {
+            player_set_flying(g_player, !player_flying(g_player));
+            if (player_flying(g_player)) {
+              hud_toast(g_hud, "Flying: Space goes up, C goes down, G lands", l_now);
+            } else {
+              hud_toast(g_hud, "Flying off", l_now);
+            }
+          }
+          if (l_key == "p") {
+            if (player_pick_block(g_player, g_inventory, l_report)) {
+              hud_show_name(g_hud, l_now);
+            } else if (l_report != "") {
+              hud_toast(g_hud, l_report, l_now);
+            }
+          }
+          if (l_key == "u") {
+            settings_toggle(g_settings, ATTR_SET_SHOW_HUD);
+            settings_save(g_settings, save_settings_path());
+          }
         }
 
-        Set_data(key_box, "");
-        if (!captured) want_frame = TRUE;
+        Set_data(l_key_box, "");
+        if (!l_captured) l_want_frame = TRUE;
 
-      } else if (cmd == "text selected") {
+      } else if (l_cmd == "text selected") {
         // Enter takes the focus away; take it back for the game keys
-        Set_data(key_box, "");
-        Set_focus(key_box);
-      } else if (cmd == "kill_focus" && captured) {
-        release = TRUE;
-        why     = "another window was clicked";
+        Set_data(l_key_box, "");
+        Set_focus(l_key_box);
+      } else if (l_cmd == "kill_focus" && l_captured) {
+        l_release = TRUE;
+        l_why     = "another window was clicked";
       }
 
-    } else if (cmd == "save") {
+    } else if (l_cmd == "save") {
       if (game_panel_save() == SUCCESS) {
-        Set_data(message, "Saved " + world_name + ".");
+        Set_data(l_message, "Saved " + p_world_name + ".");
       } else {
-        Set_data(message, "Couldn't save " + world_name + ".");
+        Set_data(l_message, "Couldn't save " + p_world_name + ".");
       }
-      game_panel_dispatch(now);
-      Set_focus(key_box);
-      want_frame = TRUE;
+      game_panel_dispatch(l_now);
+      Set_focus(l_key_box);
+      l_want_frame = TRUE;
 
-    } else if (cmd == "game_settings") {
-      open_settings = TRUE;
+    } else if (l_cmd == "game_settings") {
+      l_open_settings = TRUE;
 
-    } else if (cmd == "quit") {
+    } else if (l_cmd == "quit") {
       game_panel_close_screen();
       game_panel_save();
-      running = FALSE;
+      l_running = FALSE;
       continue;
     }
 
     // ------------------------------------------------ settings
-    if (open_settings) {
-      open_settings = FALSE;
-      if (captured) {
-        captured    = FALSE;
-        have_origin = FALSE;
+    if (l_open_settings) {
+      l_open_settings = FALSE;
+      if (l_captured) {
+        l_captured    = FALSE;
+        l_have_origin = FALSE;
       }
       if (settings_panel_run(g_settings) == SHUTDOWN_CODE) {
         game_panel_save();
         Set_exit_code("CodeShutdown");
-        Hide_widget(panel);
+        Hide_widget(l_panel);
         return SHUTDOWN_CODE;
       }
       game_build_nearby(g_player, settings_render_distance(g_settings));
-      Set_data(message, "Settings saved. Click the view to carry on.");
-      Set_focus(key_box);
-      want_frame = TRUE;
+      Set_data(l_message, "Settings saved. Click the view to carry on.");
+      Set_focus(l_key_box);
+      l_want_frame = TRUE;
     }
 
     // ------------------------------------------------ grab / free the mouse
-    if (start_request && !captured) {
+    if (l_start_request && !l_captured) {
       // A click carries its own fresh mapping; a key uses the last
       // one seen from the mouse, else the one from the last capture
-      if (!start_by_click) {
-        if (have_seen) {
-          request_x = seen_x;
-          request_y = seen_y;
+      if (!l_start_by_click) {
+        if (l_have_seen) {
+          l_request_x = l_seen_x;
+          l_request_y = l_seen_y;
         } else {
-          request_x = origin_x;
-          request_y = origin_y;
+          l_request_x = l_origin_x;
+          l_request_y = l_origin_y;
         }
       }
-      origin_x    = request_x;
-      origin_y    = request_y;
-      have_origin = TRUE;
-      warp_x      = Floor(width / 2.0);
-      warp_y      = Floor(STATUS_STRIP_HEIGHT / 2.0);
-      jiggle      = 0;
-      confirmed   = FALSE;
-      leaves      = 0;
-      captured    = TRUE;
+      l_origin_x    = l_request_x;
+      l_origin_y    = l_request_y;
+      l_have_origin = TRUE;
+      l_warp_x      = Floor(l_width / 2.0);
+      l_warp_y      = Floor(STATUS_STRIP_HEIGHT / 2.0);
+      l_jiggle      = 0;
+      l_confirmed   = FALSE;
+      l_leaves      = 0;
+      l_captured    = TRUE;
       hud_set_help(g_hud, FALSE);
-      last_input  = now;
-      Set_cursor_position(origin_x + warp_x, origin_y - warp_y);
-      Set_focus(key_box);
-      Set_data(message, "Playing " + world_name + ". Q frees the mouse, E opens the inventory, O settings, H help.");
-      want_frame = TRUE;
+      l_last_input  = l_now;
+      Set_cursor_position(l_origin_x + l_warp_x, l_origin_y - l_warp_y);
+      Set_focus(l_key_box);
+      Set_data(l_message, "Playing " + p_world_name + ". Q frees the mouse, E opens the inventory, O settings, H help.");
+      l_want_frame = TRUE;
     }
 
-    if (captured && now - last_input > IDLE_RELEASE_SECONDS) {
-      release = TRUE;
-      why     = "no input for a while";
+    if (l_captured && l_now - l_last_input > IDLE_RELEASE_SECONDS) {
+      l_release = TRUE;
+      l_why     = "no input for a while";
     }
-    if (release && captured) {
-      captured = FALSE;
-      if (why == "") {
-        Set_data(message, "Paused. Click the view to carry on.");
+    if (l_release && l_captured) {
+      l_captured = FALSE;
+      if (l_why == "") {
+        Set_data(l_message, "Paused. Click the view to carry on.");
       } else {
-        Set_data(message, "Paused (" + why + "). Click the view to carry on.");
+        Set_data(l_message, "Paused (" + l_why + "). Click the view to carry on.");
       }
       // The panel may have moved: check the mapping again next time
-      if (why != "") have_origin = FALSE;
-      want_frame = TRUE;
+      if (l_why != "") l_have_origin = FALSE;
+      l_want_frame = TRUE;
     }
   }
 
-  Hide_widget(panel);
-  return result;
+  Hide_widget(l_panel);
+  return l_result;
 }
 
 #endif

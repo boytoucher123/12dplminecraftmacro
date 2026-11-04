@@ -24,6 +24,13 @@
 #define ATTR_HUD_UNTIL      ("until")
 #define ATTR_HUD_HELP       ("show_help")
 #define ATTR_HUD_NAME_UNTIL ("name_until")
+#define ATTR_HUD_FRAMES     ("frames")          // frame times over the current second
+#define ATTR_HUD_FRAME_SUM  ("frame_sum")
+#define ATTR_HUD_FRAME_MIN  ("frame_min")
+#define ATTR_HUD_FRAME_MAX  ("frame_max")
+#define ATTR_HUD_WINDOW     ("window_start")
+#define ATTR_HUD_STATS      ("frame_stats")     // the last full second, as text
+#define FRAME_STATS_SECONDS 1.0
 
 /*Global variables*/ {
   // Polygon scratch for icons
@@ -31,25 +38,27 @@
   Real    g_icon_y[8];
 }
 
-void hud_clear          (Attributes &hud);
-void hud_toast          (Attributes &hud, Text text, Real now);
-void hud_show_name      (Attributes &hud, Real now);
-Integer hud_help_shown  (Attributes &hud);
-void hud_set_help       (Attributes &hud, Integer shown);
-void hud_on_event       (Attributes &event, Attributes &hud, Real now);
-void hud_text           (Draw_Box box, Real x, Real y, Real size, Integer align, Integer red, Integer green, Integer blue, Text text);
-void hud_shadow_text    (Draw_Box box, Real x, Real y, Real size, Integer align, Integer red, Integer green, Integer blue, Text text);
-void hud_frame          (Draw_Box box, Real x0, Real y0, Real x1, Real y1);
-void hud_texture_face   (Draw_Box box, Integer tex, Real shade, Integer quick,
-                         Real origin_x, Real origin_y, Real u_x, Real u_y, Real v_x, Real v_y);
-void hud_draw_item_icon (Draw_Box box, Integer item, Real centre_x, Real centre_y, Real size, Integer detail);
-void hud_draw_slot      (Draw_Box box, Real x0, Real y0, Real size, Integer item, Integer count, Integer damage, Integer highlight);
-Text hud_facing_name    (Real yaw);
-void hud_draw_hand      (Draw_Box box, Real w, Real view_bottom, Real h, Integer item, Real bob, Real swing_time);
-void hud_draw_health    (Draw_Box box, Real x0, Real y0, Real width, Integer health, Real now);
-void hud_draw_help      (Draw_Box box, Real w, Real h);
-void hud_draw           (Draw_Box box, Real w, Real h, Integer captured, Integer screen_open,
-                         Attributes &hud, Attributes &player, Attributes &inventory, Attributes &settings,
-                         Integer seed, Real frame_ms, Text render_stats, Real now);
+void hud_clear          (Attributes &p_hud);
+void hud_toast          (Attributes &p_hud, Text p_text, Real p_now);
+void hud_show_name      (Attributes &p_hud, Real p_now);
+Integer hud_help_shown  (Attributes &p_hud);
+void hud_set_help       (Attributes &p_hud, Integer p_shown);
+void hud_note_frame     (Attributes &p_hud, Real p_frame_ms, Real p_now);
+Text hud_frame_stats    (Attributes &p_hud);
+void hud_on_event       (Attributes &p_event, Attributes &p_hud, Real p_now);
+void hud_text           (Draw_Box p_box, Real p_x, Real p_y, Real p_size, Integer p_align, Integer p_red, Integer p_green, Integer p_blue, Text p_text);
+void hud_shadow_text    (Draw_Box p_box, Real p_x, Real p_y, Real p_size, Integer p_align, Integer p_red, Integer p_green, Integer p_blue, Text p_text);
+void hud_frame          (Draw_Box p_box, Real p_x0, Real p_y0, Real p_x1, Real p_y1);
+void hud_texture_face   (Draw_Box p_box, Integer p_tex, Real p_shade, Integer p_quick,
+                         Real p_origin_x, Real p_origin_y, Real p_u_x, Real p_u_y, Real p_v_x, Real p_v_y);
+void hud_draw_item_icon (Draw_Box p_box, Integer p_item, Real p_centre_x, Real p_centre_y, Real p_size, Integer p_detail);
+void hud_draw_slot      (Draw_Box p_box, Real p_x0, Real p_y0, Real p_size, Integer p_item, Integer p_count, Integer p_damage, Integer p_highlight);
+Text hud_facing_name    (Real p_yaw);
+void hud_draw_hand      (Draw_Box p_box, Real p_w, Real p_view_bottom, Real p_h, Integer p_item, Real p_bob, Real p_swing_time);
+void hud_draw_health    (Draw_Box p_box, Real p_x0, Real p_y0, Real p_width, Integer p_health, Real p_now);
+void hud_draw_help      (Draw_Box p_box, Real p_w, Real p_h);
+void hud_draw           (Draw_Box p_box, Real p_w, Real p_h, Integer p_captured, Integer p_screen_open,
+                         Attributes &p_hud, Attributes &p_player, Attributes &p_inventory, Attributes &p_settings,
+                         Integer p_seed, Real p_frame_ms, Text p_render_stats, Real p_now);
 
 #endif

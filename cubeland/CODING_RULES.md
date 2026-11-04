@@ -13,15 +13,15 @@ and you can test it by building its arguments by hand.
 
 ```
 // Dishonest: reads and writes globals the caller can't see
-void player_heal(Integer amount)
+void player_heal(Integer p_amount)
 {
-  g_player_health = g_player_health + amount;
+  g_player_health = g_player_health + p_amount;
 }
 
 // Honest: the record it changes is a parameter
-void player_heal(Attributes &player, Integer amount)
+void player_heal(Attributes &p_player, Integer p_amount)
 {
-  player_set_health(player, player_health(player) + amount);
+  player_set_health(p_player, player_health(p_player) + p_amount);
 }
 ```
 
@@ -63,6 +63,7 @@ global arrays, each owned by one module:
 | texture pixels, palettes and rectangles | `textures.4dm`   | built once, read-only afterwards      |
 | render scratch buffers, `g_view_*` frame copies | `render_world.4dm` | per-frame working memory, filled from records by `render_view_from` |
 | block edit list `g_edit_*`              | `save.4dm`       | up to 65,536 entries                  |
+| byte buffers `g_pack_*`, `g_inflate_*`  | `resource_pack.4dm` | hundreds of thousands of bytes while decoding a pack |
 | icon polygon scratch `g_icon_*`         | `render_hud.4dm` | point lists for `Draw_polygon`        |
 
 Rules for these tables:
@@ -75,7 +76,10 @@ Rules for these tables:
 - Read-only lookup tables that are filled once at start-up (textures,
   recipes) count as constants once they are built.
 
-At the time of writing, 349 of the 414 functions are honest: they touch no global at all. The other 65 are table functions or controllers.
+At the time of writing, 380 of the 471 functions are honest: they touch no
+global at all. The other 91 are table functions or controllers. (The
+resource pack decoder added many table functions: it works on byte buffers
+far too big to pass around as records.)
 
 Try to raise the share of honest functions with every change. A new
 function should be honest unless it is a table function or part of the
@@ -151,6 +155,19 @@ other:
 
 - Align declarations and repeated statements, and use meaningful names
   rather than abbreviations.
+- **Name prefixes.** 12dPL doesn't allow a variable and a function to
+  share a name, so every variable carries a prefix that no function
+  name has:
+
+  | Kind        | Prefix | Example                 |
+  |-------------|--------|-------------------------|
+  | global      | `g_`   | `g_player`, `g_world`   |
+  | parameter   | `p_`   | `Attributes &p_player`  |
+  | local       | `l_`   | `Integer l_count = 0;`  |
+  | function    | none   | `player_position(...)`  |
+
+  The test harness's lint reports a parameter without `p_` or a local
+  without `l_`.
 - Write constants as object-like macros in the appropriate header:
   `SUCCESS (0)`, `FAILURE (-1)`, field names, sizes.
 - Each file includes the headers it uses. `src/build.4dm` includes every
@@ -171,9 +188,21 @@ other:
 - Convert Reals to Integers by assignment (`Integer i = Floor(x);`) or with
   `floor_integer()`. Don't pass a Real where an Integer parameter is
   expected.
-- Variables and functions must not share a name.
+- Variables and functions must not share a name (the `g_`, `p_` and
+  `l_` prefixes in section 4 make sure they never do).
 
-## 6. Testing
+## 6. Safety
+
+- `include/safety.h` is the first include of `src/build.4dm`. It
+  `#define`s every dangerous 12d call as `illegal_call`, so using one is
+  a compile error. Never include anything before it, never `#undef` its
+  names, and add any new dangerous call you come across to it.
+- Open files only with `safe_file_open()`. It reads anywhere but writes
+  only inside `SAFE_WRITE_FOLDER` (`cubeland_worlds`).
+- Don't delete files: overwrite them with a marker instead (see
+  `save_delete_world()`).
+
+## 7. Testing
 
 `tools/test_harness` translates the macro into C++ and runs scripted
 scenarios. Its Attributes stand-in copies by value and checks field types,

@@ -63,7 +63,7 @@ extern std::map<long long,int> g_list_sel;
 inline Widget make_widget(const Text&t,int k){ Widget w; w.id=++g_next_id; w.title=t; w.kind=k; g_widget_by_title[t]=w.id; return w; }
 struct Panel:Widget{}; struct Vertical_Group:Widget{}; struct Horizontal_Group:Widget{};
 struct Message_Box:Widget{}; struct Colour_Message_Box:Message_Box{};
-struct Input_Box:Widget{}; struct List_Box:Widget{}; struct Button:Widget{};
+struct Input_Box:Widget{}; struct File_Box:Widget{}; struct List_Box:Widget{}; struct Button:Widget{};
 struct Draw_Box:Widget{ int w=0,h=0; };
 template<class T> T mk(const Text&t,int k){ T x; Widget w=make_widget(t,k); x.id=w.id; x.title=t; x.kind=k; return x; }
 inline Panel Create_panel(const Text&t){ return mk<Panel>("panel:"+t,1); }
@@ -72,6 +72,7 @@ inline Vertical_Group Create_vertical_group(int){ return mk<Vertical_Group>("vg"
 inline Horizontal_Group Create_button_group(){ return mk<Horizontal_Group>("hg"+std::to_string(g_next_id),2); }
 inline Colour_Message_Box Create_colour_message_box(const Text&t){ return mk<Colour_Message_Box>("msg"+std::to_string(g_next_id),3); }
 inline Input_Box Create_input_box(const Text&t,const Message_Box&){ return mk<Input_Box>(t,4); }
+inline File_Box Create_file_box(const Text&t,const Message_Box&,int,const Text&){ return mk<File_Box>(t,4); }
 inline List_Box Create_list_box(const Text&t,const Message_Box&,int){ return mk<List_Box>(t,5); }
 inline Button Create_button(const Text&t,const Text&r){ return mk<Button>("button:"+r,6); }
 inline Button Create_finish_button(const Text&t,const Text&r){ return mk<Button>("button:"+r,6); }
@@ -89,6 +90,8 @@ extern Text g_last_message;
 inline int Set_data(const Colour_Message_Box&,const Text&t){ g_last_message=t; printf("[message] %s\n",t.c_str()); return 0; }
 inline int Set_data(const Input_Box&b,const Text&t){ g_input_value[b.id]=t; return 0; }
 inline int Get_data(const Input_Box&b,Text&t){ t=g_input_value[b.id]; return 0; }
+inline int Set_data(const File_Box&b,const Text&t){ g_input_value[b.id]=t; return 0; }
+inline int Get_data(const File_Box&b,Text&t){ t=g_input_value[b.id]; return 0; }
 inline int Get_number_of_items(const List_Box&b,int&n){ n=g_list_items[b.id].size(); return 0; }
 inline int Delete_item(const List_Box&b,int p){ auto&v=g_list_items[b.id]; if(p>=1&&p<=(int)v.size()) v.erase(v.begin()+p-1); return 0; }
 inline int Add_item(const List_Box&b,const Text&t){ g_list_items[b.id].push_back(t); return 0; }
@@ -114,7 +117,13 @@ inline int Set_bk_mode(const Draw_Box&,int){ return 0; }
 // ---------------------------------------------------------------- files
 inline Text fix_path(Text p){ for(auto&c:p) if(c=='\\') c='/'; return p; }
 struct File { std::FILE* f=nullptr; };
-inline int File_open(const Text&n,const Text&m,const Text&,File&f){ f.f=fopen(fix_path(n).c_str(), m=="w"?"w":"r"); return f.f?0:1; }
+inline int File_open(const Text&n,const Text&m,const Text&,File&f){ const char*mode=m=="w"?"w":(m=="rb"?"rb":"r"); f.f=fopen(fix_path(n).c_str(), mode); return f.f?0:1; }
+// Binary reads: little-endian, like 12d on Windows
+inline int File_read(File&f,int&v){ unsigned char b[4]; if(!f.f||fread(b,1,4,f.f)!=4) return 1; v=(int)((unsigned)b[0]|((unsigned)b[1]<<8)|((unsigned)b[2]<<16)|((unsigned)b[3]<<24)); return 0; }
+inline int File_read_short(File&f,int&v){ unsigned char b[2]; if(!f.f||fread(b,1,2,f.f)!=2) return 1; v=(short)(b[0]|(b[1]<<8)); return 0; }
+inline int File_read(File&f,int n,Text&t){ t.assign(n,' '); if(!f.f||n<0||(int)fread(&t[0],1,n,f.f)!=n) return 1; return 0; }
+inline int File_seek(File&f,int pos){ return f.f?fseek(f.f,pos,SEEK_SET):1; }
+inline int File_tell(File&f,int&pos){ if(!f.f) return 1; pos=(int)ftell(f.f); return 0; }
 inline int File_close(File&f){ if(f.f) fclose(f.f); f.f=nullptr; return 0; }
 inline int File_write_line(File&f,const Text&t){ fputs(t.c_str(),f.f); fputc('\n',f.f); return 0; }
 inline int File_read_line(File&f,Text&t){ char buf[65536]; if(!fgets(buf,sizeof buf,f.f)) return -1; t=buf; while(!t.empty()&&(t.back()=='\n'||t.back()=='\r')) t.pop_back(); return 0; }

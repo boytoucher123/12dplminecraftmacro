@@ -18,11 +18,12 @@
 #define ATTR_SET_SENSITIVITY     ("mouse_sensitivity")
 #define ATTR_SET_SHOW_HUD        ("show_hud")
 #define ATTR_SET_SHOW_DEBUG      ("show_debug")
+#define ATTR_SET_RESOURCE_PACK   ("resource_pack")   // .zip file or folder, "" for the built-in textures
 
 #define RENDER_DISTANCE_MIN      8
 #define RENDER_DISTANCE_MAX      64
 #define RENDER_DISTANCE_STEP     4
-#define RENDER_DISTANCE_DEFAULT  20
+#define RENDER_DISTANCE_DEFAULT  50
 #define DETAIL_LOW               1
 #define DETAIL_NORMAL            2
 #define DETAIL_HIGH              3
@@ -34,19 +35,22 @@
 #define SENSITIVITY_MAX          10
 #define SENSITIVITY_DEFAULT      5
 #define SETTINGS_FILE            "cubeland_settings.txt"
+#define PACK_FILE_BOX_MODE       0      // File_Box mode: no automatic check (the panel checks the path itself)
 
-void    settings_defaults       (Attributes &settings);
-Integer settings_render_distance(Attributes &settings);
-Integer settings_detail         (Attributes &settings);
-Integer settings_flag           (Attributes &settings, Text field);
-Integer settings_fov_degrees    (Attributes &settings);
-Real    settings_fov_radians    (Attributes &settings);
-Real    settings_mouse_scale    (Attributes &settings);
-void    settings_change         (Attributes &settings, Text field, Integer direction);
-void    settings_toggle         (Attributes &settings, Text field);
-Text    settings_describe       (Attributes &settings, Text field);
-Text    settings_line           (Text name, Integer value);
-Integer settings_save           (Attributes &settings, Text path);
-Integer settings_load           (Attributes &settings, Text path);
+void    settings_defaults       (Attributes &p_settings);
+Integer settings_render_distance(Attributes &p_settings);
+Integer settings_detail         (Attributes &p_settings);
+Integer settings_flag           (Attributes &p_settings, Text p_field);
+Integer settings_fov_degrees    (Attributes &p_settings);
+Real    settings_fov_radians    (Attributes &p_settings);
+Real    settings_mouse_scale    (Attributes &p_settings);
+void    settings_change         (Attributes &p_settings, Text p_field, Integer p_direction);
+void    settings_toggle         (Attributes &p_settings, Text p_field);
+Text    settings_describe       (Attributes &p_settings, Text p_field);
+Text    settings_line           (Text p_name, Integer p_value);
+Integer settings_save           (Attributes &p_settings, Text p_path);
+Integer settings_load           (Attributes &p_settings, Text p_path);
+Text    settings_resource_pack  (Attributes &p_settings);
+void    settings_set_resource_pack(Attributes &p_settings, Text p_path);
 
 #endif

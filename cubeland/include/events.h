@@ -52,18 +52,18 @@
 #define ATTR_EVENT_R2         ("r2")
 #define ATTR_EVENT_R3         ("r3")
 
-void    events_clear     (Attributes &events);
-void    emit_event       (Attributes &events, Integer type, Integer i1, Integer i2, Integer i3, Integer i4, Real r1, Real r2, Real r3, Text text);
-void    emit_simple_event(Attributes &events, Integer type);
-void    emit_cell_event  (Attributes &events, Integer type, Integer x, Integer y, Integer z, Integer block);
-void    emit_item_event  (Attributes &events, Integer type, Integer item, Integer count);
-void    emit_drop_event  (Attributes &events, Integer item, Integer count, Integer damage, Real x, Real y, Real z);
-void    emit_toast       (Attributes &events, Text text);
-Integer events_pending   (Attributes &events);
-Integer next_event       (Attributes &events, Attributes &event);
-Integer event_type       (Attributes &event);
-Integer event_integer    (Attributes &event, Integer which);
-Real    event_real       (Attributes &event, Integer which);
-Text    event_text       (Attributes &event);
+void    events_clear     (Attributes &p_events);
+void    emit_event       (Attributes &p_events, Integer p_type, Integer p_i1, Integer p_i2, Integer p_i3, Integer p_i4, Real p_r1, Real p_r2, Real p_r3, Text p_text);
+void    emit_simple_event(Attributes &p_events, Integer p_type);
+void    emit_cell_event  (Attributes &p_events, Integer p_type, Integer p_x, Integer p_y, Integer p_z, Integer p_block);
+void    emit_item_event  (Attributes &p_events, Integer p_type, Integer p_item, Integer p_count);
+void    emit_drop_event  (Attributes &p_events, Integer p_item, Integer p_count, Integer p_damage, Real p_x, Real p_y, Real p_z);
+void    emit_toast       (Attributes &p_events, Text p_text);
+Integer events_pending   (Attributes &p_events);
+Integer next_event       (Attributes &p_events, Attributes &p_event);
+Integer event_type       (Attributes &p_event);
+Integer event_integer    (Attributes &p_event, Integer p_which);
+Real    event_real       (Attributes &p_event, Integer p_which);
+Text    event_text       (Attributes &p_event);
 
 #endif

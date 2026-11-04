@@ -25,6 +25,7 @@
 #define MAX_CAVE_WORMS      14
 #define CAVE_WORM_STEPS     90
 #define COAL_VEINS          110
+#define IRON_VEINS          60
 #define GRAVEL_POCKETS      40
 #define MAX_PONDS           4
 
@@ -49,48 +50,48 @@
 }
 
 // ---------------------------------------------------------------- grid access
-Integer world_index         (Integer x, Integer y, Integer z);
-Integer world_column        (Integer x, Integer z);
-Integer world_in_bounds     (Integer x, Integer y, Integer z);
-Integer world_get_block     (Integer x, Integer y, Integer z);
-void    world_set_block     (Integer x, Integer y, Integer z, Integer block);
-Integer world_is_solid      (Integer x, Integer y, Integer z);
-Integer world_top_solid_y   (Integer x, Integer z);
-Integer world_sky_top       (Integer x, Integer z);
-Integer world_solid_below   (Integer x, Integer z);
-Integer world_biome         (Integer x, Integer z);
-void    world_update_column_top(Integer x, Integer z);
-void    world_break_block   (Attributes &events, Integer x, Integer y, Integer z, Integer tool_item);
-void    world_place_block   (Attributes &events, Integer x, Integer y, Integer z, Integer block);
+Integer world_index         (Integer p_x, Integer p_y, Integer p_z);
+Integer world_column        (Integer p_x, Integer p_z);
+Integer world_in_bounds     (Integer p_x, Integer p_y, Integer p_z);
+Integer world_get_block     (Integer p_x, Integer p_y, Integer p_z);
+void    world_set_block     (Integer p_x, Integer p_y, Integer p_z, Integer p_block);
+Integer world_is_solid      (Integer p_x, Integer p_y, Integer p_z);
+Integer world_top_solid_y   (Integer p_x, Integer p_z);
+Integer world_sky_top       (Integer p_x, Integer p_z);
+Integer world_solid_below   (Integer p_x, Integer p_z);
+Integer world_biome         (Integer p_x, Integer p_z);
+void    world_update_column_top(Integer p_x, Integer p_z);
+void    world_break_block   (Attributes &p_events, Integer p_x, Integer p_y, Integer p_z, Integer p_tool_item);
+void    world_place_block   (Attributes &p_events, Integer p_x, Integer p_y, Integer p_z, Integer p_block);
 
 // ---------------------------------------------------------------- world record
-void    world_info_clear    (Attributes &info, Integer seed);
-Integer world_info_seed     (Attributes &info);
-void    world_info_spawn    (Attributes &info, Real &x, Real &y, Real &z);
-void    world_info_set_spawn(Attributes &info, Real x, Real y, Real z);
+void    world_info_clear    (Attributes &p_info, Integer p_seed);
+Integer world_info_seed     (Attributes &p_info);
+void    world_info_spawn    (Attributes &p_info, Real &p_x, Real &p_y, Real &p_z);
+void    world_info_set_spawn(Attributes &p_info, Real p_x, Real p_y, Real p_z);
 
 // ---------------------------------------------------------------- generation
-void    world_seed_shifts   (Integer seed, Real &shift_a, Real &shift_b);
-Real    world_value_noise   (Real x, Real z, Integer layer, Real shift_a, Real shift_b);
-Integer world_column_biome  (Integer x, Integer z, Real shift_a, Real shift_b);
-Integer world_terrain_height(Integer x, Integer z, Real shift_a, Real shift_b);
-Real    world_desert_weight (Integer x, Integer z, Real shift_a, Real shift_b);
-void    world_generate      (Attributes &info, Integer seed);
-void    world_fill_columns  (Real shift_a, Real shift_b);
-void    world_carve_sphere  (Real centre_x, Real centre_y, Real centre_z, Real radius);
-void    world_carve_caves   (Attributes &random);
-void    world_place_veins   (Attributes &random, Integer block, Integer count, Integer length, Integer max_y);
-void    world_plant_tree    (Integer x, Integer ground_y, Integer z, Real shift_a, Real shift_b);
-void    world_plant_trees   (Real shift_a, Real shift_b);
-void    world_plant_cactus  (Integer x, Integer ground_y, Integer z, Integer tall);
-void    world_add_plants    (Attributes &random, Real shift_a, Real shift_b);
-void    world_mark_carved   (Integer x, Integer y, Integer z);
-void    world_dig_pond      (Integer centre_x, Integer centre_z);
-void    world_add_ponds     (Attributes &random);
-Integer world_area_is_flat  (Integer x0, Integer z0, Integer x1, Integer z1, Integer &ground_y);
-void    world_build_house   (Attributes &info, Integer origin_x, Integer ground_y, Integer origin_z);
-void    world_find_spawn    (Real &spawn_x, Real &spawn_y, Real &spawn_z);
-void    world_place_house_near(Attributes &info, Real spawn_x, Real spawn_z);
+void    world_seed_shifts   (Integer p_seed, Real &p_shift_a, Real &p_shift_b);
+Real    world_value_noise   (Real p_x, Real p_z, Integer p_layer, Real p_shift_a, Real p_shift_b);
+Integer world_column_biome  (Integer p_x, Integer p_z, Real p_shift_a, Real p_shift_b);
+Integer world_terrain_height(Integer p_x, Integer p_z, Real p_shift_a, Real p_shift_b);
+Real    world_desert_weight (Integer p_x, Integer p_z, Real p_shift_a, Real p_shift_b);
+void    world_generate      (Attributes &p_info, Integer p_seed);
+void    world_fill_columns  (Real p_shift_a, Real p_shift_b);
+void    world_carve_sphere  (Real p_centre_x, Real p_centre_y, Real p_centre_z, Real p_radius);
+void    world_carve_caves   (Attributes &p_random);
+void    world_place_veins   (Attributes &p_random, Integer p_block, Integer p_count, Integer p_length, Integer p_max_y);
+void    world_plant_tree    (Integer p_x, Integer p_ground_y, Integer p_z, Real p_shift_a, Real p_shift_b);
+void    world_plant_trees   (Real p_shift_a, Real p_shift_b);
+void    world_plant_cactus  (Integer p_x, Integer p_ground_y, Integer p_z, Integer p_tall);
+void    world_add_plants    (Attributes &p_random, Real p_shift_a, Real p_shift_b);
+void    world_mark_carved   (Integer p_x, Integer p_y, Integer p_z);
+void    world_dig_pond      (Integer p_centre_x, Integer p_centre_z);
+void    world_add_ponds     (Attributes &p_random);
+Integer world_area_is_flat  (Integer p_x0, Integer p_z0, Integer p_x1, Integer p_z1, Integer &p_ground_y);
+void    world_build_house   (Attributes &p_info, Integer p_origin_x, Integer p_ground_y, Integer p_origin_z);
+void    world_find_spawn    (Real &p_spawn_x, Real &p_spawn_y, Real &p_spawn_z);
+void    world_place_house_near(Attributes &p_info, Real p_spawn_x, Real p_spawn_z);
 void    world_finish_maps   ();
 
 #endif

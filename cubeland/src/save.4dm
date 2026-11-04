@@ -28,17 +28,17 @@ void save_clear_edits()
   g_edit_overflow = 0;
 }
 
-void save_record_edit(Integer index, Integer block)
+void save_record_edit(Integer p_index, Integer p_block)
 // ----------------------------------------------------------------
 // Remember that the cell at world index now holds block
 // Each cell is listed once, with its latest block
 // ----------------------------------------------------------------
 {
-  Integer edit = 0;
+  Integer l_edit = 0;
 
-  for (edit = g_edit_count; edit >= 1; --edit) {
-    if (g_edit_index[edit] == index) {
-      g_edit_block[edit] = block;
+  for (l_edit = g_edit_count; l_edit >= 1; --l_edit) {
+    if (g_edit_index[l_edit] == p_index) {
+      g_edit_block[l_edit] = p_block;
       return;
     }
   }
@@ -48,38 +48,38 @@ void save_record_edit(Integer index, Integer block)
     return;
   }
   ++g_edit_count;
-  g_edit_index[g_edit_count] = index;
-  g_edit_block[g_edit_count] = block;
+  g_edit_index[g_edit_count] = p_index;
+  g_edit_block[g_edit_count] = p_block;
 }
 
-void save_on_event(Attributes &event)
+void save_on_event(Attributes &p_event)
 // ----------------------------------------------------------------
 // Event handler: record every block change for the world file
 // ----------------------------------------------------------------
 {
-  Integer type = event_type(event);
-  Integer x    = event_integer(event, 1);
-  Integer y    = event_integer(event, 2);
-  Integer z    = event_integer(event, 3);
+  Integer l_type = event_type(p_event);
+  Integer l_x    = event_integer(p_event, 1);
+  Integer l_y    = event_integer(p_event, 2);
+  Integer l_z    = event_integer(p_event, 3);
 
-  if (!world_in_bounds(x, y, z)) return;
+  if (!world_in_bounds(l_x, l_y, l_z)) return;
 
-  if (type == EVT_BLOCK_BROKEN) {
-    save_record_edit(world_index(x, y, z), BLOCK_AIR);
-  } else if (type == EVT_BLOCK_PLACED) {
-    save_record_edit(world_index(x, y, z), event_integer(event, 4));
+  if (l_type == EVT_BLOCK_BROKEN) {
+    save_record_edit(world_index(l_x, l_y, l_z), BLOCK_AIR);
+  } else if (l_type == EVT_BLOCK_PLACED) {
+    save_record_edit(world_index(l_x, l_y, l_z), event_integer(p_event, 4));
   }
 }
 
-Text save_world_path(Text name)
+Text save_world_path(Text p_name)
 // ----------------------------------------------------------------
 // File holding a world
 // ----------------------------------------------------------------
 {
-  Text folder    = WORLD_FOLDER;
-  Text extension = WORLD_EXTENSION;
+  Text l_folder    = WORLD_FOLDER;
+  Text l_extension = WORLD_EXTENSION;
 
-  return folder + "\\" + name + extension;
+  return l_folder + "\\" + p_name + l_extension;
 }
 
 Text save_settings_path()
@@ -87,10 +87,10 @@ Text save_settings_path()
 // File holding the settings (shared by every world)
 // ----------------------------------------------------------------
 {
-  Text folder = WORLD_FOLDER;
-  Text file   = SETTINGS_FILE;
+  Text l_folder = WORLD_FOLDER;
+  Text l_file   = SETTINGS_FILE;
 
-  return folder + "\\" + file;
+  return l_folder + "\\" + l_file;
 }
 
 void save_ensure_folder()
@@ -101,51 +101,81 @@ void save_ensure_folder()
   if (!Directory_exists(WORLD_FOLDER)) Directory_create(WORLD_FOLDER);
 }
 
-Integer save_world_exists(Text name)
+Integer save_file_is_deleted(Text p_path)
 // ----------------------------------------------------------------
-// TRUE if a world of this name has been saved
+// TRUE if a world file only holds the "deleted" marker that
+// save_delete_world() leaves behind (safety.h forbids deleting
+// files, so a deleted world is emptied instead)
 // ----------------------------------------------------------------
 {
-  if (File_exists(save_world_path(name))) return TRUE;
-  return FALSE;
+  File    l_file;
+  Text    l_line    = "";
+  Integer l_deleted = FALSE;
+
+  if (safe_file_open(p_path, "r", l_file) != 0) return FALSE;
+  if (File_read_line(l_file, l_line) == 0) {
+    if (l_line == WORLD_DELETED_TAG) l_deleted = TRUE;
+  }
+  File_close(l_file);
+  return l_deleted;
 }
 
-Integer save_list_worlds(Dynamic_Text &names)
+Integer save_world_exists(Text p_name)
+// ----------------------------------------------------------------
+// TRUE if a world of this name has been saved (and not deleted)
+// ----------------------------------------------------------------
+{
+  Text l_path = save_world_path(p_name);
+
+  if (!File_exists(l_path))         return FALSE;
+  if (save_file_is_deleted(l_path)) return FALSE;
+  return TRUE;
+}
+
+Integer save_list_worlds(Dynamic_Text &p_names)
 // ----------------------------------------------------------------
 // Names of every saved world; returns how many there are
 // ----------------------------------------------------------------
 {
-  Dynamic_Text files;
-  Integer      count    = 0;
-  Integer      file     = 0;
-  Integer      found    = 0;
-  Text         path     = "";
-  Text         pattern  = "*";
-  Text         title    = "";
+  Dynamic_Text l_files;
+  Integer      l_count    = 0;
+  Integer      l_file     = 0;
+  Integer      l_found    = 0;
+  Text         l_path     = "";
+  Text         l_pattern  = "*";
+  Text         l_title    = "";
 
-  Null(names);
+  Null(p_names);
   save_ensure_folder();
 
-  pattern = pattern + WORLD_EXTENSION;
-  if (List_files_in_folder(WORLD_FOLDER, pattern, count, files) != 0) return 0;
+  l_pattern = l_pattern + WORLD_EXTENSION;
+  if (List_files_in_folder(WORLD_FOLDER, l_pattern, l_count, l_files) != 0) return 0;
 
-  for (file = 1; file <= count; ++file) {
-    Get_item(files, file, path);
-    title = file_title_from_path(path);
-    if (title == "") continue;
-    Append(title, names);
-    ++found;
+  for (l_file = 1; l_file <= l_count; ++l_file) {
+    Get_item(l_files, l_file, l_path);
+    l_title = file_title_from_path(l_path);
+    if (l_title == "") continue;
+    if (!save_world_exists(l_title)) continue;
+    Append(l_title, p_names);
+    ++l_found;
   }
-  return found;
+  return l_found;
 }
 
-Integer save_delete_world(Text name)
+Integer save_delete_world(Text p_name)
 // ----------------------------------------------------------------
-// Delete a saved world's file
+// Delete a saved world. Deleting files is blocked by safety.h, so
+// the file is overwritten with WORLD_DELETED_TAG instead: the menu
+// no longer lists it and a new world can reuse the name. The empty
+// file can be removed by hand from the worlds folder.
 // ----------------------------------------------------------------
 {
-  if (!save_world_exists(name)) return FAILURE;
-  if (Delete_files(save_world_path(name)) != 0) return FAILURE;
+  File l_file;
+
+  if (!save_world_exists(p_name)) return FAILURE;
+  if (safe_file_open(save_world_path(p_name), "w", l_file) != 0) return FAILURE;
+  File_write_line(l_file, WORLD_DELETED_TAG);
+  File_close(l_file);
   return SUCCESS;
 }
 
@@ -153,109 +183,109 @@ Integer save_delete_world(Text name)
 
 // ---------------------------------------------------------------- records
 
-Text text_escape(Text value)
+Text text_escape(Text p_value)
 // ----------------------------------------------------------------
 // Make a Text value safe to store as one word: "%" becomes "%25",
 // a space "%20", and an empty value "%00"
 // ----------------------------------------------------------------
 {
-  Integer length    = Text_length(value);
-  Integer position  = 0;
-  Text    character = "";
-  Text    result    = "";
+  Integer l_length    = Text_length(p_value);
+  Integer l_position  = 0;
+  Text    l_character = "";
+  Text    l_result    = "";
 
-  if (length == 0) return "%00";
+  if (l_length == 0) return "%00";
 
-  for (position = 1; position <= length; ++position) {
-    character = Get_subtext(value, position, position);
-    if (character == "%") {
-      result = result + "%25";
-    } else if (character == " ") {
-      result = result + "%20";
+  for (l_position = 1; l_position <= l_length; ++l_position) {
+    l_character = Get_subtext(p_value, l_position, l_position);
+    if (l_character == "%") {
+      l_result = l_result + "%25";
+    } else if (l_character == " ") {
+      l_result = l_result + "%20";
     } else {
-      result = result + character;
+      l_result = l_result + l_character;
     }
   }
-  return result;
+  return l_result;
 }
 
-Text text_unescape(Text value)
+Text text_unescape(Text p_value)
 // ----------------------------------------------------------------
 // Undo text_escape
 // ----------------------------------------------------------------
 {
-  Integer length    = Text_length(value);
-  Integer position  = 1;
-  Text    character = "";
-  Text    code      = "";
-  Text    result    = "";
+  Integer l_length    = Text_length(p_value);
+  Integer l_position  = 1;
+  Text    l_character = "";
+  Text    l_code      = "";
+  Text    l_result    = "";
 
-  while (position <= length) {
-    character = Get_subtext(value, position, position);
-    if (character == "%" && position + 2 <= length) {
-      code = Get_subtext(value, position + 1, position + 2);
-      if (code == "25") result = result + "%";
-      if (code == "20") result = result + " ";
-      position = position + 3;
+  while (l_position <= l_length) {
+    l_character = Get_subtext(p_value, l_position, l_position);
+    if (l_character == "%" && l_position + 2 <= l_length) {
+      l_code = Get_subtext(p_value, l_position + 1, l_position + 2);
+      if (l_code == "25") l_result = l_result + "%";
+      if (l_code == "20") l_result = l_result + " ";
+      l_position = l_position + 3;
       continue;
     }
-    result   = result + character;
-    position = position + 1;
+    l_result   = l_result + l_character;
+    l_position = l_position + 1;
   }
-  return result;
+  return l_result;
 }
 
-void save_write_record(File &file, Text name, Attributes &record)
+void save_write_record(File &p_file, Text p_name, Attributes &p_record)
 // ----------------------------------------------------------------
 // Write every field of a record as "rec <name> <field> <type>
 // <value>" lines. A field's type is found by trying to read it as
 // an Integer, then a Real, then a Text.
 // ----------------------------------------------------------------
 {
-  Integer fields        = 0;
-  Integer field         = 0;
-  Integer integer_value = 0;
-  Real    real_value    = 0.0;
-  Text    text_value    = "";
-  Text    field_name    = "";
-  Text    start         = "";
+  Integer l_fields        = 0;
+  Integer l_field         = 0;
+  Integer l_integer_value = 0;
+  Real    l_real_value    = 0.0;
+  Text    l_text_value    = "";
+  Text    l_field_name    = "";
+  Text    l_start         = "";
 
-  Get_number_of_attributes(record, fields);
-  for (field = 1; field <= fields; ++field) {
-    if (Get_attribute_name(record, field, field_name) != 0) continue;
-    start = "rec " + name + " " + field_name;
-    if (Get_attribute(record, field, integer_value) == 0) {
-      File_write_line(file, start + " i " + To_text(integer_value));
-    } else if (Get_attribute(record, field, real_value) == 0) {
-      File_write_line(file, start + " r " + To_text(real_value, 6));
-    } else if (Get_attribute(record, field, text_value) == 0) {
-      File_write_line(file, start + " t " + text_escape(text_value));
+  Get_number_of_attributes(p_record, l_fields);
+  for (l_field = 1; l_field <= l_fields; ++l_field) {
+    if (Get_attribute_name(p_record, l_field, l_field_name) != 0) continue;
+    l_start = "rec " + p_name + " " + l_field_name;
+    if (Get_attribute(p_record, l_field, l_integer_value) == 0) {
+      File_write_line(p_file, l_start + " i " + To_text(l_integer_value));
+    } else if (Get_attribute(p_record, l_field, l_real_value) == 0) {
+      File_write_line(p_file, l_start + " r " + To_text(l_real_value, 6));
+    } else if (Get_attribute(p_record, l_field, l_text_value) == 0) {
+      File_write_line(p_file, l_start + " t " + text_escape(l_text_value));
     }
   }
 }
 
-Integer save_read_field(Dynamic_Text &words, Integer count, Attributes &record)
+Integer save_read_field(Dynamic_Text &p_words, Integer p_count, Attributes &p_record)
 // ----------------------------------------------------------------
 // Apply one "rec <name> <field> <type> <value>" line (already split
 // into words) to a record. Returns SUCCESS or FAILURE.
 // ----------------------------------------------------------------
 {
-  Text field = "";
-  Text type  = "";
-  Text value = "";
+  Text l_field = "";
+  Text l_type  = "";
+  Text l_value = "";
 
-  if (count < 5) return FAILURE;
+  if (p_count < 5) return FAILURE;
 
-  Get_item(words, 3, field);
-  Get_item(words, 4, type);
-  Get_item(words, 5, value);
+  Get_item(p_words, 3, l_field);
+  Get_item(p_words, 4, l_type);
+  Get_item(p_words, 5, l_value);
 
-  if (type == "i") {
-    record_set_integer(record, field, save_word_integer(words, 5));
-  } else if (type == "r") {
-    record_set_real(record, field, save_word_real(words, 5));
-  } else if (type == "t") {
-    record_set_text(record, field, text_unescape(value));
+  if (l_type == "i") {
+    record_set_integer(p_record, l_field, save_word_integer(p_words, 5));
+  } else if (l_type == "r") {
+    record_set_real(p_record, l_field, save_word_real(p_words, 5));
+  } else if (l_type == "t") {
+    record_set_text(p_record, l_field, text_unescape(l_value));
   } else {
     return FAILURE;
   }
@@ -264,199 +294,199 @@ Integer save_read_field(Dynamic_Text &words, Integer count, Attributes &record)
 
 // ---------------------------------------------------------------- worlds
 
-Integer save_world(Text name, Attributes &info, Attributes &player, Attributes &inventory,
-                   Attributes &furnaces, Attributes &cows, Attributes &drops, Attributes &events)
+Integer save_world(Text p_name, Attributes &p_info, Attributes &p_player, Attributes &p_inventory,
+                   Attributes &p_furnaces, Attributes &p_cows, Attributes &p_drops, Attributes &p_events)
 // ----------------------------------------------------------------
 // Write a world to its file. Emits EVT_WORLD_SAVED.
 // ----------------------------------------------------------------
 {
-  File    file;
-  Text    line   = "";
-  Integer edit   = 0;
-  Integer on_row = 0;
+  File    l_file;
+  Text    l_line   = "";
+  Integer l_edit   = 0;
+  Integer l_on_row = 0;
 
-  if (name == "") return FAILURE;
+  if (p_name == "") return FAILURE;
 
   save_ensure_folder();
-  if (File_open(save_world_path(name), "w", "", file) != 0) return FAILURE;
+  if (safe_file_open(save_world_path(p_name), "w", l_file) != 0) return FAILURE;
 
-  line = WORLD_FILE_TAG;
-  File_write_line(file, line + " " + To_text(WORLD_FILE_VERSION));
-  File_write_line(file, "seed " + To_text(world_info_seed(info)));
+  l_line = WORLD_FILE_TAG;
+  File_write_line(l_file, l_line + " " + To_text(WORLD_FILE_VERSION));
+  File_write_line(l_file, "seed " + To_text(world_info_seed(p_info)));
 
-  save_write_record(file, RECORD_WORLD,     info);
-  save_write_record(file, RECORD_PLAYER,    player);
-  save_write_record(file, RECORD_INVENTORY, inventory);
-  save_write_record(file, RECORD_FURNACES,  furnaces);
-  save_write_record(file, RECORD_COWS,      cows);
-  save_write_record(file, RECORD_DROPS,     drops);
+  save_write_record(l_file, RECORD_WORLD,     p_info);
+  save_write_record(l_file, RECORD_PLAYER,    p_player);
+  save_write_record(l_file, RECORD_INVENTORY, p_inventory);
+  save_write_record(l_file, RECORD_FURNACES,  p_furnaces);
+  save_write_record(l_file, RECORD_COWS,      p_cows);
+  save_write_record(l_file, RECORD_DROPS,     p_drops);
 
   // Block changes, several index/block pairs to a line
-  line   = "";
-  on_row = 0;
-  for (edit = 1; edit <= g_edit_count; ++edit) {
-    if (on_row == 0) line = "edits";
-    line = line + " " + To_text(g_edit_index[edit]) + " " + To_text(g_edit_block[edit]);
-    ++on_row;
-    if (on_row >= EDITS_PER_LINE) {
-      File_write_line(file, line);
-      on_row = 0;
+  l_line   = "";
+  l_on_row = 0;
+  for (l_edit = 1; l_edit <= g_edit_count; ++l_edit) {
+    if (l_on_row == 0) l_line = "edits";
+    l_line = l_line + " " + To_text(g_edit_index[l_edit]) + " " + To_text(g_edit_block[l_edit]);
+    ++l_on_row;
+    if (l_on_row >= EDITS_PER_LINE) {
+      File_write_line(l_file, l_line);
+      l_on_row = 0;
     }
   }
-  if (on_row > 0) File_write_line(file, line);
+  if (l_on_row > 0) File_write_line(l_file, l_line);
 
-  File_write_line(file, "end");
-  File_close(file);
+  File_write_line(l_file, "end");
+  File_close(l_file);
 
-  emit_event(events, EVT_WORLD_SAVED, 0, 0, 0, 0, 0.0, 0.0, 0.0, name);
+  emit_event(p_events, EVT_WORLD_SAVED, 0, 0, 0, 0, 0.0, 0.0, 0.0, p_name);
   return SUCCESS;
 }
 
-Integer save_word_integer(Dynamic_Text &words, Integer position)
+Integer save_word_integer(Dynamic_Text &p_words, Integer p_position)
 // ----------------------------------------------------------------
 // Word number position of a split line as an Integer (0 if bad)
 // ----------------------------------------------------------------
 {
-  Text    word  = "";
-  Integer value = 0;
+  Text    l_word  = "";
+  Integer l_value = 0;
 
-  Get_item(words, position, word);
-  if (Get_subtext(word, 1, 1) == "-") {
-    From_text(Get_subtext(word, 2, Text_length(word)), value);
-    return -value;
+  Get_item(p_words, p_position, l_word);
+  if (Get_subtext(l_word, 1, 1) == "-") {
+    From_text(Get_subtext(l_word, 2, Text_length(l_word)), l_value);
+    return -l_value;
   }
-  From_text(word, value);
-  return value;
+  From_text(l_word, l_value);
+  return l_value;
 }
 
-Real save_word_real(Dynamic_Text &words, Integer position)
+Real save_word_real(Dynamic_Text &p_words, Integer p_position)
 // ----------------------------------------------------------------
 // Word number position of a split line as a Real (0 if bad)
 // ----------------------------------------------------------------
 {
-  Text word  = "";
-  Real value = 0.0;
+  Text l_word  = "";
+  Real l_value = 0.0;
 
-  Get_item(words, position, word);
-  From_text(word, value);
-  return value;
+  Get_item(p_words, p_position, l_word);
+  From_text(l_word, l_value);
+  return l_value;
 }
 
-Integer load_world(Text name, Attributes &info, Attributes &player, Attributes &inventory,
-                   Attributes &furnaces, Attributes &cows, Attributes &drops, Text &problem)
+Integer load_world(Text p_name, Attributes &p_info, Attributes &p_player, Attributes &p_inventory,
+                   Attributes &p_furnaces, Attributes &p_cows, Attributes &p_drops, Text &p_problem)
 // ----------------------------------------------------------------
 // Read a world file: regenerate the terrain from its seed, apply
 // the saved block changes and read the records back
 // Returns SUCCESS, or FAILURE with problem saying why
 // ----------------------------------------------------------------
 {
-  File         file;
-  Dynamic_Text words;
-  Text         line     = "";
-  Text         key      = "";
-  Text         target   = "";
-  Integer      count    = 0;
-  Integer      word     = 0;
-  Integer      index    = 0;
-  Integer      block    = 0;
-  Integer      furnace  = 0;
-  Integer      cell     = 0;
-  Integer      cell_x   = 0;
-  Integer      cell_y   = 0;
-  Integer      cell_z   = 0;
-  Integer      fx       = 0;
-  Integer      fy       = 0;
-  Integer      fz       = 0;
-  Integer      seeded   = FALSE;
+  File         l_file;
+  Dynamic_Text l_words;
+  Text         l_line     = "";
+  Text         l_key      = "";
+  Text         l_target   = "";
+  Integer      l_count    = 0;
+  Integer      l_word     = 0;
+  Integer      l_index    = 0;
+  Integer      l_block    = 0;
+  Integer      l_furnace  = 0;
+  Integer      l_cell     = 0;
+  Integer      l_cell_x   = 0;
+  Integer      l_cell_y   = 0;
+  Integer      l_cell_z   = 0;
+  Integer      l_fx       = 0;
+  Integer      l_fy       = 0;
+  Integer      l_fz       = 0;
+  Integer      l_seeded   = FALSE;
 
-  problem = "";
-  if (!save_world_exists(name)) {
-    problem = "there is no saved world called " + name;
+  p_problem = "";
+  if (!save_world_exists(p_name)) {
+    p_problem = "there is no saved world called " + p_name;
     return FAILURE;
   }
-  if (File_open(save_world_path(name), "r", "", file) != 0) {
-    problem = "the world file couldn't be opened";
+  if (safe_file_open(save_world_path(p_name), "r", l_file) != 0) {
+    p_problem = "the world file couldn't be opened";
     return FAILURE;
   }
 
-  if (File_read_line(file, line) != 0) {
-    File_close(file);
-    problem = "the world file is empty";
+  if (File_read_line(l_file, l_line) != 0) {
+    File_close(l_file);
+    p_problem = "the world file is empty";
     return FAILURE;
   }
-  Null(words);
-  count = From_text(line, words);
-  Get_item(words, 1, key);
-  if (key != WORLD_FILE_TAG) {
-    File_close(file);
-    problem = "it isn't a Cubeland world file";
+  Null(l_words);
+  l_count = From_text(l_line, l_words);
+  Get_item(l_words, 1, l_key);
+  if (l_key != WORLD_FILE_TAG) {
+    File_close(l_file);
+    p_problem = "it isn't a Cubeland world file";
     return FAILURE;
   }
-  if (count < 2 || save_word_integer(words, 2) != WORLD_FILE_VERSION) {
-    File_close(file);
-    problem = "it was saved by an older version of Cubeland";
+  if (l_count < 2 || save_word_integer(l_words, 2) != WORLD_FILE_VERSION) {
+    File_close(l_file);
+    p_problem = "it was saved by an older version of Cubeland";
     return FAILURE;
   }
 
   save_clear_edits();
-  inventory_clear (inventory);
-  furnaces_clear  (furnaces);
-  cows_clear      (cows);
-  drops_clear     (drops);
+  inventory_clear (p_inventory);
+  furnaces_clear  (p_furnaces);
+  cows_clear      (p_cows);
+  drops_clear     (p_drops);
 
-  while (File_read_line(file, line) == 0) {
-    Null(words);
-    count = From_text(line, words);
-    if (count < 1) continue;
-    Get_item(words, 1, key);
+  while (File_read_line(l_file, l_line) == 0) {
+    Null(l_words);
+    l_count = From_text(l_line, l_words);
+    if (l_count < 1) continue;
+    Get_item(l_words, 1, l_key);
 
-    if (key == "end") break;
+    if (l_key == "end") break;
 
-    if (key == "seed" && count >= 2) {
-      world_generate(info, save_word_integer(words, 2));
+    if (l_key == "seed" && l_count >= 2) {
+      world_generate(p_info, save_word_integer(l_words, 2));
       mesh_reset();
-      player_reset(player, 0.0, 0.0, 0.0);
-      seeded = TRUE;
-    } else if (!seeded) {
+      player_reset(p_player, 0.0, 0.0, 0.0);
+      l_seeded = TRUE;
+    } else if (!l_seeded) {
       continue;
-    } else if (key == "rec" && count >= 5) {
-      Get_item(words, 2, target);
-      if (target == RECORD_WORLD    ) save_read_field(words, count, info);
-      if (target == RECORD_PLAYER   ) save_read_field(words, count, player);
-      if (target == RECORD_INVENTORY) save_read_field(words, count, inventory);
-      if (target == RECORD_FURNACES ) save_read_field(words, count, furnaces);
-      if (target == RECORD_COWS     ) save_read_field(words, count, cows);
-      if (target == RECORD_DROPS    ) save_read_field(words, count, drops);
-    } else if (key == "edits") {
-      for (word = 2; word + 1 <= count; word = word + 2) {
-        index = save_word_integer(words, word);
-        block = save_word_integer(words, word + 1);
-        if (index < 1 || index > WORLD_CELLS) continue;
-        save_record_edit(index, block);
+    } else if (l_key == "rec" && l_count >= 5) {
+      Get_item(l_words, 2, l_target);
+      if (l_target == RECORD_WORLD    ) save_read_field(l_words, l_count, p_info);
+      if (l_target == RECORD_PLAYER   ) save_read_field(l_words, l_count, p_player);
+      if (l_target == RECORD_INVENTORY) save_read_field(l_words, l_count, p_inventory);
+      if (l_target == RECORD_FURNACES ) save_read_field(l_words, l_count, p_furnaces);
+      if (l_target == RECORD_COWS     ) save_read_field(l_words, l_count, p_cows);
+      if (l_target == RECORD_DROPS    ) save_read_field(l_words, l_count, p_drops);
+    } else if (l_key == "edits") {
+      for (l_word = 2; l_word + 1 <= l_count; l_word = l_word + 2) {
+        l_index = save_word_integer(l_words, l_word);
+        l_block = save_word_integer(l_words, l_word + 1);
+        if (l_index < 1 || l_index > WORLD_CELLS) continue;
+        save_record_edit(l_index, l_block);
         // index = (x * WORLD_SIZE_Z + z) * WORLD_HEIGHT + y + 1
-        cell   = index - 1;
-        cell_y = positive_mod(cell, WORLD_HEIGHT);
-        cell   = floor_divide(cell, WORLD_HEIGHT);
-        cell_z = positive_mod(cell, WORLD_SIZE_Z);
-        cell_x = floor_divide(cell, WORLD_SIZE_Z);
-        world_set_block(cell_x, cell_y, cell_z, block);
-        mesh_mark_dirty(cell_x, cell_y, cell_z);
+        l_cell   = l_index - 1;
+        l_cell_y = positive_mod(l_cell, WORLD_HEIGHT);
+        l_cell   = floor_divide(l_cell, WORLD_HEIGHT);
+        l_cell_z = positive_mod(l_cell, WORLD_SIZE_Z);
+        l_cell_x = floor_divide(l_cell, WORLD_SIZE_Z);
+        world_set_block(l_cell_x, l_cell_y, l_cell_z, l_block);
+        mesh_mark_dirty(l_cell_x, l_cell_y, l_cell_z);
       }
     }
   }
-  File_close(file);
+  File_close(l_file);
 
-  if (!seeded) {
-    problem = "the world file has no seed";
+  if (!l_seeded) {
+    p_problem = "the world file has no seed";
     return FAILURE;
   }
   world_finish_maps();
 
   // Furnaces that lost their block (shouldn't happen) are forgotten
-  for (furnace = 1; furnace <= MAX_FURNACES; ++furnace) {
-    if (!furnace_used(furnaces, furnace)) continue;
-    furnace_cell(furnaces, furnace, fx, fy, fz);
-    if (!block_is_furnace(world_get_block(fx, fy, fz))) record_set_integer_at(furnaces, ATTR_USED, furnace, FALSE);
+  for (l_furnace = 1; l_furnace <= MAX_FURNACES; ++l_furnace) {
+    if (!furnace_used(p_furnaces, l_furnace)) continue;
+    furnace_cell(p_furnaces, l_furnace, l_fx, l_fy, l_fz);
+    if (!block_is_furnace(world_get_block(l_fx, l_fy, l_fz))) record_set_integer_at(p_furnaces, ATTR_USED, l_furnace, FALSE);
   }
 
   return SUCCESS;

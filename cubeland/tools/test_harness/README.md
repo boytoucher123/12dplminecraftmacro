@@ -24,8 +24,9 @@ never uses it, and nothing here goes into 12d.
   reported as a type error. Each run ends with the number of attribute
   calls and type errors; the type error count should be 0.
 - **Some 12dPL pitfalls.** The translator warns about `+=`, `?:`, variables
-  declared in `for` headers, joining two string literals, and declaring
-  the same variable twice in a function.
+  declared in `for` headers, joining two string literals, declaring
+  the same variable twice in a function, and parameters or locals without
+  their `p_` / `l_` prefix.
 
 What it can't tell you: how fast the macro runs in 12d, how 12d's own panels
 and widgets behave, or whether 12d accepts something that C++ accepts. The
@@ -126,6 +127,34 @@ that were looked up most often (to find hot spots).
 | `09_help_screen`              | the help panel                                                  |
 | `10_settings`                 | the settings panel from the menu and in game, the - / = keys    |
 | `11_save_and_load`            | items, tool wear, a furnace and block edits survive save and load |
+| `12_delete_world`             | deleting a world empties and hides its file; the name can be reused |
+| `13_resource_pack`            | a missing pack is reported; the test pack loads from its folder and from its zip (see below) |
+| `14_iron_fly_pick`            | iron ore needs a stone pickaxe, iron recipes, pick block, hiding the HUD, frame statistics, flying |
+
+### Resource pack test
+
+`make_test_pack.py` writes a pack to `packs/` (ignored by git) that uses
+every PNG colour type and bit depth the macro reads, all five row
+filters, stored and compressed data, images bigger than 16 x 16, a tall
+animation strip, colormaps, and a zip with stored and deflated entries and
+a comment. Scenario 13 loads it and the `dump_textures` hook writes every
+texture pixel to `run/out`; the script then compares them with the images:
+
+```bash
+python3 make_test_pack.py make
+```
+
+```bash
+./run.sh scenarios/13_resource_pack.txt
+```
+
+```bash
+python3 make_test_pack.py check run/out/textures.txt
+```
+
+`run/out/textures_folder.txt` holds the same check for the unzipped folder.
+A real pack can be tried by copying it into `packs/` and changing the path
+in the scenario.
 
 Hooks use the macro's own constants (`ITEM_STONE_SWORD`, `BLOCK_STONE`, ...),
 so they follow changes to `src/blocks.4dm`.

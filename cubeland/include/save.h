@@ -25,6 +25,7 @@
 #define WORLD_FOLDER        "cubeland_worlds"
 #define WORLD_EXTENSION     ".cubeworld"
 #define WORLD_FILE_TAG      "CUBELAND_WORLD"
+#define WORLD_DELETED_TAG   "CUBELAND_DELETED_WORLD"
 #define WORLD_FILE_VERSION  2
 #define EDITS_PER_LINE      16
 
@@ -43,23 +44,24 @@
 }
 
 void    save_clear_edits  ();
-void    save_record_edit  (Integer index, Integer block);
-void    save_on_event     (Attributes &event);
-Text    save_world_path   (Text name);
+void    save_record_edit  (Integer p_index, Integer p_block);
+void    save_on_event     (Attributes &p_event);
+Text    save_world_path   (Text p_name);
 Text    save_settings_path();
 void    save_ensure_folder();
-Integer save_world_exists (Text name);
-Integer save_list_worlds  (Dynamic_Text &names);
-Integer save_delete_world (Text name);
-Integer save_word_integer (Dynamic_Text &words, Integer position);
-Real    save_word_real    (Dynamic_Text &words, Integer position);
-Text    text_escape       (Text value);
-Text    text_unescape     (Text value);
-void    save_write_record (File &file, Text name, Attributes &record);
-Integer save_read_field   (Dynamic_Text &words, Integer count, Attributes &record);
-Integer save_world        (Text name, Attributes &info, Attributes &player, Attributes &inventory,
-                           Attributes &furnaces, Attributes &cows, Attributes &drops, Attributes &events);
-Integer load_world        (Text name, Attributes &info, Attributes &player, Attributes &inventory,
-                           Attributes &furnaces, Attributes &cows, Attributes &drops, Text &problem);
+Integer save_file_is_deleted(Text p_path);
+Integer save_world_exists (Text p_name);
+Integer save_list_worlds  (Dynamic_Text &p_names);
+Integer save_delete_world (Text p_name);
+Integer save_word_integer (Dynamic_Text &p_words, Integer p_position);
+Real    save_word_real    (Dynamic_Text &p_words, Integer p_position);
+Text    text_escape       (Text p_value);
+Text    text_unescape     (Text p_value);
+void    save_write_record (File &p_file, Text p_name, Attributes &p_record);
+Integer save_read_field   (Dynamic_Text &p_words, Integer p_count, Attributes &p_record);
+Integer save_world        (Text p_name, Attributes &p_info, Attributes &p_player, Attributes &p_inventory,
+                           Attributes &p_furnaces, Attributes &p_cows, Attributes &p_drops, Attributes &p_events);
+Integer load_world        (Text p_name, Attributes &p_info, Attributes &p_player, Attributes &p_inventory,
+                           Attributes &p_furnaces, Attributes &p_cows, Attributes &p_drops, Text &p_problem);
 
 #endif

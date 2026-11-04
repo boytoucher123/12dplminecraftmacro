@@ -10,12 +10,12 @@
 #include "../include/world.h"
 #include "../include/mesh.h"
 
-Integer mesh_section_index(Integer sx, Integer sy, Integer sz)
+Integer mesh_section_index(Integer p_sx, Integer p_sy, Integer p_sz)
 // ----------------------------------------------------------------
 // Array position of section (sx, sy, sz), all 0-based
 // ----------------------------------------------------------------
 {
-  return (sx * SECTIONS_Z + sz) * SECTIONS_Y + sy + 1;
+  return (p_sx * SECTIONS_Z + p_sz) * SECTIONS_Y + p_sy + 1;
 }
 
 void mesh_reset()
@@ -23,17 +23,17 @@ void mesh_reset()
 // Forget every cached face list (after generating or loading)
 // ----------------------------------------------------------------
 {
-  Integer section = 0;
+  Integer l_section = 0;
 
-  for (section = 1; section <= NUM_SECTIONS; ++section) {
-    g_section_state[section] = SECTION_UNBUILT;
-    g_section_count[section] = 0;
+  for (l_section = 1; l_section <= NUM_SECTIONS; ++l_section) {
+    g_section_state[l_section] = SECTION_UNBUILT;
+    g_section_count[l_section] = 0;
   }
   g_mesh_overflow = 0;
   g_mesh_builds   = 0;
 }
 
-Integer mesh_section_buried(Integer sx, Integer sy, Integer sz)
+Integer mesh_section_buried(Integer p_sx, Integer p_sy, Integer p_sz)
 // ----------------------------------------------------------------
 // TRUE if, as generated, every block of the section and of the
 // columns around it is solid up to above the section's top, so it
@@ -42,23 +42,23 @@ Integer mesh_section_buried(Integer sx, Integer sy, Integer sz)
 // sections dirty, which skips this shortcut).
 // ----------------------------------------------------------------
 {
-  Integer top = sy * SECTION_SIZE + SECTION_SIZE - 1;
-  Integer x   = 0;
-  Integer z   = 0;
-  Integer x0  = sx * SECTION_SIZE - 1;
-  Integer z0  = sz * SECTION_SIZE - 1;
+  Integer l_top = p_sy * SECTION_SIZE + SECTION_SIZE - 1;
+  Integer l_x   = 0;
+  Integer l_z   = 0;
+  Integer l_x0  = p_sx * SECTION_SIZE - 1;
+  Integer l_z0  = p_sz * SECTION_SIZE - 1;
 
-  for (x = x0; x <= x0 + SECTION_SIZE + 1; ++x) {
-    if (x < 0 || x >= WORLD_SIZE_X) continue;
-    for (z = z0; z <= z0 + SECTION_SIZE + 1; ++z) {
-      if (z < 0 || z >= WORLD_SIZE_Z) continue;
-      if (world_solid_below(x, z) <= top) return FALSE;
+  for (l_x = l_x0; l_x <= l_x0 + SECTION_SIZE + 1; ++l_x) {
+    if (l_x < 0 || l_x >= WORLD_SIZE_X) continue;
+    for (l_z = l_z0; l_z <= l_z0 + SECTION_SIZE + 1; ++l_z) {
+      if (l_z < 0 || l_z >= WORLD_SIZE_Z) continue;
+      if (world_solid_below(l_x, l_z) <= l_top) return FALSE;
     }
   }
   return TRUE;
 }
 
-void mesh_build_section(Integer sx, Integer sy, Integer sz)
+void mesh_build_section(Integer p_sx, Integer p_sy, Integer p_sz)
 // ----------------------------------------------------------------
 // Rebuild the face list of one section
 // A solid block shows a face wherever its neighbour doesn't hide it
@@ -68,103 +68,103 @@ void mesh_build_section(Integer sx, Integer sy, Integer sz)
 // Outside the world counts as solid so the world edge isn't drawn.
 // ----------------------------------------------------------------
 {
-  Integer section   = mesh_section_index(sx, sy, sz);
-  Integer start     = (section - 1) * SECTION_FACE_CAP;
-  Integer count     = 0;
-  Integer x0        = sx * SECTION_SIZE;
-  Integer y0        = sy * SECTION_SIZE;
-  Integer z0        = sz * SECTION_SIZE;
-  Integer x         = 0;
-  Integer y         = 0;
-  Integer z         = 0;
-  Integer column    = 0;
-  Integer cell      = 0;
-  Integer block     = 0;
-  Integer direction = 0;
-  Integer neighbour = 0;
-  Integer is_water  = 0;
-  Integer flag      = 0;
+  Integer l_section   = mesh_section_index(p_sx, p_sy, p_sz);
+  Integer l_start     = (l_section - 1) * SECTION_FACE_CAP;
+  Integer l_count     = 0;
+  Integer l_x0        = p_sx * SECTION_SIZE;
+  Integer l_y0        = p_sy * SECTION_SIZE;
+  Integer l_z0        = p_sz * SECTION_SIZE;
+  Integer l_x         = 0;
+  Integer l_y         = 0;
+  Integer l_z         = 0;
+  Integer l_column    = 0;
+  Integer l_cell      = 0;
+  Integer l_block     = 0;
+  Integer l_direction = 0;
+  Integer l_neighbour = 0;
+  Integer l_is_water  = 0;
+  Integer l_flag      = 0;
 
   ++g_mesh_builds;
 
-  if (g_section_state[section] == SECTION_UNBUILT) {
-    if (mesh_section_buried(sx, sy, sz)) {
-      g_section_count[section] = 0;
-      g_section_state[section] = SECTION_BUILT;
-      mesh_group_faces(section);
+  if (g_section_state[l_section] == SECTION_UNBUILT) {
+    if (mesh_section_buried(p_sx, p_sy, p_sz)) {
+      g_section_count[l_section] = 0;
+      g_section_state[l_section] = SECTION_BUILT;
+      mesh_group_faces(l_section);
       return;
     }
   }
 
-  for (x = x0; x < x0 + SECTION_SIZE; ++x) {
-    for (z = z0; z < z0 + SECTION_SIZE; ++z) {
-      column = world_index(x, 0, z);
-      for (y = y0; y < y0 + SECTION_SIZE; ++y) {
-        cell  = column + y;
-        block = g_world[cell];
-        if (block == BLOCK_AIR) continue;
+  for (l_x = l_x0; l_x < l_x0 + SECTION_SIZE; ++l_x) {
+    for (l_z = l_z0; l_z < l_z0 + SECTION_SIZE; ++l_z) {
+      l_column = world_index(l_x, 0, l_z);
+      for (l_y = l_y0; l_y < l_y0 + SECTION_SIZE; ++l_y) {
+        l_cell  = l_column + l_y;
+        l_block = g_world[l_cell];
+        if (l_block == BLOCK_AIR) continue;
 
-        if (block_is_plant(block)) {
-          if (count >= SECTION_FACE_CAP) {
+        if (block_is_plant(l_block)) {
+          if (l_count >= SECTION_FACE_CAP) {
             ++g_mesh_overflow;
             continue;
           }
-          ++count;
-          g_face_x    [start + count] = x;
-          g_face_y    [start + count] = y;
-          g_face_z    [start + count] = z;
-          g_face_dir  [start + count] = DIR_PLANT;
-          g_face_light[start + count] = mesh_face_light(x, y, z, 0);
+          ++l_count;
+          g_face_x    [l_start + l_count] = l_x;
+          g_face_y    [l_start + l_count] = l_y;
+          g_face_z    [l_start + l_count] = l_z;
+          g_face_dir  [l_start + l_count] = DIR_PLANT;
+          g_face_light[l_start + l_count] = mesh_face_light(l_x, l_y, l_z, 0);
           continue;
         }
 
-        is_water = block == BLOCK_WATER;
+        l_is_water = l_block == BLOCK_WATER;
 
-        for (direction = DIR_PX; direction <= DIR_NZ; ++direction) {
-          neighbour = BLOCK_STONE;
-          if (direction == DIR_PX) {
-            if (x + 1 < WORLD_SIZE_X) neighbour = g_world[cell + WORLD_STRIDE_X];
-          } else if (direction == DIR_NX) {
-            if (x > 0) neighbour = g_world[cell - WORLD_STRIDE_X];
-          } else if (direction == DIR_PY) {
-            neighbour = BLOCK_AIR;
-            if (y + 1 < WORLD_HEIGHT) neighbour = g_world[cell + 1];
-          } else if (direction == DIR_NY) {
-            if (y > 0) neighbour = g_world[cell - 1];
-          } else if (direction == DIR_PZ) {
-            if (z + 1 < WORLD_SIZE_Z) neighbour = g_world[cell + WORLD_STRIDE_Z];
+        for (l_direction = DIR_PX; l_direction <= DIR_NZ; ++l_direction) {
+          l_neighbour = BLOCK_STONE;
+          if (l_direction == DIR_PX) {
+            if (l_x + 1 < WORLD_SIZE_X) l_neighbour = g_world[l_cell + WORLD_STRIDE_X];
+          } else if (l_direction == DIR_NX) {
+            if (l_x > 0) l_neighbour = g_world[l_cell - WORLD_STRIDE_X];
+          } else if (l_direction == DIR_PY) {
+            l_neighbour = BLOCK_AIR;
+            if (l_y + 1 < WORLD_HEIGHT) l_neighbour = g_world[l_cell + 1];
+          } else if (l_direction == DIR_NY) {
+            if (l_y > 0) l_neighbour = g_world[l_cell - 1];
+          } else if (l_direction == DIR_PZ) {
+            if (l_z + 1 < WORLD_SIZE_Z) l_neighbour = g_world[l_cell + WORLD_STRIDE_Z];
           } else {
-            if (z > 0) neighbour = g_world[cell - WORLD_STRIDE_Z];
+            if (l_z > 0) l_neighbour = g_world[l_cell - WORLD_STRIDE_Z];
           }
 
-          if (block_hides_faces(neighbour)) continue;
-          flag = 0;
-          if (neighbour == BLOCK_WATER) {
-            if (is_water) continue;
-            flag = DIR_WET_FLAG;
+          if (block_hides_faces(l_neighbour)) continue;
+          l_flag = 0;
+          if (l_neighbour == BLOCK_WATER) {
+            if (l_is_water) continue;
+            l_flag = DIR_WET_FLAG;
           }
 
-          if (count >= SECTION_FACE_CAP) {
+          if (l_count >= SECTION_FACE_CAP) {
             ++g_mesh_overflow;
             continue;
           }
-          ++count;
-          g_face_x    [start + count] = x;
-          g_face_y    [start + count] = y;
-          g_face_z    [start + count] = z;
-          g_face_dir  [start + count] = direction + flag;
-          g_face_light[start + count] = mesh_face_light(x, y, z, direction);
+          ++l_count;
+          g_face_x    [l_start + l_count] = l_x;
+          g_face_y    [l_start + l_count] = l_y;
+          g_face_z    [l_start + l_count] = l_z;
+          g_face_dir  [l_start + l_count] = l_direction + l_flag;
+          g_face_light[l_start + l_count] = mesh_face_light(l_x, l_y, l_z, l_direction);
         }
       }
     }
   }
 
-  g_section_count[section] = count;
-  g_section_state[section] = SECTION_BUILT;
-  mesh_group_faces(section);
+  g_section_count[l_section] = l_count;
+  g_section_state[l_section] = SECTION_BUILT;
+  mesh_group_faces(l_section);
 }
 
-Integer mesh_face_light(Integer x, Integer y, Integer z, Integer direction)
+Integer mesh_face_light(Integer p_x, Integer p_y, Integer p_z, Integer p_direction)
 // ----------------------------------------------------------------
 // Light level (0..LIGHT_FULL) of the face of cell (x, y, z) facing
 // direction, or of the cell itself for direction 0 (plants)
@@ -174,115 +174,115 @@ Integer mesh_face_light(Integer x, Integer y, Integer z, Integer direction)
 // neighbours count 1, out of 12.
 // ----------------------------------------------------------------
 {
-  Integer front_x  = x;
-  Integer front_y  = y;
-  Integer front_z  = z;
-  Integer sky_top  = 0;
-  Integer light    = LIGHT_FULL;
-  Integer enclosed = 0;
-  Integer a        = 0;
-  Integer b        = 0;
+  Integer l_front_x  = p_x;
+  Integer l_front_y  = p_y;
+  Integer l_front_z  = p_z;
+  Integer l_sky_top  = 0;
+  Integer l_light    = LIGHT_FULL;
+  Integer l_enclosed = 0;
+  Integer l_a        = 0;
+  Integer l_b        = 0;
 
-  if (direction == DIR_PX) front_x = x + 1;
-  if (direction == DIR_NX) front_x = x - 1;
-  if (direction == DIR_PY) front_y = y + 1;
-  if (direction == DIR_NY) front_y = y - 1;
-  if (direction == DIR_PZ) front_z = z + 1;
-  if (direction == DIR_NZ) front_z = z - 1;
+  if (p_direction == DIR_PX) l_front_x = p_x + 1;
+  if (p_direction == DIR_NX) l_front_x = p_x - 1;
+  if (p_direction == DIR_PY) l_front_y = p_y + 1;
+  if (p_direction == DIR_NY) l_front_y = p_y - 1;
+  if (p_direction == DIR_PZ) l_front_z = p_z + 1;
+  if (p_direction == DIR_NZ) l_front_z = p_z - 1;
 
-  sky_top = world_sky_top(front_x, front_z);
-  if (front_y <= sky_top) {
-    light = LIGHT_FULL - (sky_top - front_y + 1) * LIGHT_DEPTH_STEP;
-    if (light < LIGHT_MIN) light = LIGHT_MIN;
+  l_sky_top = world_sky_top(l_front_x, l_front_z);
+  if (l_front_y <= l_sky_top) {
+    l_light = LIGHT_FULL - (l_sky_top - l_front_y + 1) * LIGHT_DEPTH_STEP;
+    if (l_light < LIGHT_MIN) l_light = LIGHT_MIN;
   }
-  if (direction == 0) return light;
+  if (p_direction == 0) return l_light;
 
   // The two axes across the face, a and b, each -1..1
-  for (a = -1; a <= 1; ++a) {
-    for (b = -1; b <= 1; ++b) {
-      if (a == 0 && b == 0) continue;
-      if (direction == DIR_PX || direction == DIR_NX) {
-        if (!world_is_solid(front_x, front_y + a, front_z + b)) continue;
-      } else if (direction == DIR_PY || direction == DIR_NY) {
-        if (!world_is_solid(front_x + a, front_y, front_z + b)) continue;
+  for (l_a = -1; l_a <= 1; ++l_a) {
+    for (l_b = -1; l_b <= 1; ++l_b) {
+      if (l_a == 0 && l_b == 0) continue;
+      if (p_direction == DIR_PX || p_direction == DIR_NX) {
+        if (!world_is_solid(l_front_x, l_front_y + l_a, l_front_z + l_b)) continue;
+      } else if (p_direction == DIR_PY || p_direction == DIR_NY) {
+        if (!world_is_solid(l_front_x + l_a, l_front_y, l_front_z + l_b)) continue;
       } else {
-        if (!world_is_solid(front_x + a, front_y + b, front_z)) continue;
+        if (!world_is_solid(l_front_x + l_a, l_front_y + l_b, l_front_z)) continue;
       }
-      if (a == 0 || b == 0) {
-        enclosed = enclosed + 2;
+      if (l_a == 0 || l_b == 0) {
+        l_enclosed = l_enclosed + 2;
       } else {
-        enclosed = enclosed + 1;
+        l_enclosed = l_enclosed + 1;
       }
     }
   }
 
-  return light - floor_divide(light * enclosed * LIGHT_AO_STRENGTH, 1200);
+  return l_light - floor_divide(l_light * l_enclosed * LIGHT_AO_STRENGTH, 1200);
 }
 
-void mesh_group_faces(Integer section)
+void mesh_group_faces(Integer p_section)
 // ----------------------------------------------------------------
 // Sort a section's faces by direction (a counting sort) and record
 // where each direction's group starts. The renderer can then skip a
 // whole group when the camera is behind every face in it.
 // ----------------------------------------------------------------
 {
-  Integer start     = (section - 1) * SECTION_FACE_CAP;
-  Integer count     = g_section_count[section];
-  Integer group     = (section - 1) * NUM_FACE_GROUPS;
-  Integer entry     = 0;
-  Integer direction = 0;
-  Integer position  = 0;
-  Integer running   = 0;
+  Integer l_start     = (p_section - 1) * SECTION_FACE_CAP;
+  Integer l_count     = g_section_count[p_section];
+  Integer l_group     = (p_section - 1) * NUM_FACE_GROUPS;
+  Integer l_entry     = 0;
+  Integer l_direction = 0;
+  Integer l_position  = 0;
+  Integer l_running   = 0;
 
-  for (direction = 1; direction <= NUM_FACE_GROUPS; ++direction) g_section_dir_count[group + direction] = 0;
+  for (l_direction = 1; l_direction <= NUM_FACE_GROUPS; ++l_direction) g_section_dir_count[l_group + l_direction] = 0;
 
-  for (entry = 1; entry <= count; ++entry) {
-    direction = g_face_dir[start + entry];
-    if (direction > DIR_WET_FLAG) direction = direction - DIR_WET_FLAG;
-    g_section_dir_count[group + direction] = g_section_dir_count[group + direction] + 1;
+  for (l_entry = 1; l_entry <= l_count; ++l_entry) {
+    l_direction = g_face_dir[l_start + l_entry];
+    if (l_direction > DIR_WET_FLAG) l_direction = l_direction - DIR_WET_FLAG;
+    g_section_dir_count[l_group + l_direction] = g_section_dir_count[l_group + l_direction] + 1;
   }
 
-  running = 0;
-  for (direction = 1; direction <= NUM_FACE_GROUPS; ++direction) {
-    g_section_dir_start[group + direction] = running + 1;
-    g_sort_next[direction] = running + 1;
-    running = running + g_section_dir_count[group + direction];
+  l_running = 0;
+  for (l_direction = 1; l_direction <= NUM_FACE_GROUPS; ++l_direction) {
+    g_section_dir_start[l_group + l_direction] = l_running + 1;
+    g_sort_next[l_direction] = l_running + 1;
+    l_running = l_running + g_section_dir_count[l_group + l_direction];
   }
 
-  for (entry = 1; entry <= count; ++entry) {
-    direction = g_face_dir[start + entry];
-    if (direction > DIR_WET_FLAG) direction = direction - DIR_WET_FLAG;
-    position = g_sort_next[direction];
-    g_sort_next[direction] = position + 1;
-    g_sort_x  [position] = g_face_x  [start + entry];
-    g_sort_y  [position] = g_face_y  [start + entry];
-    g_sort_z  [position] = g_face_z  [start + entry];
-    g_sort_dir[position] = g_face_dir[start + entry];
-    g_sort_light[position] = g_face_light[start + entry];
+  for (l_entry = 1; l_entry <= l_count; ++l_entry) {
+    l_direction = g_face_dir[l_start + l_entry];
+    if (l_direction > DIR_WET_FLAG) l_direction = l_direction - DIR_WET_FLAG;
+    l_position = g_sort_next[l_direction];
+    g_sort_next[l_direction] = l_position + 1;
+    g_sort_x  [l_position] = g_face_x  [l_start + l_entry];
+    g_sort_y  [l_position] = g_face_y  [l_start + l_entry];
+    g_sort_z  [l_position] = g_face_z  [l_start + l_entry];
+    g_sort_dir[l_position] = g_face_dir[l_start + l_entry];
+    g_sort_light[l_position] = g_face_light[l_start + l_entry];
   }
 
-  for (entry = 1; entry <= count; ++entry) {
-    g_face_x  [start + entry] = g_sort_x  [entry];
-    g_face_y  [start + entry] = g_sort_y  [entry];
-    g_face_z  [start + entry] = g_sort_z  [entry];
-    g_face_dir[start + entry] = g_sort_dir[entry];
-    g_face_light[start + entry] = g_sort_light[entry];
+  for (l_entry = 1; l_entry <= l_count; ++l_entry) {
+    g_face_x  [l_start + l_entry] = g_sort_x  [l_entry];
+    g_face_y  [l_start + l_entry] = g_sort_y  [l_entry];
+    g_face_z  [l_start + l_entry] = g_sort_z  [l_entry];
+    g_face_dir[l_start + l_entry] = g_sort_dir[l_entry];
+    g_face_light[l_start + l_entry] = g_sort_light[l_entry];
   }
 }
 
-Integer mesh_ensure_section(Integer sx, Integer sy, Integer sz)
+Integer mesh_ensure_section(Integer p_sx, Integer p_sy, Integer p_sz)
 // ----------------------------------------------------------------
 // Make sure a section's face list is current and return its index
 // ----------------------------------------------------------------
 {
-  Integer section = mesh_section_index(sx, sy, sz);
+  Integer l_section = mesh_section_index(p_sx, p_sy, p_sz);
 
-  if (g_section_state[section] != SECTION_BUILT) mesh_build_section(sx, sy, sz);
+  if (g_section_state[l_section] != SECTION_BUILT) mesh_build_section(p_sx, p_sy, p_sz);
 
-  return section;
+  return l_section;
 }
 
-void mesh_mark_dirty(Integer x, Integer y, Integer z)
+void mesh_mark_dirty(Integer p_x, Integer p_y, Integer p_z)
 // ----------------------------------------------------------------
 // A block changed: its section, and any section it borders, must
 // be rebuilt before it is next drawn. Light depends on the blocks
@@ -290,21 +290,21 @@ void mesh_mark_dirty(Integer x, Integer y, Integer z)
 // the diagonal neighbours (corner shading) are rebuilt too.
 // ----------------------------------------------------------------
 {
-  Integer dx = 0;
-  Integer dy = 0;
-  Integer dz = 0;
-  Integer sx = 0;
-  Integer sy = 0;
-  Integer sz = 0;
+  Integer l_dx = 0;
+  Integer l_dy = 0;
+  Integer l_dz = 0;
+  Integer l_sx = 0;
+  Integer l_sy = 0;
+  Integer l_sz = 0;
 
-  for (dx = -1; dx <= 1; ++dx) {
-    for (dy = -1; dy <= 1; ++dy) {
-      for (dz = -1; dz <= 1; ++dz) {
-        if (!world_in_bounds(x + dx, y + dy, z + dz)) continue;
-        sx = floor_divide(x + dx, SECTION_SIZE);
-        sy = floor_divide(y + dy, SECTION_SIZE);
-        sz = floor_divide(z + dz, SECTION_SIZE);
-        g_section_state[mesh_section_index(sx, sy, sz)] = SECTION_DIRTY;
+  for (l_dx = -1; l_dx <= 1; ++l_dx) {
+    for (l_dy = -1; l_dy <= 1; ++l_dy) {
+      for (l_dz = -1; l_dz <= 1; ++l_dz) {
+        if (!world_in_bounds(p_x + l_dx, p_y + l_dy, p_z + l_dz)) continue;
+        l_sx = floor_divide(p_x + l_dx, SECTION_SIZE);
+        l_sy = floor_divide(p_y + l_dy, SECTION_SIZE);
+        l_sz = floor_divide(p_z + l_dz, SECTION_SIZE);
+        g_section_state[mesh_section_index(l_sx, l_sy, l_sz)] = SECTION_DIRTY;
       }
     }
   }
@@ -313,21 +313,21 @@ void mesh_mark_dirty(Integer x, Integer y, Integer z)
   // shadow reaches further, but rebuilding every section down to
   // the bedrock would stall the game; deeper ones catch up when
   // something near them changes)
-  sx = floor_divide(x, SECTION_SIZE);
-  sz = floor_divide(z, SECTION_SIZE);
-  sy = floor_divide(y, SECTION_SIZE) - 1;
-  if (sy >= 0) g_section_state[mesh_section_index(sx, sy, sz)] = SECTION_DIRTY;
+  l_sx = floor_divide(p_x, SECTION_SIZE);
+  l_sz = floor_divide(p_z, SECTION_SIZE);
+  l_sy = floor_divide(p_y, SECTION_SIZE) - 1;
+  if (l_sy >= 0) g_section_state[mesh_section_index(l_sx, l_sy, l_sz)] = SECTION_DIRTY;
 }
 
-void mesh_on_event(Attributes &event)
+void mesh_on_event(Attributes &p_event)
 // ----------------------------------------------------------------
 // Event handler: rebuild sections around changed blocks
 // ----------------------------------------------------------------
 {
-  Integer type = event_type(event);
+  Integer l_type = event_type(p_event);
 
-  if (type == EVT_BLOCK_BROKEN || type == EVT_BLOCK_PLACED) {
-    mesh_mark_dirty(event_integer(event, 1), event_integer(event, 2), event_integer(event, 3));
+  if (l_type == EVT_BLOCK_BROKEN || l_type == EVT_BLOCK_PLACED) {
+    mesh_mark_dirty(event_integer(p_event, 1), event_integer(p_event, 2), event_integer(p_event, 3));
   }
 }
 

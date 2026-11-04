@@ -43,29 +43,29 @@
 #define RANDOM_MULTIPLIER  16807.0
 
 // Generic field access (missing fields read as 0, 0.0 or "")
-Integer record_integer       (Attributes &record, Text field);
-Real    record_real          (Attributes &record, Text field);
-Text    record_text          (Attributes &record, Text field);
-void    record_set_integer   (Attributes &record, Text field, Integer value);
-void    record_set_real      (Attributes &record, Text field, Real value);
-void    record_set_text      (Attributes &record, Text field, Text value);
-void    record_clear         (Attributes &record, Text datatype);
-Text    record_datatype      (Attributes &record);
+Integer record_integer       (Attributes &p_record, Text p_field);
+Real    record_real          (Attributes &p_record, Text p_field);
+Text    record_text          (Attributes &p_record, Text p_field);
+void    record_set_integer   (Attributes &p_record, Text p_field, Integer p_value);
+void    record_set_real      (Attributes &p_record, Text p_field, Real p_value);
+void    record_set_text      (Attributes &p_record, Text p_field, Text p_value);
+void    record_clear         (Attributes &p_record, Text p_datatype);
+Text    record_datatype      (Attributes &p_record);
 
 // Fields of entity number index inside a collection record
-Text    record_field_at      (Text field, Integer index);
-Integer record_integer_at    (Attributes &record, Text field, Integer index);
-Real    record_real_at       (Attributes &record, Text field, Integer index);
-Text    record_text_at       (Attributes &record, Text field, Integer index);
-void    record_set_integer_at(Attributes &record, Text field, Integer index, Integer value);
-void    record_set_real_at   (Attributes &record, Text field, Integer index, Real value);
-void    record_set_text_at   (Attributes &record, Text field, Integer index, Text value);
+Text    record_field_at      (Text p_field, Integer p_index);
+Integer record_integer_at    (Attributes &p_record, Text p_field, Integer p_index);
+Real    record_real_at       (Attributes &p_record, Text p_field, Integer p_index);
+Text    record_text_at       (Attributes &p_record, Text p_field, Integer p_index);
+void    record_set_integer_at(Attributes &p_record, Text p_field, Integer p_index, Integer p_value);
+void    record_set_real_at   (Attributes &p_record, Text p_field, Integer p_index, Real p_value);
+void    record_set_text_at   (Attributes &p_record, Text p_field, Integer p_index, Text p_value);
 
 // Seeded random numbers; the state lives in the record passed in,
 // so a function that needs randomness says so in its signature
-void    random_seed          (Attributes &random, Integer seed);
-Real    random_next          (Attributes &random);
-Integer random_range         (Attributes &random, Integer low, Integer high);
-Real    random_between       (Attributes &random, Real low, Real high);
+void    random_seed          (Attributes &p_random, Integer p_seed);
+Real    random_next          (Attributes &p_random);
+Integer random_range         (Attributes &p_random, Integer p_low, Integer p_high);
+Real    random_between       (Attributes &p_random, Real p_low, Real p_high);
 
 #endif

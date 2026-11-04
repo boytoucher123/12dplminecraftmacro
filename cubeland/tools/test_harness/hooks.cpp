@@ -31,6 +31,15 @@ static void place_in_grid(int item,int grid_slot){ // pick up the stack, right c
   ui_click_slot(s,"click"); }
 static void register_hooks(){
   g_calls["dump"]=dump;
+  g_calls["dump_textures"]=[]{ // every texture pixel as r,g,b ("-" see-through), for make_test_pack.py check
+    FILE*f=fopen("out/textures.txt","w");
+    for(int t=1;t<=NUM_TEXTURES;t++){ fprintf(f,"%d",t);
+      for(int v=1;v<=16;v++) for(int u=1;u<=16;u++){ int i=texture_get(t,u,v);
+        if(i==0) fprintf(f," -"); else { int s=texture_palette_index(t,i); fprintf(f," %d,%d,%d",g_tex_pal_r[s],g_tex_pal_g[s],g_tex_pal_b[s]); } }
+      fprintf(f,"\n"); }
+    fclose(f); printf("[hook] wrote out/textures.txt (%d rectangles)\n",g_rect_total); };
+  g_calls["rename_texture_dump"]=[]{ rename("out/textures.txt","out/textures_folder.txt"); };
+  g_calls["give_iron"]=[]{ inventory_add(g_inventory,ITEM_IRON_INGOT,6); inventory_add(g_inventory,ITEM_STICK,4); inventory_add(g_inventory,ITEM_STONE_PICKAXE,1); };
   g_calls["texstats"]=[]{ int total=0; for(int t=1;t<=NUM_TEXTURES;t++){ printf("[tex] %d rects %d base %d sprite %d\n",t,g_tex_rect_count[t],g_tex_base[t],g_tex_is_sprite[t]); total+=g_tex_rect_count[t]; } printf("[tex] total %d (%d)\n",total,g_rect_total); };
   g_calls["give"]=[]{ inventory_add(g_inventory,6,4); inventory_add(g_inventory,3,16); inventory_add(g_inventory,65,3); inventory_add(g_inventory,4,10); };
   g_calls["give_wood"]=[]{ inventory_add(g_inventory,ITEM_OAK_LOG,5); };
@@ -72,13 +81,24 @@ static void register_hooks(){
   g_calls["house_view"]=[]{ int hx=record_integer(g_info,ATTR_HOUSE_X),hy=record_integer(g_info,ATTR_HOUSE_Y),hz=record_integer(g_info,ATTR_HOUSE_Z); player_reset(g_player,hx-4.5,hy+3.0,hz-5.0); set_look(0.75,-0.25); printf("[hook] house at %d %d %d\n",hx,hy,hz); };
   g_calls["stone_front"]=[]{ int x=(int)px()+2, y=(int)py(), z=(int)pz(); world_place_block(g_events,x,y,z,2); world_place_block(g_events,x,y+1,z,10); set_look(0,-0.3); };
   g_calls["select_pickaxe"]=[]{ int s=find_item(ITEM_WOODEN_PICKAXE); if(!s) s=find_item(ITEM_STONE_PICKAXE); if(s>0&&s<=9) player_set_selected(g_player,s); else printf("[hook] pickaxe not on hotbar (%d)\n",s); };
-  for(auto pr: std::vector<std::pair<const char*,int>>{{"table",ITEM_CRAFTING_TABLE},{"pickaxe",ITEM_WOODEN_PICKAXE},{"stone_pickaxe",ITEM_STONE_PICKAXE},{"furnace",ITEM_FURNACE},{"cobble",ITEM_COBBLESTONE},{"sword",ITEM_STONE_SWORD},{"beef",ITEM_COOKED_BEEF},{"poppy",ITEM_POPPY}}){
+  for(auto pr: std::vector<std::pair<const char*,int>>{{"table",ITEM_CRAFTING_TABLE},{"pickaxe",ITEM_WOODEN_PICKAXE},{"stone_pickaxe",ITEM_STONE_PICKAXE},{"furnace",ITEM_FURNACE},{"cobble",ITEM_COBBLESTONE},{"sword",ITEM_STONE_SWORD},{"beef",ITEM_COOKED_BEEF},{"poppy",ITEM_POPPY},{"iron_pickaxe",ITEM_IRON_PICKAXE}}){
     int item=pr.second; g_calls[std::string("hold_")+pr.first]=[item]{ int s=find_item(item); if(!s){ printf("[hook] no %s to hold\n",item_name(item).c_str()); return; }
       int i9=slot_item(g_inventory,9),c9=slot_count(g_inventory,9),d9=slot_damage(g_inventory,9);
       slot_set(g_inventory,9,item,slot_count(g_inventory,s),slot_damage(g_inventory,s)); if(s!=9) slot_set(g_inventory,s,i9,c9,d9); player_set_selected(g_player,9); }; }
   g_calls["aim_last_placed"]=[]{ if(g_edit_count<1) return; int cell=g_edit_index[g_edit_count]-1; int y=cell%WORLD_HEIGHT; cell/=WORLD_HEIGHT; int z=cell%WORLD_SIZE_Z, x=cell/WORLD_SIZE_Z;
      double dx=x+0.5-px(), dy=y+0.5-(py()+1.62), dz=z+0.5-pz(); set_look(wrap_angle(atan2(dz,dx)),atan2(dy,sqrt(dx*dx+dz*dz))); printf("[hook] aim at %d %d %d (block %d)\n",x,y,z,world_get_block(x,y,z)); };
   g_calls["stone_eye"]=[]{ int x=(int)px()-2, y=(int)py()+1, z=(int)pz(); world_place_block(g_events,x,y,z,BLOCK_STONE); set_look(PI,-0.15); printf("[hook] stone at %d %d %d\n",x,y,z); };
+  g_calls["planks_eye"]=[]{ int x=(int)px()-2, y=(int)py()+1, z=(int)pz(); world_place_block(g_events,x,y,z,BLOCK_PLANKS); set_look(PI,-0.15); };
+  g_calls["iron_eye"]=[]{ int x=(int)px()-2, y=(int)py()+1, z=(int)pz(); world_place_block(g_events,x,y,z,BLOCK_IRON_ORE); set_look(PI,-0.15); printf("[hook] iron ore at %d %d %d\n",x,y,z); };
+  g_calls["iron_recipes"]=[]{ // lay each iron tool out in the 3 x 3 grid and ask the recipe book
+    struct R{ const char*rows; int out; }; R rs[]={{"AAA.B..B.",ITEM_IRON_PICKAXE},{"AA.AB..B.",ITEM_IRON_AXE},{".A..B..B.",ITEM_IRON_SHOVEL},{".A..A..B.",ITEM_IRON_SWORD}};
+    for(auto&r:rs){ grid_clear(g_grid,3); for(int k=0;k<9;k++){ int it=r.rows[k]=='A'?ITEM_IRON_INGOT:(r.rows[k]=='B'?ITEM_STICK:0); if(it) slot_set(g_grid,k+1,it,1,0); }
+      int m=crafting_match(g_book,g_grid); printf("[recipe] %s -> %s (%s)\n",r.rows,m>0?item_name(record_integer_at(g_book,ATTR_RECIPE_OUTPUT,m)).c_str():"nothing",(m>0&&record_integer_at(g_book,ATTR_RECIPE_OUTPUT,m)==r.out)?"ok":"WRONG"); }
+    grid_clear(g_grid,2);
+    printf("[recipe] iron ore smelts into %s\n",item_name(item_smelt_result(ITEM_IRON_ORE)).c_str()); };
+  g_calls["block_below_target"]=[]{ int x,y,z; player_target_cell(g_player,x,y,z); printf("[hook] target block %s, selected slot %d holds %s\n",item_name(world_get_block(x,y,z)).c_str(),player_selected(g_player),item_name(player_held_item(g_player,g_inventory)).c_str()); };
+  g_calls["frame_stats"]=[]{ printf("[hook] frame stats: %s\n",hud_frame_stats(g_hud).c_str()); };
+  g_calls["give_planks_far"]=[]{ slot_set(g_inventory,20,ITEM_PLANKS,7,0); };
   g_calls["settings"]=[]{ printf("[settings] view %d detail %d plants %d shading %d fov %d mouse %d jump %d hud %d\n",settings_render_distance(g_settings),settings_detail(g_settings),
      settings_flag(g_settings,ATTR_SET_PLANTS),settings_flag(g_settings,ATTR_SET_SHADING),settings_fov_degrees(g_settings),record_integer(g_settings,ATTR_SET_SENSITIVITY),settings_flag(g_settings,ATTR_SET_AUTO_JUMP),settings_flag(g_settings,ATTR_SET_SHOW_HUD)); };
   g_calls["overflow"]=[]{ for(int s=1;s<=NUM_SECTIONS;s++) if(g_section_state[s]==SECTION_BUILT && g_section_count[s]>=SECTION_FACE_CAP){ int sy=(s-1)%SECTIONS_Y, r=(s-1)/SECTIONS_Y, sz=r%SECTIONS_Z, sx=r/SECTIONS_Z; int plants=0,leaves=0,air=0;

@@ -11,121 +11,121 @@
 
 // ---------------------------------------------------------------- grid access
 
-Integer world_index(Integer x, Integer y, Integer z)
+Integer world_index(Integer p_x, Integer p_y, Integer p_z)
 // ----------------------------------------------------------------
 // Array position of a cell; the cell must be in bounds
 // ----------------------------------------------------------------
 {
-  return (x * WORLD_SIZE_Z + z) * WORLD_HEIGHT + y + 1;
+  return (p_x * WORLD_SIZE_Z + p_z) * WORLD_HEIGHT + p_y + 1;
 }
 
-Integer world_column(Integer x, Integer z)
+Integer world_column(Integer p_x, Integer p_z)
 // ----------------------------------------------------------------
 // Array position of a column in the column maps
 // ----------------------------------------------------------------
 {
-  return x * WORLD_SIZE_Z + z + 1;
+  return p_x * WORLD_SIZE_Z + p_z + 1;
 }
 
-Integer world_in_bounds(Integer x, Integer y, Integer z)
+Integer world_in_bounds(Integer p_x, Integer p_y, Integer p_z)
 // ----------------------------------------------------------------
 // TRUE if the cell lies inside the world
 // ----------------------------------------------------------------
 {
-  if (x < 0 || y < 0 || z < 0) return FALSE;
-  if (x >= WORLD_SIZE_X || y >= WORLD_HEIGHT || z >= WORLD_SIZE_Z) return FALSE;
+  if (p_x < 0 || p_y < 0 || p_z < 0) return FALSE;
+  if (p_x >= WORLD_SIZE_X || p_y >= WORLD_HEIGHT || p_z >= WORLD_SIZE_Z) return FALSE;
   return TRUE;
 }
 
-Integer world_get_block(Integer x, Integer y, Integer z)
+Integer world_get_block(Integer p_x, Integer p_y, Integer p_z)
 // ----------------------------------------------------------------
 // Block at a cell; air outside the world (bedrock below it)
 // ----------------------------------------------------------------
 {
-  if (y < 0) return BLOCK_BEDROCK;
-  if (!world_in_bounds(x, y, z)) return BLOCK_AIR;
-  return g_world[world_index(x, y, z)];
+  if (p_y < 0) return BLOCK_BEDROCK;
+  if (!world_in_bounds(p_x, p_y, p_z)) return BLOCK_AIR;
+  return g_world[world_index(p_x, p_y, p_z)];
 }
 
-void world_set_block(Integer x, Integer y, Integer z, Integer block)
+void world_set_block(Integer p_x, Integer p_y, Integer p_z, Integer p_block)
 // ----------------------------------------------------------------
 // Change a cell without telling anyone; used by generation and
 // loading. Gameplay changes go through world_break_block and
 // world_place_block so that other modules hear about them.
 // ----------------------------------------------------------------
 {
-  if (!world_in_bounds(x, y, z)) return;
-  g_world[world_index(x, y, z)] = block;
+  if (!world_in_bounds(p_x, p_y, p_z)) return;
+  g_world[world_index(p_x, p_y, p_z)] = p_block;
 }
 
-Integer world_is_solid(Integer x, Integer y, Integer z)
+Integer world_is_solid(Integer p_x, Integer p_y, Integer p_z)
 // ----------------------------------------------------------------
 // TRUE if a cell blocks movement. The sides of the world and the
 // floor below it are solid, the sky above it is not.
 // ----------------------------------------------------------------
 {
-  if (y < 0) return TRUE;
-  if (y >= WORLD_HEIGHT) return FALSE;
-  if (x < 0 || z < 0 || x >= WORLD_SIZE_X || z >= WORLD_SIZE_Z) return TRUE;
-  return block_is_solid(g_world[world_index(x, y, z)]);
+  if (p_y < 0) return TRUE;
+  if (p_y >= WORLD_HEIGHT) return FALSE;
+  if (p_x < 0 || p_z < 0 || p_x >= WORLD_SIZE_X || p_z >= WORLD_SIZE_Z) return TRUE;
+  return block_is_solid(g_world[world_index(p_x, p_y, p_z)]);
 }
 
-Integer world_top_solid_y(Integer x, Integer z)
+Integer world_top_solid_y(Integer p_x, Integer p_z)
 // ----------------------------------------------------------------
 // y of the highest solid block in a column, -1 if there is none
 // ----------------------------------------------------------------
 {
-  Integer y    = 0;
-  Integer base = 0;
+  Integer l_y    = 0;
+  Integer l_base = 0;
 
-  if (!world_in_bounds(x, 0, z)) return -1;
+  if (!world_in_bounds(p_x, 0, p_z)) return -1;
 
-  base = world_index(x, 0, z);
-  for (y = WORLD_HEIGHT - 1; y >= 0; --y) {
-    if (block_is_solid(g_world[base + y])) return y;
+  l_base = world_index(p_x, 0, p_z);
+  for (l_y = WORLD_HEIGHT - 1; l_y >= 0; --l_y) {
+    if (block_is_solid(g_world[l_base + l_y])) return l_y;
   }
   return -1;
 }
 
-Integer world_sky_top(Integer x, Integer z)
+Integer world_sky_top(Integer p_x, Integer p_z)
 // ----------------------------------------------------------------
 // y of the highest sky-blocking block of a column (kept up to date
 // as blocks change); cells above it are in daylight
 // ----------------------------------------------------------------
 {
-  if (!world_in_bounds(x, 0, z)) return -1;
-  return g_column_top[world_column(x, z)];
+  if (!world_in_bounds(p_x, 0, p_z)) return -1;
+  return g_column_top[world_column(p_x, p_z)];
 }
 
-Integer world_solid_below(Integer x, Integer z)
+Integer world_solid_below(Integer p_x, Integer p_z)
 // ----------------------------------------------------------------
 // As generated, every cell of the column from 0 up to this y is
 // solid (caves and ponds lower it). Used to skip buried sections.
 // ----------------------------------------------------------------
 {
-  if (!world_in_bounds(x, 0, z)) return WORLD_HEIGHT;
-  return g_solid_below[world_column(x, z)];
+  if (!world_in_bounds(p_x, 0, p_z)) return WORLD_HEIGHT;
+  return g_solid_below[world_column(p_x, p_z)];
 }
 
-Integer world_biome(Integer x, Integer z)
+Integer world_biome(Integer p_x, Integer p_z)
 // ----------------------------------------------------------------
 // BIOME_* of a column
 // ----------------------------------------------------------------
 {
-  if (!world_in_bounds(x, 0, z)) return BIOME_OCEAN;
-  return g_biome_map[world_column(x, z)];
+  if (!world_in_bounds(p_x, 0, p_z)) return BIOME_OCEAN;
+  return g_biome_map[world_column(p_x, p_z)];
 }
 
-void world_update_column_top(Integer x, Integer z)
+void world_update_column_top(Integer p_x, Integer p_z)
 // ----------------------------------------------------------------
 // Recompute the sky top of one column after a block changed
 // ----------------------------------------------------------------
 {
-  if (!world_in_bounds(x, 0, z)) return;
-  g_column_top[world_column(x, z)] = world_top_solid_y(x, z);
+  if (!world_in_bounds(p_x, 0, p_z)) return;
+  g_column_top[world_column(p_x, p_z)] = world_top_solid_y(p_x, p_z);
 }
 
-void world_break_block(Attributes &events, Integer x, Integer y, Integer z, Integer tool_item)
+void world_break_block(Attributes &p_events, Integer p_x, Integer p_y, Integer p_z, Integer p_tool_item)
 // ----------------------------------------------------------------
 // Remove a block during play and announce it with EVT_BLOCK_BROKEN
 // (tool_item is what it was broken with, so the drop can depend on
@@ -134,144 +134,144 @@ void world_break_block(Attributes &events, Integer x, Integer y, Integer z, Inte
 // ponds stay level when the shore is dug away
 // ----------------------------------------------------------------
 {
-  Integer old_block = world_get_block(x, y, z);
-  Integer new_block = BLOCK_AIR;
+  Integer l_old_block = world_get_block(p_x, p_y, p_z);
+  Integer l_new_block = BLOCK_AIR;
 
-  if (!world_in_bounds(x, y, z)) return;
-  if (old_block == BLOCK_AIR) return;
+  if (!world_in_bounds(p_x, p_y, p_z)) return;
+  if (l_old_block == BLOCK_AIR) return;
 
-  if (world_get_block(x + 1, y, z) == BLOCK_WATER) new_block = BLOCK_WATER;
-  if (world_get_block(x - 1, y, z) == BLOCK_WATER) new_block = BLOCK_WATER;
-  if (world_get_block(x, y + 1, z) == BLOCK_WATER) new_block = BLOCK_WATER;
-  if (world_get_block(x, y, z + 1) == BLOCK_WATER) new_block = BLOCK_WATER;
-  if (world_get_block(x, y, z - 1) == BLOCK_WATER) new_block = BLOCK_WATER;
+  if (world_get_block(p_x + 1, p_y, p_z) == BLOCK_WATER) l_new_block = BLOCK_WATER;
+  if (world_get_block(p_x - 1, p_y, p_z) == BLOCK_WATER) l_new_block = BLOCK_WATER;
+  if (world_get_block(p_x, p_y + 1, p_z) == BLOCK_WATER) l_new_block = BLOCK_WATER;
+  if (world_get_block(p_x, p_y, p_z + 1) == BLOCK_WATER) l_new_block = BLOCK_WATER;
+  if (world_get_block(p_x, p_y, p_z - 1) == BLOCK_WATER) l_new_block = BLOCK_WATER;
 
-  world_set_block        (x, y, z, new_block);
-  world_update_column_top(x, z);
-  emit_event(events, EVT_BLOCK_BROKEN, x, y, z, old_block, tool_item * 1.0, 0.0, 0.0, "");
-  if (new_block == BLOCK_WATER) emit_cell_event(events, EVT_BLOCK_PLACED, x, y, z, BLOCK_WATER);
+  world_set_block        (p_x, p_y, p_z, l_new_block);
+  world_update_column_top(p_x, p_z);
+  emit_event(p_events, EVT_BLOCK_BROKEN, p_x, p_y, p_z, l_old_block, p_tool_item * 1.0, 0.0, 0.0, "");
+  if (l_new_block == BLOCK_WATER) emit_cell_event(p_events, EVT_BLOCK_PLACED, p_x, p_y, p_z, BLOCK_WATER);
 
   // A plant standing on the broken block goes with it
-  if (block_is_plant(world_get_block(x, y + 1, z))) world_break_block(events, x, y + 1, z, ITEM_NONE);
+  if (block_is_plant(world_get_block(p_x, p_y + 1, p_z))) world_break_block(p_events, p_x, p_y + 1, p_z, ITEM_NONE);
 }
 
-void world_place_block(Attributes &events, Integer x, Integer y, Integer z, Integer block)
+void world_place_block(Attributes &p_events, Integer p_x, Integer p_y, Integer p_z, Integer p_block)
 // ----------------------------------------------------------------
 // Put a block down during play and announce it with
 // EVT_BLOCK_PLACED
 // ----------------------------------------------------------------
 {
-  if (!world_in_bounds(x, y, z)) return;
+  if (!world_in_bounds(p_x, p_y, p_z)) return;
 
-  world_set_block        (x, y, z, block);
-  world_update_column_top(x, z);
-  emit_cell_event(events, EVT_BLOCK_PLACED, x, y, z, block);
+  world_set_block        (p_x, p_y, p_z, p_block);
+  world_update_column_top(p_x, p_z);
+  emit_cell_event(p_events, EVT_BLOCK_PLACED, p_x, p_y, p_z, p_block);
 }
 
 // ---------------------------------------------------------------- world record
 
-void world_info_clear(Attributes &info, Integer seed)
+void world_info_clear(Attributes &p_info, Integer p_seed)
 // ----------------------------------------------------------------
 // Start a world record for a seed
 // ----------------------------------------------------------------
 {
-  Real shift_a = 0.0;
-  Real shift_b = 0.0;
+  Real l_shift_a = 0.0;
+  Real l_shift_b = 0.0;
 
-  world_seed_shifts(seed, shift_a, shift_b);
+  world_seed_shifts(p_seed, l_shift_a, l_shift_b);
 
-  record_clear      (info, DATATYPE_WORLD_INFO);
-  record_set_integer(info, ATTR_WORLD_SEED, seed);
-  record_set_real   (info, ATTR_SHIFT_A,    shift_a);
-  record_set_real   (info, ATTR_SHIFT_B,    shift_b);
-  world_info_set_spawn(info, WORLD_SIZE_X * 0.5, SEA_LEVEL + 8.0, WORLD_SIZE_Z * 0.5);
+  record_clear      (p_info, DATATYPE_WORLD_INFO);
+  record_set_integer(p_info, ATTR_WORLD_SEED, p_seed);
+  record_set_real   (p_info, ATTR_SHIFT_A,    l_shift_a);
+  record_set_real   (p_info, ATTR_SHIFT_B,    l_shift_b);
+  world_info_set_spawn(p_info, WORLD_SIZE_X * 0.5, SEA_LEVEL + 8.0, WORLD_SIZE_Z * 0.5);
 }
 
-Integer world_info_seed(Attributes &info)
+Integer world_info_seed(Attributes &p_info)
 // ----------------------------------------------------------------
 // The seed a world was made from
 // ----------------------------------------------------------------
 {
-  return record_integer(info, ATTR_WORLD_SEED);
+  return record_integer(p_info, ATTR_WORLD_SEED);
 }
 
-void world_info_spawn(Attributes &info, Real &x, Real &y, Real &z)
+void world_info_spawn(Attributes &p_info, Real &p_x, Real &p_y, Real &p_z)
 // ----------------------------------------------------------------
 // Where the player starts and respawns
 // ----------------------------------------------------------------
 {
-  x = record_real(info, ATTR_SPAWN_X);
-  y = record_real(info, ATTR_SPAWN_Y);
-  z = record_real(info, ATTR_SPAWN_Z);
+  p_x = record_real(p_info, ATTR_SPAWN_X);
+  p_y = record_real(p_info, ATTR_SPAWN_Y);
+  p_z = record_real(p_info, ATTR_SPAWN_Z);
 }
 
-void world_info_set_spawn(Attributes &info, Real x, Real y, Real z)
+void world_info_set_spawn(Attributes &p_info, Real p_x, Real p_y, Real p_z)
 // ----------------------------------------------------------------
 // Set where the player starts and respawns
 // ----------------------------------------------------------------
 {
-  record_set_real(info, ATTR_SPAWN_X, x);
-  record_set_real(info, ATTR_SPAWN_Y, y);
-  record_set_real(info, ATTR_SPAWN_Z, z);
+  record_set_real(p_info, ATTR_SPAWN_X, p_x);
+  record_set_real(p_info, ATTR_SPAWN_Y, p_y);
+  record_set_real(p_info, ATTR_SPAWN_Z, p_z);
 }
 
 // ---------------------------------------------------------------- noise
 
-void world_seed_shifts(Integer seed, Real &shift_a, Real &shift_b)
+void world_seed_shifts(Integer p_seed, Real &p_shift_a, Real &p_shift_b)
 // ----------------------------------------------------------------
 // Turn the world seed into the offsets used by the noise functions
 // Any Integer works, including negative and very large seeds
 // ----------------------------------------------------------------
 {
-  Integer low  = positive_mod(seed, 9973);
-  Integer high = positive_mod(floor_divide(seed, 9973), 9967);
+  Integer l_low  = positive_mod(p_seed, 9973);
+  Integer l_high = positive_mod(floor_divide(p_seed, 9973), 9967);
 
-  shift_a = low  * 0.7310 + 13.0;
-  shift_b = high * 0.5170 + 7.0;
+  p_shift_a = l_low  * 0.7310 + 13.0;
+  p_shift_b = l_high * 0.5170 + 7.0;
 }
 
-Real world_value_noise(Real x, Real z, Integer layer, Real shift_a, Real shift_b)
+Real world_value_noise(Real p_x, Real p_z, Integer p_layer, Real p_shift_a, Real p_shift_b)
 // ----------------------------------------------------------------
 // Smooth 2D value noise in [0, 1] for a seed's shifts
 // layer picks an independent pattern
 // ----------------------------------------------------------------
 {
-  Integer cell_x  = Floor(x);
-  Integer cell_z  = Floor(z);
-  Real    blend_x = smooth_curve(x - cell_x);
-  Real    blend_z = smooth_curve(z - cell_z);
-  Real    salt    = layer * 19.19 + shift_b;
-  Real    v00     = hash_real(cell_x       + shift_a, cell_z       * 1.0, salt);
-  Real    v10     = hash_real(cell_x + 1.0 + shift_a, cell_z       * 1.0, salt);
-  Real    v01     = hash_real(cell_x       + shift_a, cell_z + 1.0      , salt);
-  Real    v11     = hash_real(cell_x + 1.0 + shift_a, cell_z + 1.0      , salt);
+  Integer l_cell_x  = Floor(p_x);
+  Integer l_cell_z  = Floor(p_z);
+  Real    l_blend_x = smooth_curve(p_x - l_cell_x);
+  Real    l_blend_z = smooth_curve(p_z - l_cell_z);
+  Real    l_salt    = p_layer * 19.19 + p_shift_b;
+  Real    l_v00     = hash_real(l_cell_x       + p_shift_a, l_cell_z       * 1.0, l_salt);
+  Real    l_v10     = hash_real(l_cell_x + 1.0 + p_shift_a, l_cell_z       * 1.0, l_salt);
+  Real    l_v01     = hash_real(l_cell_x       + p_shift_a, l_cell_z + 1.0      , l_salt);
+  Real    l_v11     = hash_real(l_cell_x + 1.0 + p_shift_a, l_cell_z + 1.0      , l_salt);
 
-  return lerp_real(lerp_real(v00, v10, blend_x), lerp_real(v01, v11, blend_x), blend_z);
+  return lerp_real(lerp_real(l_v00, l_v10, l_blend_x), lerp_real(l_v01, l_v11, l_blend_x), l_blend_z);
 }
 
-Real world_desert_weight(Integer x, Integer z, Real shift_a, Real shift_b)
+Real world_desert_weight(Integer p_x, Integer p_z, Real p_shift_a, Real p_shift_b)
 // ----------------------------------------------------------------
 // 0 outside deserts, 1 deep inside one, smooth in between so the
 // land flattens gradually towards a desert instead of stepping
 // ----------------------------------------------------------------
 {
-  Real heat = world_value_noise(x / 58.0, z / 58.0, 7, shift_a, shift_b);
+  Real l_heat = world_value_noise(p_x / 58.0, p_z / 58.0, 7, p_shift_a, p_shift_b);
 
-  return smooth_curve(clamp_real((heat - 0.56) / 0.12, 0.0, 1.0));
+  return smooth_curve(clamp_real((l_heat - 0.56) / 0.12, 0.0, 1.0));
 }
 
-Integer world_column_biome(Integer x, Integer z, Real shift_a, Real shift_b)
+Integer world_column_biome(Integer p_x, Integer p_z, Real p_shift_a, Real p_shift_b)
 // ----------------------------------------------------------------
 // Land biome of a column (oceans and beaches are decided from the
 // height afterwards)
 // ----------------------------------------------------------------
 {
-  if (world_desert_weight(x, z, shift_a, shift_b) > 0.5) return BIOME_DESERT;
-  if (world_value_noise(x / 34.0, z / 34.0, 6, shift_a, shift_b) > 0.52) return BIOME_FOREST;
+  if (world_desert_weight(p_x, p_z, p_shift_a, p_shift_b) > 0.5) return BIOME_DESERT;
+  if (world_value_noise(p_x / 34.0, p_z / 34.0, 6, p_shift_a, p_shift_b) > 0.52) return BIOME_FOREST;
   return BIOME_PLAINS;
 }
 
-Integer world_terrain_height(Integer x, Integer z, Real shift_a, Real shift_b)
+Integer world_terrain_height(Integer p_x, Integer p_z, Real p_shift_a, Real p_shift_b)
 // ----------------------------------------------------------------
 // y of the top block of a column
 // A slow "continent" pattern decides land or sea and gentle hills
@@ -280,461 +280,461 @@ Integer world_terrain_height(Integer x, Integer z, Real shift_a, Real shift_b)
 // SEA_LEVEL becomes ocean floor.
 // ----------------------------------------------------------------
 {
-  Real    continent = world_value_noise(x / 64.0, z / 64.0, 1, shift_a, shift_b);
-  Real    hills     = world_value_noise(x / 30.0, z / 30.0, 2, shift_a, shift_b) * 0.72
-                    + world_value_noise(x / 13.0, z / 13.0, 3, shift_a, shift_b) * 0.28;
-  Real    rugged    = world_value_noise(x / 40.0, z / 40.0, 5, shift_a, shift_b);
-  Real    desert    = world_desert_weight(x, z, shift_a, shift_b);
-  Real    base      = 53.0 + continent * 26.0;
-  Real    amplitude = 2.5 + rugged * rugged * rugged * 22.0;
-  Real    height    = 0.0;
-  Integer result    = 0;
+  Real    l_continent = world_value_noise(p_x / 64.0, p_z / 64.0, 1, p_shift_a, p_shift_b);
+  Real    l_hills     = world_value_noise(p_x / 30.0, p_z / 30.0, 2, p_shift_a, p_shift_b) * 0.72
+                    + world_value_noise(p_x / 13.0, p_z / 13.0, 3, p_shift_a, p_shift_b) * 0.28;
+  Real    l_rugged    = world_value_noise(p_x / 40.0, p_z / 40.0, 5, p_shift_a, p_shift_b);
+  Real    l_desert    = world_desert_weight(p_x, p_z, p_shift_a, p_shift_b);
+  Real    l_base      = 53.0 + l_continent * 26.0;
+  Real    l_amplitude = 2.5 + l_rugged * l_rugged * l_rugged * 22.0;
+  Real    l_height    = 0.0;
+  Integer l_result    = 0;
 
-  amplitude = amplitude * (1.0 - 0.6 * desert);
-  base      = base + 2.0 * desert;
+  l_amplitude = l_amplitude * (1.0 - 0.6 * l_desert);
+  l_base      = l_base + 2.0 * l_desert;
 
-  if (base < SEA_LEVEL) {
+  if (l_base < SEA_LEVEL) {
     // Deepen the sea floor away from the coast
-    base      = SEA_LEVEL - (SEA_LEVEL - base) * 1.6;
-    amplitude = 3.0;
+    l_base      = SEA_LEVEL - (SEA_LEVEL - l_base) * 1.6;
+    l_amplitude = 3.0;
   }
 
-  height = base + (hills - 0.5) * amplitude * 2.0;
-  result = Floor(height);
+  l_height = l_base + (l_hills - 0.5) * l_amplitude * 2.0;
+  l_result = Floor(l_height);
 
-  return clamp_integer(result, 6, WORLD_HEIGHT - 14);
+  return clamp_integer(l_result, 6, WORLD_HEIGHT - 14);
 }
 
 // ---------------------------------------------------------------- generation
 
-void world_fill_columns(Real shift_a, Real shift_b)
+void world_fill_columns(Real p_shift_a, Real p_shift_b)
 // ----------------------------------------------------------------
 // Fill every column: bedrock floor, stone, a biome surface (grass
 // on dirt, sand on sandstone in deserts, sand on beaches and the
 // sea bed, gravel in the deep sea) and water up to SEA_LEVEL
 // ----------------------------------------------------------------
 {
-  Integer x       = 0;
-  Integer z       = 0;
-  Integer y       = 0;
-  Integer height  = 0;
-  Integer biome   = 0;
-  Integer base    = 0;
-  Integer column  = 0;
-  Integer block   = 0;
-  Integer surface = 0;
-  Integer under   = 0;
-  Integer deep    = 0;
-  Integer depth   = 0;
+  Integer l_x       = 0;
+  Integer l_z       = 0;
+  Integer l_y       = 0;
+  Integer l_height  = 0;
+  Integer l_biome   = 0;
+  Integer l_base    = 0;
+  Integer l_column  = 0;
+  Integer l_block   = 0;
+  Integer l_surface = 0;
+  Integer l_under   = 0;
+  Integer l_deep    = 0;
+  Integer l_depth   = 0;
 
-  for (x = 0; x < WORLD_SIZE_X; ++x) {
-    for (z = 0; z < WORLD_SIZE_Z; ++z) {
-      height = world_terrain_height(x, z, shift_a, shift_b);
-      biome  = world_column_biome  (x, z, shift_a, shift_b);
-      base   = world_index (x, 0, z);
-      column = world_column(x, z);
+  for (l_x = 0; l_x < WORLD_SIZE_X; ++l_x) {
+    for (l_z = 0; l_z < WORLD_SIZE_Z; ++l_z) {
+      l_height = world_terrain_height(l_x, l_z, p_shift_a, p_shift_b);
+      l_biome  = world_column_biome  (l_x, l_z, p_shift_a, p_shift_b);
+      l_base   = world_index (l_x, 0, l_z);
+      l_column = world_column(l_x, l_z);
 
-      surface = BLOCK_GRASS;
-      under   = BLOCK_DIRT;
-      deep    = BLOCK_DIRT;
-      depth   = 3;
-      if (biome == BIOME_DESERT) {
-        surface = BLOCK_SAND;
-        under   = BLOCK_SAND;
-        deep    = BLOCK_SANDSTONE;
-        depth   = 6;
+      l_surface = BLOCK_GRASS;
+      l_under   = BLOCK_DIRT;
+      l_deep    = BLOCK_DIRT;
+      l_depth   = 3;
+      if (l_biome == BIOME_DESERT) {
+        l_surface = BLOCK_SAND;
+        l_under   = BLOCK_SAND;
+        l_deep    = BLOCK_SANDSTONE;
+        l_depth   = 6;
       }
-      if (height < SEA_LEVEL + 1) {
-        biome   = BIOME_BEACH;
-        surface = BLOCK_SAND;
-        under   = BLOCK_SAND;
-        deep    = BLOCK_SANDSTONE;
-        if (height < SEA_LEVEL - 2) biome = BIOME_OCEAN;
-        if (height < SEA_LEVEL - 9) {
-          surface = BLOCK_GRAVEL;
-          under   = BLOCK_DIRT;
-          deep    = BLOCK_DIRT;
+      if (l_height < SEA_LEVEL + 1) {
+        l_biome   = BIOME_BEACH;
+        l_surface = BLOCK_SAND;
+        l_under   = BLOCK_SAND;
+        l_deep    = BLOCK_SANDSTONE;
+        if (l_height < SEA_LEVEL - 2) l_biome = BIOME_OCEAN;
+        if (l_height < SEA_LEVEL - 9) {
+          l_surface = BLOCK_GRAVEL;
+          l_under   = BLOCK_DIRT;
+          l_deep    = BLOCK_DIRT;
         }
       }
 
-      g_height_map [column] = height;
-      g_solid_below[column] = height;
-      g_biome_map  [column] = biome;
+      g_height_map [l_column] = l_height;
+      g_solid_below[l_column] = l_height;
+      g_biome_map  [l_column] = l_biome;
 
-      for (y = 0; y < WORLD_HEIGHT; ++y) {
-        block = BLOCK_AIR;
-        if (y == 0) {
-          block = BLOCK_BEDROCK;
-        } else if (y <= 3 && hash_real(x * 1.0, y * 1.0, z + shift_a) < 0.7 / y) {
-          block = BLOCK_BEDROCK;
-        } else if (y < height - depth) {
-          block = BLOCK_STONE;
-        } else if (y < height - 3) {
-          block = deep;
-        } else if (y < height) {
-          block = under;
-        } else if (y == height) {
-          block = surface;
-        } else if (y < SEA_LEVEL) {
-          block = BLOCK_WATER;
+      for (l_y = 0; l_y < WORLD_HEIGHT; ++l_y) {
+        l_block = BLOCK_AIR;
+        if (l_y == 0) {
+          l_block = BLOCK_BEDROCK;
+        } else if (l_y <= 3 && hash_real(l_x * 1.0, l_y * 1.0, l_z + p_shift_a) < 0.7 / l_y) {
+          l_block = BLOCK_BEDROCK;
+        } else if (l_y < l_height - l_depth) {
+          l_block = BLOCK_STONE;
+        } else if (l_y < l_height - 3) {
+          l_block = l_deep;
+        } else if (l_y < l_height) {
+          l_block = l_under;
+        } else if (l_y == l_height) {
+          l_block = l_surface;
+        } else if (l_y < SEA_LEVEL) {
+          l_block = BLOCK_WATER;
         }
-        g_world[base + y] = block;
+        g_world[l_base + l_y] = l_block;
       }
     }
   }
 }
 
-void world_mark_carved(Integer x, Integer y, Integer z)
+void world_mark_carved(Integer p_x, Integer p_y, Integer p_z)
 // ----------------------------------------------------------------
 // Note that a generated column is no longer solid up to its
 // surface (so meshing doesn't skip the hollow section)
 // ----------------------------------------------------------------
 {
-  Integer column = 0;
+  Integer l_column = 0;
 
-  if (!world_in_bounds(x, y, z)) return;
-  column = world_column(x, z);
-  if (y - 1 < g_solid_below[column]) g_solid_below[column] = y - 1;
+  if (!world_in_bounds(p_x, p_y, p_z)) return;
+  l_column = world_column(p_x, p_z);
+  if (p_y - 1 < g_solid_below[l_column]) g_solid_below[l_column] = p_y - 1;
 }
 
-void world_carve_sphere(Real centre_x, Real centre_y, Real centre_z, Real radius)
+void world_carve_sphere(Real p_centre_x, Real p_centre_y, Real p_centre_z, Real p_radius)
 // ----------------------------------------------------------------
 // Hollow out a ball of underground blocks for a cave. Water, the
 // cells next to water and the bottom of the world are left alone
 // so caves never drain the sea or break through the bedrock.
 // ----------------------------------------------------------------
 {
-  Integer x0    = Floor(centre_x - radius);
-  Integer x1    = Floor(centre_x + radius);
-  Integer y0    = Floor(centre_y - radius);
-  Integer y1    = Floor(centre_y + radius);
-  Integer z0    = Floor(centre_z - radius);
-  Integer z1    = Floor(centre_z + radius);
-  Integer x     = 0;
-  Integer y     = 0;
-  Integer z     = 0;
-  Integer block = 0;
-  Integer wet   = 0;
-  Real    dx    = 0.0;
-  Real    dy    = 0.0;
-  Real    dz    = 0.0;
+  Integer l_x0    = Floor(p_centre_x - p_radius);
+  Integer l_x1    = Floor(p_centre_x + p_radius);
+  Integer l_y0    = Floor(p_centre_y - p_radius);
+  Integer l_y1    = Floor(p_centre_y + p_radius);
+  Integer l_z0    = Floor(p_centre_z - p_radius);
+  Integer l_z1    = Floor(p_centre_z + p_radius);
+  Integer l_x     = 0;
+  Integer l_y     = 0;
+  Integer l_z     = 0;
+  Integer l_block = 0;
+  Integer l_wet   = 0;
+  Real    l_dx    = 0.0;
+  Real    l_dy    = 0.0;
+  Real    l_dz    = 0.0;
 
-  for (x = x0; x <= x1; ++x) {
-    for (z = z0; z <= z1; ++z) {
-      for (y = y0; y <= y1; ++y) {
-        if (y <= 4) continue;
-        if (!world_in_bounds(x, y, z)) continue;
-        dx = x + 0.5 - centre_x;
-        dy = (y + 0.5 - centre_y) * 1.3;
-        dz = z + 0.5 - centre_z;
-        if (dx * dx + dy * dy + dz * dz > radius * radius) continue;
+  for (l_x = l_x0; l_x <= l_x1; ++l_x) {
+    for (l_z = l_z0; l_z <= l_z1; ++l_z) {
+      for (l_y = l_y0; l_y <= l_y1; ++l_y) {
+        if (l_y <= 4) continue;
+        if (!world_in_bounds(l_x, l_y, l_z)) continue;
+        l_dx = l_x + 0.5 - p_centre_x;
+        l_dy = (l_y + 0.5 - p_centre_y) * 1.3;
+        l_dz = l_z + 0.5 - p_centre_z;
+        if (l_dx * l_dx + l_dy * l_dy + l_dz * l_dz > p_radius * p_radius) continue;
 
-        block = world_get_block(x, y, z);
-        if (block == BLOCK_AIR || block == BLOCK_WATER || block == BLOCK_BEDROCK) continue;
+        l_block = world_get_block(l_x, l_y, l_z);
+        if (l_block == BLOCK_AIR || l_block == BLOCK_WATER || l_block == BLOCK_BEDROCK) continue;
 
-        wet = FALSE;
-        if (world_get_block(x + 1, y, z) == BLOCK_WATER) wet = TRUE;
-        if (world_get_block(x - 1, y, z) == BLOCK_WATER) wet = TRUE;
-        if (world_get_block(x, y + 1, z) == BLOCK_WATER) wet = TRUE;
-        if (world_get_block(x, y, z + 1) == BLOCK_WATER) wet = TRUE;
-        if (world_get_block(x, y, z - 1) == BLOCK_WATER) wet = TRUE;
-        if (wet) continue;
+        l_wet = FALSE;
+        if (world_get_block(l_x + 1, l_y, l_z) == BLOCK_WATER) l_wet = TRUE;
+        if (world_get_block(l_x - 1, l_y, l_z) == BLOCK_WATER) l_wet = TRUE;
+        if (world_get_block(l_x, l_y + 1, l_z) == BLOCK_WATER) l_wet = TRUE;
+        if (world_get_block(l_x, l_y, l_z + 1) == BLOCK_WATER) l_wet = TRUE;
+        if (world_get_block(l_x, l_y, l_z - 1) == BLOCK_WATER) l_wet = TRUE;
+        if (l_wet) continue;
 
-        world_set_block  (x, y, z, BLOCK_AIR);
-        world_mark_carved(x, y, z);
+        world_set_block  (l_x, l_y, l_z, BLOCK_AIR);
+        world_mark_carved(l_x, l_y, l_z);
       }
     }
   }
 }
 
-void world_carve_caves(Attributes &random)
+void world_carve_caves(Attributes &p_random)
 // ----------------------------------------------------------------
 // Caves are dug by "worms": each starts somewhere underground and
 // wanders, turning a little at every step, hollowing out a ball
 // whose size swells and shrinks. A few reach the surface.
 // ----------------------------------------------------------------
 {
-  Integer worms  = random_range(random, MAX_CAVE_WORMS - 5, MAX_CAVE_WORMS);
-  Integer worm   = 0;
-  Integer step   = 0;
-  Integer top    = 0;
-  Real    x      = 0.0;
-  Real    y      = 0.0;
-  Real    z      = 0.0;
-  Real    yaw    = 0.0;
-  Real    pitch  = 0.0;
-  Real    phase  = 0.0;
-  Real    radius = 0.0;
+  Integer l_worms  = random_range(p_random, MAX_CAVE_WORMS - 5, MAX_CAVE_WORMS);
+  Integer l_worm   = 0;
+  Integer l_step   = 0;
+  Integer l_top    = 0;
+  Real    l_x      = 0.0;
+  Real    l_y      = 0.0;
+  Real    l_z      = 0.0;
+  Real    l_yaw    = 0.0;
+  Real    l_pitch  = 0.0;
+  Real    l_phase  = 0.0;
+  Real    l_radius = 0.0;
 
-  for (worm = 1; worm <= worms; ++worm) {
-    x     = random_between(random, 10.0, WORLD_SIZE_X - 10.0);
-    z     = random_between(random, 10.0, WORLD_SIZE_Z - 10.0);
-    top   = g_height_map[world_column(floor_integer(x), floor_integer(z))];
-    y     = random_between(random, 10.0, max_real(12.0, top - 4.0));
-    yaw   = random_between(random, 0.0, TWO_PI);
-    pitch = random_between(random, -0.25, 0.25);
-    phase = random_between(random, 0.0, TWO_PI);
+  for (l_worm = 1; l_worm <= l_worms; ++l_worm) {
+    l_x     = random_between(p_random, 10.0, WORLD_SIZE_X - 10.0);
+    l_z     = random_between(p_random, 10.0, WORLD_SIZE_Z - 10.0);
+    l_top   = g_height_map[world_column(floor_integer(l_x), floor_integer(l_z))];
+    l_y     = random_between(p_random, 10.0, max_real(12.0, l_top - 4.0));
+    l_yaw   = random_between(p_random, 0.0, TWO_PI);
+    l_pitch = random_between(p_random, -0.25, 0.25);
+    l_phase = random_between(p_random, 0.0, TWO_PI);
 
-    for (step = 1; step <= CAVE_WORM_STEPS; ++step) {
-      radius = 1.5 + 1.0 * Sin(step * 0.16 + phase);
-      world_carve_sphere(x, y, z, radius);
+    for (l_step = 1; l_step <= CAVE_WORM_STEPS; ++l_step) {
+      l_radius = 1.5 + 1.0 * Sin(l_step * 0.16 + l_phase);
+      world_carve_sphere(l_x, l_y, l_z, l_radius);
 
-      x     = x + Cos(yaw) * Cos(pitch);
-      z     = z + Sin(yaw) * Cos(pitch);
-      y     = y + Sin(pitch);
-      yaw   = yaw + random_between(random, -0.35, 0.35);
-      pitch = clamp_real(pitch * 0.9 + random_between(random, -0.18, 0.18), -0.6, 0.6);
+      l_x     = l_x + Cos(l_yaw) * Cos(l_pitch);
+      l_z     = l_z + Sin(l_yaw) * Cos(l_pitch);
+      l_y     = l_y + Sin(l_pitch);
+      l_yaw   = l_yaw + random_between(p_random, -0.35, 0.35);
+      l_pitch = clamp_real(l_pitch * 0.9 + random_between(p_random, -0.18, 0.18), -0.6, 0.6);
 
-      if (y < 7.0) pitch = Absolute(pitch);
-      if (x < 4.0 || z < 4.0 || x > WORLD_SIZE_X - 4.0 || z > WORLD_SIZE_Z - 4.0) break;
+      if (l_y < 7.0) l_pitch = Absolute(l_pitch);
+      if (l_x < 4.0 || l_z < 4.0 || l_x > WORLD_SIZE_X - 4.0 || l_z > WORLD_SIZE_Z - 4.0) break;
     }
   }
 }
 
-void world_place_veins(Attributes &random, Integer block, Integer count, Integer length, Integer max_y)
+void world_place_veins(Attributes &p_random, Integer p_block, Integer p_count, Integer p_length, Integer p_max_y)
 // ----------------------------------------------------------------
 // Scatter count small veins of block through the stone below
 // max_y, each a short random walk of length cells
 // ----------------------------------------------------------------
 {
-  Integer vein = 0;
-  Integer cell = 0;
-  Integer x    = 0;
-  Integer y    = 0;
-  Integer z    = 0;
-  Integer axis = 0;
+  Integer l_vein = 0;
+  Integer l_cell = 0;
+  Integer l_x    = 0;
+  Integer l_y    = 0;
+  Integer l_z    = 0;
+  Integer l_axis = 0;
 
-  for (vein = 1; vein <= count; ++vein) {
-    x = random_range(random, 1, WORLD_SIZE_X - 2);
-    z = random_range(random, 1, WORLD_SIZE_Z - 2);
-    y = random_range(random, 5, max_y);
+  for (l_vein = 1; l_vein <= p_count; ++l_vein) {
+    l_x = random_range(p_random, 1, WORLD_SIZE_X - 2);
+    l_z = random_range(p_random, 1, WORLD_SIZE_Z - 2);
+    l_y = random_range(p_random, 5, p_max_y);
 
-    for (cell = 1; cell <= length; ++cell) {
-      if (world_get_block(x, y, z) == BLOCK_STONE) world_set_block(x, y, z, block);
-      axis = random_range(random, 1, 6);
-      if (axis == 1) ++x;
-      if (axis == 2) --x;
-      if (axis == 3) ++y;
-      if (axis == 4) --y;
-      if (axis == 5) ++z;
-      if (axis == 6) --z;
+    for (l_cell = 1; l_cell <= p_length; ++l_cell) {
+      if (world_get_block(l_x, l_y, l_z) == BLOCK_STONE) world_set_block(l_x, l_y, l_z, p_block);
+      l_axis = random_range(p_random, 1, 6);
+      if (l_axis == 1) ++l_x;
+      if (l_axis == 2) --l_x;
+      if (l_axis == 3) ++l_y;
+      if (l_axis == 4) --l_y;
+      if (l_axis == 5) ++l_z;
+      if (l_axis == 6) --l_z;
     }
   }
 }
 
-void world_plant_tree(Integer x, Integer ground_y, Integer z, Real shift_a, Real shift_b)
+void world_plant_tree(Integer p_x, Integer p_ground_y, Integer p_z, Real p_shift_a, Real p_shift_b)
 // ----------------------------------------------------------------
 // An oak: a trunk of logs with a rounded crown of leaves
 // The ground under the trunk becomes dirt
 // ----------------------------------------------------------------
 {
-  Integer trunk  = 4 + Floor(hash_real(x * 3.1 + shift_a, z * 1.7, 41.0) * 3.0);
-  Integer top    = ground_y + trunk;
-  Integer y      = 0;
-  Integer dx     = 0;
-  Integer dz     = 0;
-  Integer radius = 0;
-  Integer corner = 0;
-  Integer here   = 0;
+  Integer l_trunk  = 4 + Floor(hash_real(p_x * 3.1 + p_shift_a, p_z * 1.7, 41.0) * 3.0);
+  Integer l_top    = p_ground_y + l_trunk;
+  Integer l_y      = 0;
+  Integer l_dx     = 0;
+  Integer l_dz     = 0;
+  Integer l_radius = 0;
+  Integer l_corner = 0;
+  Integer l_here   = 0;
 
-  for (y = top - 2; y <= top + 1; ++y) {
-    radius = 2;
-    if (y >= top) radius = 1;
-    for (dx = -radius; dx <= radius; ++dx) {
-      for (dz = -radius; dz <= radius; ++dz) {
-        corner = Absolute(dx) == radius && Absolute(dz) == radius;
-        if (corner) {
-          if (y == top + 1) continue;
-          if (hash_real(x + dx * 1.0, y * 1.0, z + dz + shift_b) < 0.55) continue;
+  for (l_y = l_top - 2; l_y <= l_top + 1; ++l_y) {
+    l_radius = 2;
+    if (l_y >= l_top) l_radius = 1;
+    for (l_dx = -l_radius; l_dx <= l_radius; ++l_dx) {
+      for (l_dz = -l_radius; l_dz <= l_radius; ++l_dz) {
+        l_corner = Absolute(l_dx) == l_radius && Absolute(l_dz) == l_radius;
+        if (l_corner) {
+          if (l_y == l_top + 1) continue;
+          if (hash_real(p_x + l_dx * 1.0, l_y * 1.0, p_z + l_dz + p_shift_b) < 0.55) continue;
         }
-        here = world_get_block(x + dx, y, z + dz);
-        if (here == BLOCK_AIR || block_is_plant(here)) world_set_block(x + dx, y, z + dz, BLOCK_LEAVES);
+        l_here = world_get_block(p_x + l_dx, l_y, p_z + l_dz);
+        if (l_here == BLOCK_AIR || block_is_plant(l_here)) world_set_block(p_x + l_dx, l_y, p_z + l_dz, BLOCK_LEAVES);
       }
     }
   }
 
-  for (y = ground_y + 1; y <= top; ++y) world_set_block(x, y, z, BLOCK_OAK_LOG);
-  world_set_block(x, ground_y, z, BLOCK_DIRT);
+  for (l_y = p_ground_y + 1; l_y <= l_top; ++l_y) world_set_block(p_x, l_y, p_z, BLOCK_OAK_LOG);
+  world_set_block(p_x, p_ground_y, p_z, BLOCK_DIRT);
 }
 
-void world_plant_trees(Real shift_a, Real shift_b)
+void world_plant_trees(Real p_shift_a, Real p_shift_b)
 // ----------------------------------------------------------------
 // At most one tree per 5 x 5 patch: many in forests, the odd one on
 // the plains (leaving open clearings), none in deserts or on sand
 // ----------------------------------------------------------------
 {
-  Integer cell_x = 0;
-  Integer cell_z = 0;
-  Integer tree_x = 0;
-  Integer tree_z = 0;
-  Integer height = 0;
-  Integer biome  = 0;
-  Real    forest = 0.0;
-  Real    chance = 0.0;
+  Integer l_cell_x = 0;
+  Integer l_cell_z = 0;
+  Integer l_tree_x = 0;
+  Integer l_tree_z = 0;
+  Integer l_height = 0;
+  Integer l_biome  = 0;
+  Real    l_forest = 0.0;
+  Real    l_chance = 0.0;
 
-  for (cell_x = 0; cell_x < floor_divide(WORLD_SIZE_X, 5); ++cell_x) {
-    for (cell_z = 0; cell_z < floor_divide(WORLD_SIZE_Z, 5); ++cell_z) {
-      tree_x = cell_x * 5 + 1 + Floor(hash_real(cell_x * 1.0, cell_z * 1.0, 51.0 + shift_a) * 3.0);
-      tree_z = cell_z * 5 + 1 + Floor(hash_real(cell_x * 1.0, cell_z * 1.0, 52.0 + shift_b) * 3.0);
-      if (tree_x < 3 || tree_z < 3 || tree_x > WORLD_SIZE_X - 4 || tree_z > WORLD_SIZE_Z - 4) continue;
+  for (l_cell_x = 0; l_cell_x < floor_divide(WORLD_SIZE_X, 5); ++l_cell_x) {
+    for (l_cell_z = 0; l_cell_z < floor_divide(WORLD_SIZE_Z, 5); ++l_cell_z) {
+      l_tree_x = l_cell_x * 5 + 1 + Floor(hash_real(l_cell_x * 1.0, l_cell_z * 1.0, 51.0 + p_shift_a) * 3.0);
+      l_tree_z = l_cell_z * 5 + 1 + Floor(hash_real(l_cell_x * 1.0, l_cell_z * 1.0, 52.0 + p_shift_b) * 3.0);
+      if (l_tree_x < 3 || l_tree_z < 3 || l_tree_x > WORLD_SIZE_X - 4 || l_tree_z > WORLD_SIZE_Z - 4) continue;
 
-      biome  = world_biome(tree_x, tree_z);
-      forest = world_value_noise(tree_x / 34.0, tree_z / 34.0, 6, shift_a, shift_b);
-      chance = 0.04;
-      if (biome == BIOME_FOREST) chance = 0.25 + (forest - 0.52) * 3.0;
-      if (biome != BIOME_FOREST && biome != BIOME_PLAINS) chance = 0.0;
-      if (hash_real(cell_x * 1.0, cell_z * 1.0, 53.0 + shift_a) > chance) continue;
+      l_biome  = world_biome(l_tree_x, l_tree_z);
+      l_forest = world_value_noise(l_tree_x / 34.0, l_tree_z / 34.0, 6, p_shift_a, p_shift_b);
+      l_chance = 0.04;
+      if (l_biome == BIOME_FOREST) l_chance = 0.25 + (l_forest - 0.52) * 3.0;
+      if (l_biome != BIOME_FOREST && l_biome != BIOME_PLAINS) l_chance = 0.0;
+      if (hash_real(l_cell_x * 1.0, l_cell_z * 1.0, 53.0 + p_shift_a) > l_chance) continue;
 
-      height = g_height_map[world_column(tree_x, tree_z)];
-      if (world_get_block(tree_x, height, tree_z) != BLOCK_GRASS) continue;
-      if (world_get_block(tree_x, height + 1, tree_z) != BLOCK_AIR) continue;
-      if (height + 8 >= WORLD_HEIGHT) continue;
+      l_height = g_height_map[world_column(l_tree_x, l_tree_z)];
+      if (world_get_block(l_tree_x, l_height, l_tree_z) != BLOCK_GRASS) continue;
+      if (world_get_block(l_tree_x, l_height + 1, l_tree_z) != BLOCK_AIR) continue;
+      if (l_height + 8 >= WORLD_HEIGHT) continue;
 
-      world_plant_tree(tree_x, height, tree_z, shift_a, shift_b);
+      world_plant_tree(l_tree_x, l_height, l_tree_z, p_shift_a, p_shift_b);
     }
   }
 }
 
-void world_plant_cactus(Integer x, Integer ground_y, Integer z, Integer tall)
+void world_plant_cactus(Integer p_x, Integer p_ground_y, Integer p_z, Integer p_tall)
 // ----------------------------------------------------------------
 // A cactus of tall blocks on sand, if nothing is next to it
 // ----------------------------------------------------------------
 {
-  Integer y = 0;
+  Integer l_y = 0;
 
-  if (world_get_block(x + 1, ground_y + 1, z) != BLOCK_AIR) return;
-  if (world_get_block(x - 1, ground_y + 1, z) != BLOCK_AIR) return;
-  if (world_get_block(x, ground_y + 1, z + 1) != BLOCK_AIR) return;
-  if (world_get_block(x, ground_y + 1, z - 1) != BLOCK_AIR) return;
+  if (world_get_block(p_x + 1, p_ground_y + 1, p_z) != BLOCK_AIR) return;
+  if (world_get_block(p_x - 1, p_ground_y + 1, p_z) != BLOCK_AIR) return;
+  if (world_get_block(p_x, p_ground_y + 1, p_z + 1) != BLOCK_AIR) return;
+  if (world_get_block(p_x, p_ground_y + 1, p_z - 1) != BLOCK_AIR) return;
 
-  for (y = ground_y + 1; y <= ground_y + tall; ++y) world_set_block(x, y, z, BLOCK_CACTUS);
+  for (l_y = p_ground_y + 1; l_y <= p_ground_y + p_tall; ++l_y) world_set_block(p_x, l_y, p_z, BLOCK_CACTUS);
 }
 
-void world_add_plants(Attributes &random, Real shift_a, Real shift_b)
+void world_add_plants(Attributes &p_random, Real p_shift_a, Real p_shift_b)
 // ----------------------------------------------------------------
 // Grass tufts and patches of flowers on open grass (thickest in
 // meadows), cacti and dead bushes in the desert
 // ----------------------------------------------------------------
 {
-  Integer x      = 0;
-  Integer z      = 0;
-  Integer top    = 0;
-  Integer biome  = 0;
-  Integer ground = 0;
-  Real    meadow = 0.0;
-  Real    roll   = 0.0;
+  Integer l_x      = 0;
+  Integer l_z      = 0;
+  Integer l_top    = 0;
+  Integer l_biome  = 0;
+  Integer l_ground = 0;
+  Real    l_meadow = 0.0;
+  Real    l_roll   = 0.0;
 
-  for (x = 1; x < WORLD_SIZE_X - 1; ++x) {
-    for (z = 1; z < WORLD_SIZE_Z - 1; ++z) {
-      top    = g_height_map[world_column(x, z)];
-      ground = world_get_block(x, top, z);
-      if (world_get_block(x, top + 1, z) != BLOCK_AIR) continue;
-      biome  = world_biome(x, z);
-      roll   = random_next(random);
+  for (l_x = 1; l_x < WORLD_SIZE_X - 1; ++l_x) {
+    for (l_z = 1; l_z < WORLD_SIZE_Z - 1; ++l_z) {
+      l_top    = g_height_map[world_column(l_x, l_z)];
+      l_ground = world_get_block(l_x, l_top, l_z);
+      if (world_get_block(l_x, l_top + 1, l_z) != BLOCK_AIR) continue;
+      l_biome  = world_biome(l_x, l_z);
+      l_roll   = random_next(p_random);
 
-      if (ground == BLOCK_GRASS) {
-        meadow = world_value_noise(x / 18.0, z / 18.0, 8, shift_a, shift_b);
-        if (roll < 0.06 + meadow * 0.22) {
-          world_set_block(x, top + 1, z, BLOCK_TALL_GRASS);
-        } else if (roll > 0.995 - meadow * 0.02) {
-          if (world_value_noise(x / 9.0, z / 9.0, 9, shift_a, shift_b) > 0.5) {
-            world_set_block(x, top + 1, z, BLOCK_POPPY);
+      if (l_ground == BLOCK_GRASS) {
+        l_meadow = world_value_noise(l_x / 18.0, l_z / 18.0, 8, p_shift_a, p_shift_b);
+        if (l_roll < 0.06 + l_meadow * 0.22) {
+          world_set_block(l_x, l_top + 1, l_z, BLOCK_TALL_GRASS);
+        } else if (l_roll > 0.995 - l_meadow * 0.02) {
+          if (world_value_noise(l_x / 9.0, l_z / 9.0, 9, p_shift_a, p_shift_b) > 0.5) {
+            world_set_block(l_x, l_top + 1, l_z, BLOCK_POPPY);
           } else {
-            world_set_block(x, top + 1, z, BLOCK_DANDELION);
+            world_set_block(l_x, l_top + 1, l_z, BLOCK_DANDELION);
           }
         }
-      } else if (ground == BLOCK_SAND && biome == BIOME_DESERT) {
-        if (roll < 0.012) {
-          world_set_block(x, top + 1, z, BLOCK_DEAD_BUSH);
-        } else if (roll < 0.030) {
-          world_plant_cactus(x, top, z, random_range(random, 1, 3));
+      } else if (l_ground == BLOCK_SAND && l_biome == BIOME_DESERT) {
+        if (l_roll < 0.012) {
+          world_set_block(l_x, l_top + 1, l_z, BLOCK_DEAD_BUSH);
+        } else if (l_roll < 0.030) {
+          world_plant_cactus(l_x, l_top, l_z, random_range(p_random, 1, 3));
         }
       }
     }
   }
 }
 
-Integer world_area_is_flat(Integer x0, Integer z0, Integer x1, Integer z1, Integer &ground_y)
+Integer world_area_is_flat(Integer p_x0, Integer p_z0, Integer p_x1, Integer p_z1, Integer &p_ground_y)
 // ----------------------------------------------------------------
 // TRUE if every generated surface in the rectangle is dry grass or
 // sand within one block of the others; ground_y is set to the most
 // common lower height to build on
 // ----------------------------------------------------------------
 {
-  Integer x      = 0;
-  Integer z      = 0;
-  Integer height = 0;
-  Integer low    = WORLD_HEIGHT;
-  Integer high   = -1;
-  Integer block  = 0;
+  Integer l_x      = 0;
+  Integer l_z      = 0;
+  Integer l_height = 0;
+  Integer l_low    = WORLD_HEIGHT;
+  Integer l_high   = -1;
+  Integer l_block  = 0;
 
-  for (x = x0; x <= x1; ++x) {
-    for (z = z0; z <= z1; ++z) {
-      if (!world_in_bounds(x, 0, z)) return FALSE;
-      height = g_height_map[world_column(x, z)];
-      block  = world_get_block(x, height, z);
-      if (height <= SEA_LEVEL) return FALSE;
-      if (block != BLOCK_GRASS && block != BLOCK_SAND) return FALSE;
-      if (height < low ) low  = height;
-      if (height > high) high = height;
+  for (l_x = p_x0; l_x <= p_x1; ++l_x) {
+    for (l_z = p_z0; l_z <= p_z1; ++l_z) {
+      if (!world_in_bounds(l_x, 0, l_z)) return FALSE;
+      l_height = g_height_map[world_column(l_x, l_z)];
+      l_block  = world_get_block(l_x, l_height, l_z);
+      if (l_height <= SEA_LEVEL) return FALSE;
+      if (l_block != BLOCK_GRASS && l_block != BLOCK_SAND) return FALSE;
+      if (l_height < l_low ) l_low  = l_height;
+      if (l_height > l_high) l_high = l_height;
     }
   }
-  ground_y = low;
-  if (high - low > 1) return FALSE;
+  p_ground_y = l_low;
+  if (l_high - l_low > 1) return FALSE;
   return TRUE;
 }
 
-void world_dig_pond(Integer centre_x, Integer centre_z)
+void world_dig_pond(Integer p_centre_x, Integer p_centre_z)
 // ----------------------------------------------------------------
 // A small round pond, 2 deep in the middle, in flat grassland
 // ----------------------------------------------------------------
 {
-  Integer ground = 0;
-  Integer x      = 0;
-  Integer z      = 0;
-  Integer y      = 0;
-  Integer depth  = 0;
-  Real    reach  = 0.0;
+  Integer l_ground = 0;
+  Integer l_x      = 0;
+  Integer l_z      = 0;
+  Integer l_y      = 0;
+  Integer l_depth  = 0;
+  Real    l_reach  = 0.0;
 
-  if (!world_area_is_flat(centre_x - 4, centre_z - 4, centre_x + 4, centre_z + 4, ground)) return;
+  if (!world_area_is_flat(p_centre_x - 4, p_centre_z - 4, p_centre_x + 4, p_centre_z + 4, l_ground)) return;
 
-  for (x = centre_x - 3; x <= centre_x + 3; ++x) {
-    for (z = centre_z - 3; z <= centre_z + 3; ++z) {
-      reach = (x - centre_x) * (x - centre_x) + (z - centre_z) * (z - centre_z);
-      if (reach > 10.5) continue;
-      depth = 1;
-      if (reach < 4.5) depth = 2;
-      for (y = ground + 1; y <= ground + 3; ++y) world_set_block(x, y, z, BLOCK_AIR);
-      for (y = ground - depth + 1; y <= ground; ++y) {
-        world_set_block  (x, y, z, BLOCK_WATER);
-        world_mark_carved(x, y, z);
+  for (l_x = p_centre_x - 3; l_x <= p_centre_x + 3; ++l_x) {
+    for (l_z = p_centre_z - 3; l_z <= p_centre_z + 3; ++l_z) {
+      l_reach = (l_x - p_centre_x) * (l_x - p_centre_x) + (l_z - p_centre_z) * (l_z - p_centre_z);
+      if (l_reach > 10.5) continue;
+      l_depth = 1;
+      if (l_reach < 4.5) l_depth = 2;
+      for (l_y = l_ground + 1; l_y <= l_ground + 3; ++l_y) world_set_block(l_x, l_y, l_z, BLOCK_AIR);
+      for (l_y = l_ground - l_depth + 1; l_y <= l_ground; ++l_y) {
+        world_set_block  (l_x, l_y, l_z, BLOCK_WATER);
+        world_mark_carved(l_x, l_y, l_z);
       }
-      world_set_block(x, ground - depth, z, BLOCK_SAND);
+      world_set_block(l_x, l_ground - l_depth, l_z, BLOCK_SAND);
     }
   }
 }
 
-void world_add_ponds(Attributes &random)
+void world_add_ponds(Attributes &p_random)
 // ----------------------------------------------------------------
 // Try a few spots for ponds; most worlds get one or two
 // ----------------------------------------------------------------
 {
-  Integer attempt = 0;
-  Integer x       = 0;
-  Integer z       = 0;
-  Integer biome   = 0;
+  Integer l_attempt = 0;
+  Integer l_x       = 0;
+  Integer l_z       = 0;
+  Integer l_biome   = 0;
 
-  for (attempt = 1; attempt <= MAX_PONDS * 6; ++attempt) {
-    x     = random_range(random, 10, WORLD_SIZE_X - 11);
-    z     = random_range(random, 10, WORLD_SIZE_Z - 11);
-    biome = world_biome(x, z);
-    if (biome != BIOME_PLAINS && biome != BIOME_FOREST) continue;
-    if (random_next(random) > 0.25) continue;
-    world_dig_pond(x, z);
+  for (l_attempt = 1; l_attempt <= MAX_PONDS * 6; ++l_attempt) {
+    l_x     = random_range(p_random, 10, WORLD_SIZE_X - 11);
+    l_z     = random_range(p_random, 10, WORLD_SIZE_Z - 11);
+    l_biome = world_biome(l_x, l_z);
+    if (l_biome != BIOME_PLAINS && l_biome != BIOME_FOREST) continue;
+    if (random_next(p_random) > 0.25) continue;
+    world_dig_pond(l_x, l_z);
   }
 }
 
-void world_build_house(Attributes &info, Integer origin_x, Integer ground_y, Integer origin_z)
+void world_build_house(Attributes &p_info, Integer p_origin_x, Integer p_ground_y, Integer p_origin_z)
 // ----------------------------------------------------------------
 // The starter house: a 7 x 7 cabin with a cobblestone floor_y, log
 // corner posts, plank walls, a doorway facing -z, a window in each
@@ -743,70 +743,70 @@ void world_build_house(Attributes &info, Integer origin_x, Integer ground_y, Int
 // it. The spawn point is put inside.
 // ----------------------------------------------------------------
 {
-  Integer x0     = origin_x;
-  Integer z0     = origin_z;
-  Integer x1     = origin_x + 6;
-  Integer z1     = origin_z + 6;
-  Integer floor_y  = ground_y;
-  Integer x      = 0;
-  Integer y      = 0;
-  Integer z      = 0;
-  Integer edge_x = 0;
-  Integer edge_z = 0;
-  Integer block  = 0;
+  Integer l_x0     = p_origin_x;
+  Integer l_z0     = p_origin_z;
+  Integer l_x1     = p_origin_x + 6;
+  Integer l_z1     = p_origin_z + 6;
+  Integer l_floor_y  = p_ground_y;
+  Integer l_x      = 0;
+  Integer l_y      = 0;
+  Integer l_z      = 0;
+  Integer l_edge_x = 0;
+  Integer l_edge_z = 0;
+  Integer l_block  = 0;
 
   // Level: solid foundation below, open air above (one block of
   // margin all round so trees and plants don't touch the walls)
-  for (x = x0 - 1; x <= x1 + 1; ++x) {
-    for (z = z0 - 1; z <= z1 + 1; ++z) {
-      for (y = floor_y + 1; y <= floor_y + 8; ++y) world_set_block(x, y, z, BLOCK_AIR);
-      for (y = floor_y - 4; y <= floor_y; ++y) {
-        if (!block_is_solid(world_get_block(x, y, z))) world_set_block(x, y, z, BLOCK_DIRT);
+  for (l_x = l_x0 - 1; l_x <= l_x1 + 1; ++l_x) {
+    for (l_z = l_z0 - 1; l_z <= l_z1 + 1; ++l_z) {
+      for (l_y = l_floor_y + 1; l_y <= l_floor_y + 8; ++l_y) world_set_block(l_x, l_y, l_z, BLOCK_AIR);
+      for (l_y = l_floor_y - 4; l_y <= l_floor_y; ++l_y) {
+        if (!block_is_solid(world_get_block(l_x, l_y, l_z))) world_set_block(l_x, l_y, l_z, BLOCK_DIRT);
       }
-      if (x < x0 || x > x1 || z < z0 || z > z1) world_set_block(x, floor_y, z, BLOCK_GRASS);
+      if (l_x < l_x0 || l_x > l_x1 || l_z < l_z0 || l_z > l_z1) world_set_block(l_x, l_floor_y, l_z, BLOCK_GRASS);
     }
   }
 
-  for (x = x0; x <= x1; ++x) {
-    for (z = z0; z <= z1; ++z) {
-      edge_x = x == x0 || x == x1;
-      edge_z = z == z0 || z == z1;
+  for (l_x = l_x0; l_x <= l_x1; ++l_x) {
+    for (l_z = l_z0; l_z <= l_z1; ++l_z) {
+      l_edge_x = l_x == l_x0 || l_x == l_x1;
+      l_edge_z = l_z == l_z0 || l_z == l_z1;
 
-      world_set_block(x, floor_y, z, BLOCK_COBBLESTONE);
+      world_set_block(l_x, l_floor_y, l_z, BLOCK_COBBLESTONE);
 
-      for (y = floor_y + 1; y <= floor_y + 3; ++y) {
-        block = BLOCK_AIR;
-        if (edge_x || edge_z) block = BLOCK_PLANKS;
-        if (edge_x && edge_z) block = BLOCK_OAK_LOG;
-        world_set_block(x, y, z, block);
+      for (l_y = l_floor_y + 1; l_y <= l_floor_y + 3; ++l_y) {
+        l_block = BLOCK_AIR;
+        if (l_edge_x || l_edge_z) l_block = BLOCK_PLANKS;
+        if (l_edge_x && l_edge_z) l_block = BLOCK_OAK_LOG;
+        world_set_block(l_x, l_y, l_z, l_block);
       }
 
       // Roof: a plank layer with log trim, then a smaller layer
-      block = BLOCK_PLANKS;
-      if (edge_x || edge_z) block = BLOCK_OAK_LOG;
-      world_set_block(x, floor_y + 4, z, block);
-      if (!edge_x && !edge_z) world_set_block(x, floor_y + 5, z, BLOCK_PLANKS);
+      l_block = BLOCK_PLANKS;
+      if (l_edge_x || l_edge_z) l_block = BLOCK_OAK_LOG;
+      world_set_block(l_x, l_floor_y + 4, l_z, l_block);
+      if (!l_edge_x && !l_edge_z) world_set_block(l_x, l_floor_y + 5, l_z, BLOCK_PLANKS);
     }
   }
 
   // Doorway in the middle of the -z wall, windows in the others
-  world_set_block(x0 + 3, floor_y + 1, z0    , BLOCK_AIR);
-  world_set_block(x0 + 3, floor_y + 2, z0    , BLOCK_AIR);
-  world_set_block(x0    , floor_y + 2, z0 + 3, BLOCK_AIR);
-  world_set_block(x1    , floor_y + 2, z0 + 3, BLOCK_AIR);
-  world_set_block(x0 + 3, floor_y + 2, z1    , BLOCK_AIR);
+  world_set_block(l_x0 + 3, l_floor_y + 1, l_z0    , BLOCK_AIR);
+  world_set_block(l_x0 + 3, l_floor_y + 2, l_z0    , BLOCK_AIR);
+  world_set_block(l_x0    , l_floor_y + 2, l_z0 + 3, BLOCK_AIR);
+  world_set_block(l_x1    , l_floor_y + 2, l_z0 + 3, BLOCK_AIR);
+  world_set_block(l_x0 + 3, l_floor_y + 2, l_z1    , BLOCK_AIR);
 
   // Furniture along the back wall; the furnace faces the door
-  world_set_block(x0 + 1, floor_y + 1, z1 - 1, BLOCK_CRAFTING_TABLE);
-  world_set_block(x1 - 1, floor_y + 1, z1 - 1, BLOCK_FURNACE_NZ);
+  world_set_block(l_x0 + 1, l_floor_y + 1, l_z1 - 1, BLOCK_CRAFTING_TABLE);
+  world_set_block(l_x1 - 1, l_floor_y + 1, l_z1 - 1, BLOCK_FURNACE_NZ);
 
-  record_set_integer(info, ATTR_HOUSE_X, x0);
-  record_set_integer(info, ATTR_HOUSE_Y, floor_y);
-  record_set_integer(info, ATTR_HOUSE_Z, z0);
-  world_info_set_spawn(info, x0 + 3.5, floor_y + 1.0, z0 + 2.5);
+  record_set_integer(p_info, ATTR_HOUSE_X, l_x0);
+  record_set_integer(p_info, ATTR_HOUSE_Y, l_floor_y);
+  record_set_integer(p_info, ATTR_HOUSE_Z, l_z0);
+  world_info_set_spawn(p_info, l_x0 + 3.5, l_floor_y + 1.0, l_z0 + 2.5);
 }
 
-void world_place_house_near(Attributes &info, Real spawn_x, Real spawn_z)
+void world_place_house_near(Attributes &p_info, Real p_spawn_x, Real p_spawn_z)
 // ----------------------------------------------------------------
 // Find the flattest dry spot for the starter house close to the
 // spawn point, searching outwards in growing squares. If none is
@@ -814,66 +814,66 @@ void world_place_house_near(Attributes &info, Real spawn_x, Real spawn_z)
 // (the foundation fills any dips).
 // ----------------------------------------------------------------
 {
-  Integer centre_x = floor_integer(spawn_x) - 3;
-  Integer centre_z = floor_integer(spawn_z) - 3;
-  Integer radius   = 0;
-  Integer x        = 0;
-  Integer z        = 0;
-  Integer ground   = 0;
+  Integer l_centre_x = floor_integer(p_spawn_x) - 3;
+  Integer l_centre_z = floor_integer(p_spawn_z) - 3;
+  Integer l_radius   = 0;
+  Integer l_x        = 0;
+  Integer l_z        = 0;
+  Integer l_ground   = 0;
 
-  for (radius = 0; radius <= 24; ++radius) {
-    for (x = centre_x - radius; x <= centre_x + radius; ++x) {
-      for (z = centre_z - radius; z <= centre_z + radius; ++z) {
-        if (Absolute(x - centre_x) != radius && Absolute(z - centre_z) != radius) continue;
-        if (x < 3 || z < 3 || x + 10 > WORLD_SIZE_X || z + 10 > WORLD_SIZE_Z) continue;
-        if (!world_area_is_flat(x - 1, z - 1, x + 7, z + 7, ground)) continue;
-        world_build_house(info, x, ground, z);
+  for (l_radius = 0; l_radius <= 24; ++l_radius) {
+    for (l_x = l_centre_x - l_radius; l_x <= l_centre_x + l_radius; ++l_x) {
+      for (l_z = l_centre_z - l_radius; l_z <= l_centre_z + l_radius; ++l_z) {
+        if (Absolute(l_x - l_centre_x) != l_radius && Absolute(l_z - l_centre_z) != l_radius) continue;
+        if (l_x < 3 || l_z < 3 || l_x + 10 > WORLD_SIZE_X || l_z + 10 > WORLD_SIZE_Z) continue;
+        if (!world_area_is_flat(l_x - 1, l_z - 1, l_x + 7, l_z + 7, l_ground)) continue;
+        world_build_house(p_info, l_x, l_ground, l_z);
         return;
       }
     }
   }
 
-  x = clamp_integer(centre_x, 3, WORLD_SIZE_X - 10);
-  z = clamp_integer(centre_z, 3, WORLD_SIZE_Z - 10);
-  ground = g_height_map[world_column(x + 3, z + 3)];
-  if (ground < SEA_LEVEL) ground = SEA_LEVEL;
-  world_build_house(info, x, ground, z);
+  l_x = clamp_integer(l_centre_x, 3, WORLD_SIZE_X - 10);
+  l_z = clamp_integer(l_centre_z, 3, WORLD_SIZE_Z - 10);
+  l_ground = g_height_map[world_column(l_x + 3, l_z + 3)];
+  if (l_ground < SEA_LEVEL) l_ground = SEA_LEVEL;
+  world_build_house(p_info, l_x, l_ground, l_z);
 }
 
-void world_find_spawn(Real &spawn_x, Real &spawn_y, Real &spawn_z)
+void world_find_spawn(Real &p_spawn_x, Real &p_spawn_y, Real &p_spawn_z)
 // ----------------------------------------------------------------
 // Pick the grass column nearest the middle of the world, searching
 // outwards in growing squares
 // ----------------------------------------------------------------
 {
-  Integer centre_x = floor_divide(WORLD_SIZE_X, 2);
-  Integer centre_z = floor_divide(WORLD_SIZE_Z, 2);
-  Integer radius   = 0;
-  Integer x        = 0;
-  Integer z        = 0;
-  Integer top      = 0;
+  Integer l_centre_x = floor_divide(WORLD_SIZE_X, 2);
+  Integer l_centre_z = floor_divide(WORLD_SIZE_Z, 2);
+  Integer l_radius   = 0;
+  Integer l_x        = 0;
+  Integer l_z        = 0;
+  Integer l_top      = 0;
 
-  for (radius = 0; radius < centre_x - 2; ++radius) {
-    for (x = centre_x - radius; x <= centre_x + radius; ++x) {
-      for (z = centre_z - radius; z <= centre_z + radius; ++z) {
-        if (Absolute(x - centre_x) != radius && Absolute(z - centre_z) != radius) continue;
-        top = world_top_solid_y(x, z);
-        if (top < SEA_LEVEL) continue;
-        if (world_get_block(x, top, z) != BLOCK_GRASS) continue;
-        spawn_x = x + 0.5;
-        spawn_y = top + 1.0;
-        spawn_z = z + 0.5;
+  for (l_radius = 0; l_radius < l_centre_x - 2; ++l_radius) {
+    for (l_x = l_centre_x - l_radius; l_x <= l_centre_x + l_radius; ++l_x) {
+      for (l_z = l_centre_z - l_radius; l_z <= l_centre_z + l_radius; ++l_z) {
+        if (Absolute(l_x - l_centre_x) != l_radius && Absolute(l_z - l_centre_z) != l_radius) continue;
+        l_top = world_top_solid_y(l_x, l_z);
+        if (l_top < SEA_LEVEL) continue;
+        if (world_get_block(l_x, l_top, l_z) != BLOCK_GRASS) continue;
+        p_spawn_x = l_x + 0.5;
+        p_spawn_y = l_top + 1.0;
+        p_spawn_z = l_z + 0.5;
         return;
       }
     }
   }
 
   // No land at all: stand on top of whatever is in the middle
-  top = world_top_solid_y(centre_x, centre_z);
-  if (top < SEA_LEVEL - 1) top = SEA_LEVEL - 1;
-  spawn_x = centre_x + 0.5;
-  spawn_y = top + 1.0;
-  spawn_z = centre_z + 0.5;
+  l_top = world_top_solid_y(l_centre_x, l_centre_z);
+  if (l_top < SEA_LEVEL - 1) l_top = SEA_LEVEL - 1;
+  p_spawn_x = l_centre_x + 0.5;
+  p_spawn_y = l_top + 1.0;
+  p_spawn_z = l_centre_z + 0.5;
 }
 
 void world_finish_maps()
@@ -882,45 +882,46 @@ void world_finish_maps()
 // again after a save's edits are applied)
 // ----------------------------------------------------------------
 {
-  Integer x = 0;
-  Integer z = 0;
+  Integer l_x = 0;
+  Integer l_z = 0;
 
-  for (x = 0; x < WORLD_SIZE_X; ++x) {
-    for (z = 0; z < WORLD_SIZE_Z; ++z) {
-      g_column_top[world_column(x, z)] = world_top_solid_y(x, z);
+  for (l_x = 0; l_x < WORLD_SIZE_X; ++l_x) {
+    for (l_z = 0; l_z < WORLD_SIZE_Z; ++l_z) {
+      g_column_top[world_column(l_x, l_z)] = world_top_solid_y(l_x, l_z);
     }
   }
 }
 
-void world_generate(Attributes &info, Integer seed)
+void world_generate(Attributes &p_info, Integer p_seed)
 // ----------------------------------------------------------------
 // Make the whole world from a seed: terrain and biomes, caves,
 // coal and gravel, ponds, trees, plants, then the starter house
 // near the middle where the player spawns
 // ----------------------------------------------------------------
 {
-  Attributes random;
-  Real       shift_a = 0.0;
-  Real       shift_b = 0.0;
-  Real       spawn_x = 0.0;
-  Real       spawn_y = 0.0;
-  Real       spawn_z = 0.0;
+  Attributes l_random;
+  Real       l_shift_a = 0.0;
+  Real       l_shift_b = 0.0;
+  Real       l_spawn_x = 0.0;
+  Real       l_spawn_y = 0.0;
+  Real       l_spawn_z = 0.0;
 
-  world_info_clear (info, seed);
-  world_seed_shifts(seed, shift_a, shift_b);
-  random_seed      (random, seed);
+  world_info_clear (p_info, p_seed);
+  world_seed_shifts(p_seed, l_shift_a, l_shift_b);
+  random_seed      (l_random, p_seed);
 
-  world_fill_columns(shift_a, shift_b);
-  world_carve_caves (random);
-  world_place_veins (random, BLOCK_COAL_ORE, COAL_VEINS, 6, 56);
-  world_place_veins (random, BLOCK_GRAVEL, GRAVEL_POCKETS, 10, 50);
-  world_add_ponds   (random);
-  world_plant_trees (shift_a, shift_b);
-  world_add_plants  (random, shift_a, shift_b);
+  world_fill_columns(l_shift_a, l_shift_b);
+  world_carve_caves (l_random);
+  world_place_veins (l_random, BLOCK_COAL_ORE, COAL_VEINS, 6, 56);
+  world_place_veins (l_random, BLOCK_GRAVEL, GRAVEL_POCKETS, 10, 50);
+  world_place_veins (l_random, BLOCK_IRON_ORE, IRON_VEINS, 5, 44);
+  world_add_ponds   (l_random);
+  world_plant_trees (l_shift_a, l_shift_b);
+  world_add_plants  (l_random, l_shift_a, l_shift_b);
 
-  world_find_spawn      (spawn_x, spawn_y, spawn_z);
-  world_info_set_spawn  (info, spawn_x, spawn_y, spawn_z);
-  world_place_house_near(info, spawn_x, spawn_z);
+  world_find_spawn      (l_spawn_x, l_spawn_y, l_spawn_z);
+  world_info_set_spawn  (p_info, l_spawn_x, l_spawn_y, l_spawn_z);
+  world_place_house_near(p_info, l_spawn_x, l_spawn_z);
 
   world_finish_maps();
 }
