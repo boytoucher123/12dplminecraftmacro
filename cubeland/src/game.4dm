@@ -10,6 +10,7 @@
 #include "../include/textures.h"
 #include "../include/resource_pack.h"
 #include "../include/settings.h"
+#include "../include/chest.h"
 #include "../include/world.h"
 #include "../include/mesh.h"
 #include "../include/physics.h"
@@ -215,6 +216,7 @@ void game_dispatch_events(Attributes &p_events, Attributes &p_event, Attributes 
     player_on_event (p_event, p_player, p_events);
     save_on_event   (p_event);
     furnace_on_event(p_event, p_furnaces, p_events);
+    chest_on_event  (p_event, p_furnaces, p_events);
     drops_on_event  (p_event, p_drops, p_random);
     hud_on_event    (p_event, p_hud, p_now);
     ui_on_event     (p_event, p_ui, p_inventory, p_grid, p_furnaces, p_events, l_x, l_y + 1.3, l_z);

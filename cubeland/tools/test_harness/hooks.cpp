@@ -49,7 +49,7 @@ static void register_hooks(){
   g_calls["look_cow"]=[]{ double yaw,p; player_look(g_player,yaw,p); set_look(yaw,-0.25); };
   g_calls["hurt"]=[]{ player_set_health(g_player,2); };
   g_calls["full"]=[]{ player_set_health(g_player,20); };
-  for(int s=1;s<=53;s++){ g_calls["slot"+std::to_string(s)]=[s]{ ui_click_slot(s,"click"); }; g_calls["rslot"+std::to_string(s)]=[s]{ ui_click_slot(s,"rclick"); }; }
+  for(int s=1;s<=UI_SLOT_LAST;s++){ g_calls["slot"+std::to_string(s)]=[s]{ ui_click_slot(s,"click"); }; g_calls["rslot"+std::to_string(s)]=[s]{ ui_click_slot(s,"rclick"); }; }
   // Grid layouts, pushed in reverse so they run in order
   g_calls["grid_planks"]=[]{ place_in_grid(ITEM_OAK_LOG,1); };
   g_calls["grid_table"]=[]{ for(int g: {5,4,2,1}) place_in_grid(ITEM_PLANKS,g); };
@@ -89,6 +89,9 @@ static void register_hooks(){
      double dx=x+0.5-px(), dy=y+0.5-(py()+1.62), dz=z+0.5-pz(); set_look(wrap_angle(atan2(dz,dx)),atan2(dy,sqrt(dx*dx+dz*dz))); printf("[hook] aim at %d %d %d (block %d)\n",x,y,z,world_get_block(x,y,z)); };
   g_calls["stone_eye"]=[]{ int x=(int)px()-2, y=(int)py()+1, z=(int)pz(); world_place_block(g_events,x,y,z,BLOCK_STONE); set_look(PI,-0.15); printf("[hook] stone at %d %d %d\n",x,y,z); };
   g_calls["house_inside"]=[]{ int hx=record_integer(g_info,ATTR_HOUSE_X),hy=record_integer(g_info,ATTR_HOUSE_Y),hz=record_integer(g_info,ATTR_HOUSE_Z); player_reset(g_player,hx+3.5,hy+1.0,hz+1.6); set_look(PI/2,-0.2); printf("[hook] inside the house, light %d\n",world_get_light(hx+3,hy+2,hz+2)); };
+  g_calls["chest_front"]=[]{ int x=(int)px()+2,y=(int)py(),z=(int)pz(); world_place_block(g_events,x,y,z,BLOCK_CHEST); };
+  g_calls["chests"]=[]{ for(int c=1;c<=MAX_CHESTS;c++) if(chest_used(g_furnaces,c)){ printf("[chest] %d at %d %d %d holds",c,record_integer_at(g_furnaces,ATTR_CHEST_X,c),record_integer_at(g_furnaces,ATTR_CHEST_Y,c),record_integer_at(g_furnaces,ATTR_CHEST_Z,c));
+      for(int n=1;n<=CHEST_SLOTS;n++){ int sl=chest_slot(c,n); if(slot_item(g_furnaces,sl)) printf(" [%d]%s x%d",n,item_name(slot_item(g_furnaces,sl)).c_str(),slot_count(g_furnaces,sl)); } printf("\n"); } };
   g_calls["night"]=[]{ world_set_time_of_day(g_info,0.75); printf("[hook] time %s daylight %.2f night %d\n",world_clock_text(0.75).c_str(),world_daylight(0.75),world_is_night(0.75)); };
   g_calls["dusk"]=[]{ world_set_time_of_day(g_info,0.5); };
   g_calls["noon"]=[]{ world_set_time_of_day(g_info,0.25); };

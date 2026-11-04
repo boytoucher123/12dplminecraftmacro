@@ -891,6 +891,10 @@ void player_secondary_action(Attributes &p_player, Attributes &p_inventory, Attr
       emit_event(p_events, EVT_OPEN_SCREEN, SCREEN_FURNACE, l_x, l_y, l_z, 0.0, 0.0, 0.0, "");
       return;
     }
+    if (l_block == BLOCK_CHEST) {
+      emit_event(p_events, EVT_OPEN_SCREEN, SCREEN_CHEST, l_x, l_y, l_z, 0.0, 0.0, 0.0, "");
+      return;
+    }
     if (l_block == BLOCK_BED) {
       emit_event(p_events, EVT_SLEEP, l_x, l_y, l_z, 0, 0.0, 0.0, 0.0, "");
       return;

@@ -37,7 +37,8 @@
 #define BLOCK_TORCH           25   // drawn like a plant; gives light
 #define BLOCK_GLASS           26   // solid, but you see through it
 #define BLOCK_BED             27   // right click at night to sleep
-#define MAX_BLOCK_ID          27
+#define BLOCK_CHEST           28   // right click to store things
+#define MAX_BLOCK_ID          28
 #define TORCH_LIGHT           14
 
 #define ITEM_NONE             0
@@ -62,6 +63,7 @@
 #define ITEM_TORCH            25
 #define ITEM_GLASS            26
 #define ITEM_BED              27
+#define ITEM_CHEST            28
 #define FIRST_PURE_ITEM       64   // items from here on are not blocks
 #define ITEM_STICK            64
 #define ITEM_RAW_BEEF         65

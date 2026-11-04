@@ -41,6 +41,7 @@
 #define SCREEN_INVENTORY      1
 #define SCREEN_CRAFTING       2
 #define SCREEN_FURNACE        3
+#define SCREEN_CHEST          4
 
 #define DATATYPE_EVENT_QUEUE  ("event_queue")
 #define DATATYPE_EVENT        ("event")

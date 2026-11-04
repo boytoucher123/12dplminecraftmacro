@@ -126,6 +126,7 @@ Integer block_hand_hits(Integer p_block)
   if (p_block == BLOCK_CRAFTING_TABLE) return 4;
   if (p_block == BLOCK_GLASS         ) return 2;
   if (p_block == BLOCK_BED           ) return 2;
+  if (p_block == BLOCK_CHEST         ) return 4;
   if (p_block == BLOCK_SANDSTONE     ) return 6;
   if (p_block == BLOCK_COAL_ORE      ) return 10;
   if (p_block == BLOCK_IRON_ORE      ) return 12;
@@ -145,6 +146,7 @@ Integer block_tool_kind(Integer p_block)
   if (p_block == BLOCK_PLANKS        ) return TOOL_AXE;
   if (p_block == BLOCK_CRAFTING_TABLE) return TOOL_AXE;
   if (p_block == BLOCK_BED           ) return TOOL_AXE;
+  if (p_block == BLOCK_CHEST         ) return TOOL_AXE;
   if (p_block == BLOCK_STONE         ) return TOOL_PICKAXE;
   if (p_block == BLOCK_COBBLESTONE   ) return TOOL_PICKAXE;
   if (p_block == BLOCK_SANDSTONE     ) return TOOL_PICKAXE;
@@ -252,6 +254,10 @@ Integer block_face_texture(Integer p_block, Integer p_direction)
   if (p_block == BLOCK_GRAVEL     ) return TEX_GRAVEL;
   if (p_block == BLOCK_GLASS      ) return TEX_GLASS;
 
+  if (p_block == BLOCK_CHEST) {
+    if (p_direction == DIR_PY || p_direction == DIR_NY) return TEX_CHEST_TOP;
+    return TEX_CHEST_SIDE;
+  }
   if (p_block == BLOCK_BED) {
     if (p_direction == DIR_PY) return TEX_BED_TOP;
     if (p_direction == DIR_NY) return TEX_PLANKS;
@@ -331,6 +337,7 @@ Text item_name(Integer p_item)
   if (p_item == ITEM_TORCH          ) return "Torch";
   if (p_item == ITEM_GLASS          ) return "Glass";
   if (p_item == ITEM_BED            ) return "Bed";
+  if (p_item == ITEM_CHEST          ) return "Chest";
   if (p_item == ITEM_ROTTEN_FLESH   ) return "Rotten Flesh";
   if (p_item == ITEM_GRAVEL         ) return "Gravel";
   if (p_item == ITEM_POPPY          ) return "Poppy";

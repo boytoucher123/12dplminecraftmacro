@@ -12,6 +12,7 @@
 #include "../include/furnace.h"
 #include "../include/render.h"
 #include "../include/hud.h"
+#include "../include/chest.h"
 #include "../include/ui.h"
 
 // ---------------------------------------------------------------- the UI record
@@ -78,12 +79,22 @@ void ui_open(Attributes &p_ui, Attributes &p_grid, Attributes &p_furnaces, Attri
 
   record_set_integer(p_ui, ATTR_UI_SCREEN,  p_screen);
   record_set_integer(p_ui, ATTR_UI_FURNACE, 0);
+  record_set_integer(p_ui, ATTR_UI_CHEST,   0);
   record_set_integer(p_ui, ATTR_X,          p_x);
   record_set_integer(p_ui, ATTR_Y,          p_y);
   record_set_integer(p_ui, ATTR_Z,          p_z);
 
   if (p_screen == SCREEN_INVENTORY) grid_clear(p_grid, GRID_INVENTORY_WIDTH);
   if (p_screen == SCREEN_CRAFTING ) grid_clear(p_grid, GRID_TABLE_WIDTH);
+
+  if (p_screen == SCREEN_CHEST) {
+    l_furnace = chest_get_or_create(p_furnaces, p_x, p_y, p_z);
+    record_set_integer(p_ui, ATTR_UI_CHEST, l_furnace);
+    if (l_furnace == 0) {
+      record_set_integer(p_ui, ATTR_UI_SCREEN, SCREEN_NONE);
+      emit_toast(p_events, "Too many chests in this world");
+    }
+  }
 
   if (p_screen == SCREEN_FURNACE) {
     l_furnace = furnace_get_or_create(p_furnaces, p_x, p_y, p_z);
@@ -123,7 +134,7 @@ void ui_on_event(Attributes &p_event, Attributes &p_ui, Attributes &p_inventory,
   } else if (l_type == EVT_CLOSE_SCREEN || l_type == EVT_PLAYER_DIED) {
     if (ui_screen(p_ui) != SCREEN_NONE) ui_close(p_ui, p_inventory, p_grid, p_events, p_drop_x, p_drop_y, p_drop_z);
   } else if (l_type == EVT_BLOCK_BROKEN) {
-    if (ui_screen(p_ui) == SCREEN_FURNACE || ui_screen(p_ui) == SCREEN_CRAFTING) {
+    if (ui_screen(p_ui) == SCREEN_FURNACE || ui_screen(p_ui) == SCREEN_CRAFTING || ui_screen(p_ui) == SCREEN_CHEST) {
       if (event_integer(p_event, 1) == record_integer(p_ui, ATTR_X) && event_integer(p_event, 2) == record_integer(p_ui, ATTR_Y) &&
           event_integer(p_event, 3) == record_integer(p_ui, ATTR_Z)) {
         ui_close(p_ui, p_inventory, p_grid, p_events, p_drop_x, p_drop_y, p_drop_z);
@@ -217,6 +228,19 @@ Integer ui_slot_rect(Integer p_screen, Integer p_grid_width, Integer p_slot, Rea
     return FALSE;
   }
 
+  if (p_screen == SCREEN_CHEST) {
+    // three rows of nine above the inventory, slot 1 at the top left
+    if (p_slot > UI_SLOT_CHEST && p_slot <= UI_SLOT_CHEST + CHEST_SLOTS) {
+      l_cell   = p_slot - UI_SLOT_CHEST - 1;
+      l_row    = floor_divide(l_cell, 9);
+      l_column = l_cell - l_row * 9;
+      p_x = l_inv_x + l_column * p_size;
+      p_y = l_top_y + (2 - l_row) * p_size;
+      return TRUE;
+    }
+    return FALSE;
+  }
+
   if (p_screen == SCREEN_FURNACE) {
     if (p_slot == UI_SLOT_FURNACE + FURNACE_SLOT_INPUT) {
       p_x = l_inv_x + p_size * 2.0;
@@ -290,6 +314,18 @@ void ui_click(Attributes &p_ui, Attributes &p_inventory, Attributes &p_grid, Att
       slot_click_right(p_inventory, p_grid, l_target, FALSE);
     } else {
       slot_click_left(p_inventory, p_grid, l_target, FALSE);
+    }
+    return;
+  }
+
+  if (l_screen == SCREEN_CHEST && record_integer(p_ui, ATTR_UI_CHEST) > 0) {
+    if (l_slot > UI_SLOT_CHEST && l_slot <= UI_SLOT_CHEST + CHEST_SLOTS) {
+      l_target = chest_slot(record_integer(p_ui, ATTR_UI_CHEST), l_slot - UI_SLOT_CHEST);
+      if (p_right_button) {
+        slot_click_right(p_inventory, p_furnaces, l_target, FALSE);
+      } else {
+        slot_click_left(p_inventory, p_furnaces, l_target, FALSE);
+      }
     }
     return;
   }
@@ -428,6 +464,7 @@ void ui_draw(Draw_Box p_box, Real p_w, Real p_h, Attributes &p_ui, Attributes &p
   if (l_screen == SCREEN_INVENTORY) l_title = "Inventory - crafting (2 x 2)";
   if (l_screen == SCREEN_CRAFTING ) l_title = "Crafting Table (3 x 3)";
   if (l_screen == SCREEN_FURNACE  ) l_title = "Furnace";
+  if (l_screen == SCREEN_CHEST    ) l_title = "Chest";
   hud_text(p_box, l_inv_x, l_y1 - 8.0, 15.0, TEXT_ALIGN_LEFT, 236, 236, 236, l_title);
   hud_text(p_box, l_x1 - 150.0, l_y1 - 10.0, 11.0, TEXT_ALIGN_LEFT, 160, 168, 180, "E or Q to close");
   hud_text(p_box, l_inv_x, l_inv_y + l_slot_size * 4.0 + 8.0 + 18.0, 13.0, TEXT_ALIGN_LEFT, 220, 220, 220, "Inventory");
@@ -450,6 +487,11 @@ void ui_draw(Draw_Box p_box, Real p_w, Real p_h, Attributes &p_ui, Attributes &p
       l_item   = slot_item  (p_grid, l_slot - UI_SLOT_GRID);
       l_count  = slot_count (p_grid, l_slot - UI_SLOT_GRID);
       l_damage = slot_damage(p_grid, l_slot - UI_SLOT_GRID);
+    } else if (l_slot > UI_SLOT_CHEST && record_integer(p_ui, ATTR_UI_CHEST) > 0) {
+      l_target = chest_slot(record_integer(p_ui, ATTR_UI_CHEST), l_slot - UI_SLOT_CHEST);
+      l_item   = slot_item  (p_furnaces, l_target);
+      l_count  = slot_count (p_furnaces, l_target);
+      l_damage = slot_damage(p_furnaces, l_target);
     } else if (l_furnace > 0) {
       l_target = furnace_slot(l_furnace, l_slot - UI_SLOT_FURNACE);
       l_item   = slot_item  (p_furnaces, l_target);
@@ -462,6 +504,8 @@ void ui_draw(Draw_Box p_box, Real p_w, Real p_h, Attributes &p_ui, Attributes &p
 
   if (l_screen == SCREEN_FURNACE) {
     ui_draw_furnace(p_box, p_furnaces, l_furnace, p_w, p_h);
+  } else if (l_screen == SCREEN_CHEST) {
+    // nothing more to draw
   } else {
     // Arrow from the grid to the output slot
     if (ui_slot_rect(l_screen, l_width, UI_SLOT_OUTPUT, p_w, p_h, l_x, l_y, l_size)) {

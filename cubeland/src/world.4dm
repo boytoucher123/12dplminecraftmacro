@@ -1043,7 +1043,7 @@ void world_build_house(Attributes &p_info, Integer p_origin_x, Integer p_ground_
 // The starter house: a 7 x 7 cabin with a cobblestone floor, log
 // corner posts, plank walls, a doorway facing -z, a window in each
 // other wall and a stepped plank roof. Inside are a crafting table,
-// a furnace, a bed and two torches. The ground is levelled under it and cleared around
+// a furnace, a bed, a chest and two torches. The ground is levelled under it and cleared around
 // it. The spawn point is put inside.
 // ----------------------------------------------------------------
 {
@@ -1104,6 +1104,7 @@ void world_build_house(Attributes &p_info, Integer p_origin_x, Integer p_ground_
   world_set_block(l_x0 + 1, l_floor_y + 1, l_z1 - 1, BLOCK_CRAFTING_TABLE);
   world_set_block(l_x1 - 1, l_floor_y + 1, l_z1 - 1, BLOCK_FURNACE_NZ);
   world_set_block(l_x1 - 1, l_floor_y + 1, l_z0 + 3, BLOCK_BED);
+  world_set_block(l_x0 + 1, l_floor_y + 1, l_z1 - 2, BLOCK_CHEST);
   world_set_block(l_x0 + 1, l_floor_y + 1, l_z0 + 1, BLOCK_TORCH);
   world_set_block(l_x1 - 1, l_floor_y + 1, l_z0 + 1, BLOCK_TORCH);
 

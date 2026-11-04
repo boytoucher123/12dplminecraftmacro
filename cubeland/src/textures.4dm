@@ -1078,6 +1078,31 @@ void make_texture_zombie(Integer p_tex, Integer p_part)
   }
 }
 
+void make_texture_chest(Integer p_tex, Integer p_side)
+// ----------------------------------------------------------------
+// A wooden chest: dark rim and planks; the sides (p_side) have the
+// lid seam and an iron latch
+// ----------------------------------------------------------------
+{
+  texture_set_palette(p_tex, 1, 160, 112, 52 );
+  texture_set_palette(p_tex, 2, 128, 86 , 38 );
+  texture_set_palette(p_tex, 3, 82 , 54 , 24 );
+  texture_set_palette(p_tex, 4, 200, 200, 204);
+  texture_set_palette(p_tex, 5, 60 , 60 , 64 );
+  texture_fill     (p_tex, 1);
+  texture_fill_rect(p_tex, 1 , 1 , 16, 1 , 3);
+  texture_fill_rect(p_tex, 1 , 16, 16, 16, 3);
+  texture_fill_rect(p_tex, 1 , 1 , 1 , 16, 3);
+  texture_fill_rect(p_tex, 16, 1 , 16, 16, 3);
+  texture_fill_rect(p_tex, 2 , 6 , 15, 6 , 2);
+  texture_fill_rect(p_tex, 2 , 11, 15, 11, 2);
+  if (p_side) {
+    texture_fill_rect(p_tex, 2 , 6 , 15, 6 , 3);
+    texture_fill_rect(p_tex, 7 , 5 , 10, 9 , 4);
+    texture_fill_rect(p_tex, 8 , 7 , 9 , 8 , 5);
+  }
+}
+
 void make_texture_torch(Integer p_tex)
 // ----------------------------------------------------------------
 // Picture of a torch: a stick with a glowing tip
@@ -1395,6 +1420,8 @@ void textures_generate()
   make_texture_zombie        (TEX_ZOMBIE_SHIRT, 3);
   make_texture_zombie        (TEX_ZOMBIE_PANTS, 4);
   make_texture_torch         (TEX_TORCH);
+  make_texture_chest         (TEX_CHEST_TOP, FALSE);
+  make_texture_chest         (TEX_CHEST_SIDE, TRUE);
   make_texture_glass         (TEX_GLASS);
   make_texture_item_rotten_flesh(TEX_ITEM_ROTTEN_FLESH);
 }
