@@ -194,6 +194,17 @@ Integer block_drop_item(Integer p_block, Integer p_tool_item)
   return p_block;
 }
 
+Integer block_pick_item(Integer p_block)
+// ----------------------------------------------------------------
+// The item that places a block (for pick block), ITEM_NONE for
+// blocks no item places
+// ----------------------------------------------------------------
+{
+  if (block_is_furnace(p_block)) return ITEM_FURNACE;
+  if (item_places_block(p_block) == BLOCK_AIR) return ITEM_NONE;
+  return p_block;
+}
+
 Integer block_face_texture(Integer p_block, Integer p_direction)
 // ----------------------------------------------------------------
 // Texture drawn on one face of a block

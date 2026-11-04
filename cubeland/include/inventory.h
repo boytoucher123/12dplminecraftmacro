@@ -26,6 +26,7 @@ Integer slot_damage          (Attributes &p_container, Integer p_slot);
 Integer slot_is_empty        (Attributes &p_container, Integer p_slot);
 void    slot_set             (Attributes &p_container, Integer p_slot, Integer p_item, Integer p_count, Integer p_damage);
 void    slot_clear           (Attributes &p_container, Integer p_slot);
+void    slot_swap            (Attributes &p_container, Integer p_slot_a, Integer p_slot_b);
 void    slot_take_one        (Attributes &p_container, Integer p_slot);
 Integer slot_wear            (Attributes &p_container, Integer p_slot);
 void    slot_click_left      (Attributes &p_holder, Attributes &p_container, Integer p_slot, Integer p_take_only);

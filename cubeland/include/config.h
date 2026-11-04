@@ -40,6 +40,9 @@
 #define SWIM_UP_SPEED        3.6
 #define SWIM_SINK_SPEED      2.5
 #define WATER_SPEED_FACTOR   0.55
+#define FLY_SPEED_FACTOR     1.8      // horizontal speed while flying
+#define FLY_VERTICAL_SPEED   6.0      // blocks per second up (Space) or down (C)
+#define FLY_KEY_SECONDS      0.25     // a press of Space or C moves this long
 #define FALL_DAMAGE_START    3.0
 #define REGEN_SECONDS        4.0
 #define BREAK_RESET_SECONDS  1.2

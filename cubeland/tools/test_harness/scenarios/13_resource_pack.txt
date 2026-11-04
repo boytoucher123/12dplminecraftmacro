@@ -29,4 +29,9 @@ call give_tools
 call hold_pickaxe
 snap 13_pack_view
 wait 1
+# back to the built-in textures, so later scenarios don't use the pack
+key o
+button set_pack_clear
+button set_done
+wait 1
 quit

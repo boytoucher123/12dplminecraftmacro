@@ -109,6 +109,7 @@ Integer block_needs_tool     (Integer p_block);
 Integer block_tier_needed    (Integer p_block);
 Integer block_hits_with      (Integer p_block, Integer p_tool_item);
 Integer block_drop_item      (Integer p_block, Integer p_tool_item);
+Integer block_pick_item      (Integer p_block);
 Integer block_face_texture   (Integer p_block, Integer p_direction);
 Real    block_face_shade     (Integer p_direction);
 Text    item_name            (Integer p_item);

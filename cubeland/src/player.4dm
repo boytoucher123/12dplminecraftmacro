@@ -339,6 +339,67 @@ void player_turn(Attributes &p_player, Real p_yaw_change, Real p_pitch_change)
   player_set_look(p_player, wrap_angle(l_yaw + p_yaw_change), clamp_real(l_pitch + p_pitch_change, -MAX_PITCH, MAX_PITCH));
 }
 
+Integer player_flying(Attributes &p_player)
+// ----------------------------------------------------------------
+// TRUE while fly mode is on (no gravity, Space rises, C sinks)
+// ----------------------------------------------------------------
+{
+  return record_integer(p_player, ATTR_PLAYER_FLYING);
+}
+
+void player_set_flying(Attributes &p_player, Integer p_flying)
+// ----------------------------------------------------------------
+// Turn fly mode on or off; landing after flying does no harm
+// ----------------------------------------------------------------
+{
+  Real l_x = 0.0;
+  Real l_y = 0.0;
+  Real l_z = 0.0;
+
+  player_position(p_player, l_x, l_y, l_z);
+  record_set_integer  (p_player, ATTR_PLAYER_FLYING, p_flying);
+  player_set_fall_peak(p_player, l_y);
+}
+
+Integer player_pick_block(Attributes &p_player, Attributes &p_inventory, Text &p_report)
+// ----------------------------------------------------------------
+// Pick block: select the hotbar slot holding the item of the block
+// under the crosshair, or swap it into the selected hotbar slot
+// from the rest of the inventory. Returns TRUE if the held item
+// changed; p_report says what happened.
+// ----------------------------------------------------------------
+{
+  Integer l_x        = 0;
+  Integer l_y        = 0;
+  Integer l_z        = 0;
+  Integer l_block    = BLOCK_AIR;
+  Integer l_item     = ITEM_NONE;
+  Integer l_slot     = 0;
+  Integer l_selected = player_selected(p_player);
+
+  p_report = "";
+  if (player_target_kind(p_player) != TARGET_BLOCK) return FALSE;
+  player_target_cell(p_player, l_x, l_y, l_z);
+  l_block = world_get_block(l_x, l_y, l_z);
+  l_item  = block_pick_item(l_block);
+  if (l_item == ITEM_NONE) return FALSE;
+
+  for (l_slot = 1; l_slot <= HOTBAR_SLOTS; ++l_slot) {
+    if (slot_item(p_inventory, l_slot) == l_item) {
+      player_set_selected(p_player, l_slot);
+      return TRUE;
+    }
+  }
+  for (l_slot = HOTBAR_SLOTS + 1; l_slot <= INVENTORY_SLOTS; ++l_slot) {
+    if (slot_item(p_inventory, l_slot) == l_item) {
+      slot_swap(p_inventory, l_slot, l_selected);
+      return TRUE;
+    }
+  }
+  p_report = "No " + item_name(l_item) + " in your inventory";
+  return FALSE;
+}
+
 void player_key_pressed(Attributes &p_player, Text p_key, Real p_now)
 // ----------------------------------------------------------------
 // A movement key (w a s d, space) arrived from the keyboard box
@@ -364,6 +425,11 @@ void player_key_pressed(Attributes &p_player, Text p_key, Real p_now)
     record_set_text(p_player, ATTR_MOVE_KEY,  p_key);
     record_set_real(p_player, ATTR_MOVE_LAST, p_now);
     if (p_key == "s") player_set_auto_walk(p_player, FALSE);
+    return;
+  }
+
+  if (p_key == "c") {
+    if (player_flying(p_player)) record_set_real(p_player, ATTR_FLY_DOWN_UNTIL, p_now + FLY_KEY_SECONDS);
     return;
   }
 
@@ -457,6 +523,8 @@ void player_update(Attributes &p_player, Attributes &p_cows, Attributes &p_event
   Integer l_hit_z        = FALSE;
   Integer l_hit_down     = FALSE;
   Integer l_hit_up       = FALSE;
+  Integer l_flying       = player_flying(p_player);
+  Real    l_down_until   = record_real(p_player, ATTR_FLY_DOWN_UNTIL);
 
   record_set_real(p_player, ATTR_PLAYER_HURT,  player_hurt_time (p_player) - p_dt);
   record_set_real(p_player, ATTR_PLAYER_SWING, player_swing_time(p_player) - p_dt);
@@ -480,6 +548,7 @@ void player_update(Attributes &p_player, Attributes &p_cows, Attributes &p_event
   }
   l_speed = WALK_SPEED * l_ease;
   if (l_in_water) l_speed = l_speed * WATER_SPEED_FACTOR;
+  if (l_flying)   l_speed = l_speed * FLY_SPEED_FACTOR;
 
   l_wish_x = l_heading_x * l_forward - l_heading_z * l_strafe;
   l_wish_z = l_heading_z * l_forward + l_heading_x * l_strafe;
@@ -490,7 +559,7 @@ void player_update(Attributes &p_player, Attributes &p_cows, Attributes &p_event
     l_moving = TRUE;
   }
 
-  if (l_on_ground) {
+  if (l_on_ground || l_flying) {
     l_vx = l_wish_x * l_speed;
     l_vz = l_wish_z * l_speed;
   } else {
@@ -499,8 +568,17 @@ void player_update(Attributes &p_player, Attributes &p_cows, Attributes &p_event
     l_vz = l_vz + (l_wish_z * l_speed - l_vz) * l_blend;
   }
 
+  // Flying: no gravity, Space rises and C sinks while pressed
+  if (l_flying) {
+    l_vy = 0.0;
+    if (p_now < l_jump_until) l_vy = FLY_VERTICAL_SPEED;
+    if (p_now < l_down_until) l_vy = -FLY_VERTICAL_SPEED;
+  }
+
   // Jumping and swimming
-  if (p_now < l_jump_until) {
+  if (l_flying) {
+    // handled above
+  } else if (p_now < l_jump_until) {
     if (l_in_water) {
       l_vy = SWIM_UP_SPEED;
     } else if (l_on_ground) {
@@ -509,7 +587,9 @@ void player_update(Attributes &p_player, Attributes &p_cows, Attributes &p_event
     }
   }
 
-  if (l_in_water) {
+  if (l_flying) {
+    // no gravity
+  } else if (l_in_water) {
     l_vy = l_vy - SWIM_GRAVITY * p_dt;
     if (l_vy < -SWIM_SINK_SPEED) l_vy = -SWIM_SINK_SPEED;
   } else {
@@ -562,8 +642,8 @@ void player_update(Attributes &p_player, Attributes &p_cows, Attributes &p_event
   record_set_real    (p_player, ATTR_JUMP_UNTIL, l_jump_until);
 
   // Fall damage: measured from the highest point since leaving the
-  // ground; water breaks any fall
-  if (l_in_water) {
+  // ground; water (and flying) breaks any fall
+  if (l_in_water || l_flying) {
     l_fall_peak = l_y;
   } else if (l_on_ground) {
     if (!l_was_grounded) {

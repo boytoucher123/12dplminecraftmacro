@@ -225,6 +225,7 @@ Integer game_panel_run(Text p_world_name, Integer p_create, Integer p_seed)
   Integer   l_leaves          = 0;
   Integer   l_calibration     = 0;
   Real      l_frame_ms        = 0.0;
+  Text      l_report          = "";
   Integer   l_open_settings   = FALSE;
   Text      l_problem         = "";
 
@@ -313,6 +314,7 @@ Integer game_panel_run(Text p_world_name, Integer p_create, Integer p_seed)
       game_panel_render(l_draw_box, l_captured, l_frame_ms, l_frame_start);
       Get_time(l_frame_end);
       l_frame_ms = (l_frame_end - l_frame_start) * 1000.0;
+      hud_note_frame(g_hud, l_frame_ms, l_frame_end);
       l_want_frame = FALSE;
     }
 
@@ -471,7 +473,7 @@ Integer game_panel_run(Text p_world_name, Integer p_create, Integer p_seed)
             if (l_have_origin || l_have_seen) l_start_request = TRUE;
           }
         } else {
-          if (l_key == "w" || l_key == "a" || l_key == "s" || l_key == "d" || l_key == " ") {
+          if (l_key == "w" || l_key == "a" || l_key == "s" || l_key == "d" || l_key == " " || l_key == "c") {
             player_key_pressed(g_player, l_key, l_now);
             if (!l_captured && hud_help_shown(g_hud) && (l_have_origin || l_have_seen)) l_start_request = TRUE;
           }
@@ -508,6 +510,25 @@ Integer game_panel_run(Text p_world_name, Integer p_create, Integer p_seed)
             settings_save(g_settings, save_settings_path());
           }
           if (l_key == "o") l_open_settings = TRUE;
+          if (l_key == "g") {
+            player_set_flying(g_player, !player_flying(g_player));
+            if (player_flying(g_player)) {
+              hud_toast(g_hud, "Flying: Space goes up, C goes down, G lands", l_now);
+            } else {
+              hud_toast(g_hud, "Flying off", l_now);
+            }
+          }
+          if (l_key == "p") {
+            if (player_pick_block(g_player, g_inventory, l_report)) {
+              hud_show_name(g_hud, l_now);
+            } else if (l_report != "") {
+              hud_toast(g_hud, l_report, l_now);
+            }
+          }
+          if (l_key == "u") {
+            settings_toggle(g_settings, ATTR_SET_SHOW_HUD);
+            settings_save(g_settings, save_settings_path());
+          }
         }
 
         Set_data(l_key_box, "");

@@ -31,6 +31,55 @@ void hud_clear(Attributes &p_hud)
   }
   record_set_integer(p_hud, ATTR_HUD_HELP,       TRUE);
   record_set_real   (p_hud, ATTR_HUD_NAME_UNTIL, 0.0);
+  record_set_integer(p_hud, ATTR_HUD_FRAMES,     0);
+  record_set_real   (p_hud, ATTR_HUD_FRAME_SUM,  0.0);
+  record_set_real   (p_hud, ATTR_HUD_FRAME_MIN,  0.0);
+  record_set_real   (p_hud, ATTR_HUD_FRAME_MAX,  0.0);
+  record_set_real   (p_hud, ATTR_HUD_WINDOW,     0.0);
+  record_set_text   (p_hud, ATTR_HUD_STATS,      "");
+}
+
+void hud_note_frame(Attributes &p_hud, Real p_frame_ms, Real p_now)
+// ----------------------------------------------------------------
+// Count a drawn frame; once a second the fastest, average and
+// slowest frame time of that second and the frame rate are kept
+// as text for the statistics line
+// ----------------------------------------------------------------
+{
+  Integer l_frames  = record_integer(p_hud, ATTR_HUD_FRAMES);
+  Real    l_sum     = record_real   (p_hud, ATTR_HUD_FRAME_SUM);
+  Real    l_fastest = record_real   (p_hud, ATTR_HUD_FRAME_MIN);
+  Real    l_slowest = record_real   (p_hud, ATTR_HUD_FRAME_MAX);
+  Real    l_start   = record_real   (p_hud, ATTR_HUD_WINDOW);
+  Real    l_elapsed = 0.0;
+
+  if (l_frames == 0 || p_frame_ms < l_fastest) l_fastest = p_frame_ms;
+  if (l_frames == 0 || p_frame_ms > l_slowest) l_slowest = p_frame_ms;
+  if (l_frames == 0 && l_start <= 0.0) l_start = p_now;
+  ++l_frames;
+  l_sum = l_sum + p_frame_ms;
+
+  l_elapsed = p_now - l_start;
+  if (l_elapsed >= FRAME_STATS_SECONDS) {
+    record_set_text(p_hud, ATTR_HUD_STATS, "frame " + To_text(l_fastest, 1) + " / " + To_text(l_sum / l_frames, 1) + " / "
+                    + To_text(l_slowest, 1) + " ms (min/avg/max), " + To_text(l_frames / l_elapsed, 1) + " fps");
+    l_frames = 0;
+    l_sum    = 0.0;
+    l_start  = p_now;
+  }
+  record_set_integer(p_hud, ATTR_HUD_FRAMES,    l_frames);
+  record_set_real   (p_hud, ATTR_HUD_FRAME_SUM, l_sum);
+  record_set_real   (p_hud, ATTR_HUD_FRAME_MIN, l_fastest);
+  record_set_real   (p_hud, ATTR_HUD_FRAME_MAX, l_slowest);
+  record_set_real   (p_hud, ATTR_HUD_WINDOW,    l_start);
+}
+
+Text hud_frame_stats(Attributes &p_hud)
+// ----------------------------------------------------------------
+// Frame time statistics of the last full second ("" at first)
+// ----------------------------------------------------------------
+{
+  return record_text(p_hud, ATTR_HUD_STATS);
 }
 
 void hud_toast(Attributes &p_hud, Text p_text, Real p_now)
@@ -337,11 +386,13 @@ void hud_draw_help(Draw_Box p_box, Real p_w, Real p_h)
   hud_help_line(p_box, l_x, l_y, "Right click"    , "place blocks, eat, use crafting tables and furnaces");
   hud_help_heading(p_box, l_x, l_y, "KEYBOARD");
   hud_help_line(p_box, l_x, l_y, "W A S D"        , "walk (hold one key at a time)");
-  hud_help_line(p_box, l_x, l_y, "Space"          , "jump, swim up");
+  hud_help_line(p_box, l_x, l_y, "Space"          , "jump, swim up, fly up");
   hud_help_line(p_box, l_x, l_y, "1 - 9"          , "choose a hotbar slot");
   hud_help_line(p_box, l_x, l_y, "E"              , "inventory and 2 x 2 crafting");
   hud_help_line(p_box, l_x, l_y, "Q"              , "pause and free the mouse, or close a screen");
   hud_help_line(p_box, l_x, l_y, "F / J"          , "auto-walk on/off, auto-jump on/off");
+  hud_help_line(p_box, l_x, l_y, "G / C"          , "fly on/off, fly down");
+  hud_help_line(p_box, l_x, l_y, "P / U"          , "pick the block you look at, hide the HUD");
   hud_help_line(p_box, l_x, l_y, "- / ="          , "shorter / longer view distance");
   hud_help_line(p_box, l_x, l_y, "I / H / O"      , "position info, this help, settings");
   hud_help_heading(p_box, l_x, l_y, "GETTING STARTED");
@@ -468,6 +519,8 @@ void hud_draw(Draw_Box p_box, Real p_w, Real p_h, Integer p_captured, Integer p_
   l_info = GAME_TITLE;
   l_info = l_info + "   seed " + To_text(p_seed) + "   view " + To_text(settings_render_distance(p_settings))
        + "   " + To_text(p_frame_ms, 1) + " ms";
+  if (settings_flag(p_settings, ATTR_SET_SHOW_DEBUG) && hud_frame_stats(p_hud) != "") l_info = l_info + "   " + hud_frame_stats(p_hud);
+  if (player_flying(p_player)) l_info = l_info + "   FLYING";
   if (player_auto_walk(p_player)) l_info = l_info + "   AUTO-WALK";
   if (!settings_flag(p_settings, ATTR_SET_AUTO_JUMP)) l_info = l_info + "   auto-jump off";
   hud_text(p_box, 8.0, l_strip - 5.0, 11.0, TEXT_ALIGN_LEFT, 170, 176, 186, l_info);

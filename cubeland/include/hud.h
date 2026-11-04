@@ -24,6 +24,13 @@
 #define ATTR_HUD_UNTIL      ("until")
 #define ATTR_HUD_HELP       ("show_help")
 #define ATTR_HUD_NAME_UNTIL ("name_until")
+#define ATTR_HUD_FRAMES     ("frames")          // frame times over the current second
+#define ATTR_HUD_FRAME_SUM  ("frame_sum")
+#define ATTR_HUD_FRAME_MIN  ("frame_min")
+#define ATTR_HUD_FRAME_MAX  ("frame_max")
+#define ATTR_HUD_WINDOW     ("window_start")
+#define ATTR_HUD_STATS      ("frame_stats")     // the last full second, as text
+#define FRAME_STATS_SECONDS 1.0
 
 /*Global variables*/ {
   // Polygon scratch for icons
@@ -36,6 +43,8 @@ void hud_toast          (Attributes &p_hud, Text p_text, Real p_now);
 void hud_show_name      (Attributes &p_hud, Real p_now);
 Integer hud_help_shown  (Attributes &p_hud);
 void hud_set_help       (Attributes &p_hud, Integer p_shown);
+void hud_note_frame     (Attributes &p_hud, Real p_frame_ms, Real p_now);
+Text hud_frame_stats    (Attributes &p_hud);
 void hud_on_event       (Attributes &p_event, Attributes &p_hud, Real p_now);
 void hud_text           (Draw_Box p_box, Real p_x, Real p_y, Real p_size, Integer p_align, Integer p_red, Integer p_green, Integer p_blue, Text p_text);
 void hud_shadow_text    (Draw_Box p_box, Real p_x, Real p_y, Real p_size, Integer p_align, Integer p_red, Integer p_green, Integer p_blue, Text p_text);

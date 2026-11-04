@@ -72,6 +72,19 @@ void slot_clear(Attributes &p_container, Integer p_slot)
   slot_set(p_container, p_slot, ITEM_NONE, 0, 0);
 }
 
+void slot_swap(Attributes &p_container, Integer p_slot_a, Integer p_slot_b)
+// ----------------------------------------------------------------
+// Exchange the contents of two slots of a container
+// ----------------------------------------------------------------
+{
+  Integer l_item   = slot_item  (p_container, p_slot_a);
+  Integer l_count  = slot_count (p_container, p_slot_a);
+  Integer l_damage = slot_damage(p_container, p_slot_a);
+
+  slot_set(p_container, p_slot_a, slot_item(p_container, p_slot_b), slot_count(p_container, p_slot_b), slot_damage(p_container, p_slot_b));
+  slot_set(p_container, p_slot_b, l_item, l_count, l_damage);
+}
+
 void slot_take_one(Attributes &p_container, Integer p_slot)
 // ----------------------------------------------------------------
 // Use up one item from a slot (placing a block, eating)
