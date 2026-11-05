@@ -32,8 +32,10 @@ at the code it cites.
 | B6 Vertical render range | done | sections more than 40 blocks above or below the eye are skipped |
 | Resource packs (not from SM) | done | `.zip` or folder in Settings; zip, deflate and PNG decoded in 12dPL (`resource_pack.4dm`) |
 | Beyond SM | done | zombies at night, glass, beds, chests, iron |
+| O1 Optimising | **next** | measure first, then cut record reads and rebuild work in hot loops (section O below) |
+| Desktop build (not from SM) | done | `tools/desktop`: the same macro as a Windows `.exe`, without 12d |
 
-Suggested next steps: flood-fill sky light (so caves under overhangs darken properly), B2 edge-strip
+Suggested next steps: **O1 optimising** (below) before adding much more, then flood-fill sky light (so caves under overhangs darken properly), B2 edge-strip
 AO, a lit furnace giving off light, doors, more animals.
 
 ## 0. Which ScuffedMinecraft?
@@ -405,6 +407,37 @@ moves along an arc. Torches then matter. About 20 statements per frame, 0 polygo
 SM has a separate render-height slider. In Cubeland `render_collect_blocks` uses the same
 range for y. Clamp the vertical section range to ±2 sections (32 blocks) when the camera is above
 ground, to save section tests. Low value, trivial. Fold it into the user's render-distance setting.
+
+### (O) Optimising
+
+Every feature so far added work per frame. Before adding more, spend a pass on speed. Measure first,
+change one thing at a time, and keep the test scenarios passing (their dumps show behaviour hasn't changed).
+
+**How to measure**
+- In game: the I statistics line shows frame time min/avg/max over each second, polygons and faces.
+- Harness: `TRACE_ATTR=1 ./run.sh scenarios/15_night_torches_zombies.txt` lists the most-read
+  record fields, and `[frames]` gives attribute calls per run. Attributes calls are the slowest
+  thing 12dPL does in a loop, so that count is the main number to bring down.
+- First measurement (scenario 15, 471 frames, 367k record reads, about 780 per frame): the top
+  entries are `used_1` ... `used_11` about 2,850 times each. That is the cow/zombie loop asking every
+  slot whether it is alive, every frame.
+
+**Candidates, roughly in order of payoff**
+1. Mob and drop slots: keep an `Integer g_cow_used[MAX_COWS]` (and drops, furnaces) mirror of the
+   `used_c` fields, written by the same set function, so the per-frame loops skip empty slots
+   without touching the record. Same idea for `x/y/z` of live mobs during a frame.
+2. Per-frame values read from records more than once (`state`, `selected`, `dead`: thousands of reads):
+   read once at the start of the frame into locals, pass them down.
+3. Light updates: `world_light_update` relights a 31^3 box per block change. Shrink the box to the
+   torch radius actually affected, and skip it entirely when no light source is near.
+4. Mesh rebuilds: count section rebuilds (`builds` in the dump) when breaking one block; rebuild only
+   the touched section and neighbours on its faces.
+5. Rendering: cull faces of sections fully behind the camera before sorting; cache sun/sky colours
+   that only change every few seconds of game time.
+6. Saving: write chunks of the world per line instead of per block if save time is noticeable.
+
+Each change should state the before/after number (frame ms in game, or record reads in the harness)
+in its commit message.
 
 ### (C) Skip, and why
 

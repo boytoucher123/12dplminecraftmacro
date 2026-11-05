@@ -11,6 +11,10 @@
 #include <algorithm>
 #include <sys/stat.h>
 #include <dirent.h>
+#ifdef _WIN32
+#include <direct.h>
+#include <io.h>
+#endif
 typedef int Integer;
 typedef long long Integer64;
 typedef double Real;
@@ -47,12 +51,18 @@ inline void Print(){ printf("\n"); }
 
 // ---------------------------------------------------------------- random / time
 extern double g_sim_time;
+#ifndef CUBELAND_DESKTOP
 inline int Get_time(double&t){ t=g_sim_time; return 0; }
 inline int Get_time(int&t){ t=(int)g_sim_time; return 0; }
+#else
+int Get_time(double&t);
+int Get_time(int&t);
+#endif
 static unsigned long long g_rng=1;
 inline void Set_random_number(int seed,int){ g_rng=(unsigned long long)(unsigned)seed*2654435761ULL+12345; }
 inline double Get_random_number_closed(){ g_rng=g_rng*6364136223846793005ULL+1442695040888963407ULL; return (double)((g_rng>>11)&((1ULL<<53)-1))/(double)((1ULL<<53)-1); }
 
+#ifndef CUBELAND_DESKTOP
 // ---------------------------------------------------------------- widgets
 struct Widget { long long id=0; Text title; int kind=0; };
 extern long long g_next_id;
@@ -114,6 +124,44 @@ int Draw_text(const Draw_Box&,double,double,double,double,const Text&);
 int Set_text_align(const Draw_Box&,int); int Set_text_colour(const Draw_Box&,int,int,int);
 inline int Set_bk_mode(const Draw_Box&,int){ return 0; }
 
+#else
+// ---------------------------------------------------------------- widgets (desktop: implemented in tools/desktop/desktop.cpp)
+struct Widget { long long id=0; Text title; int kind=0; };
+extern long long g_next_id;
+struct Panel:Widget{}; struct Vertical_Group:Widget{}; struct Horizontal_Group:Widget{};
+struct Message_Box:Widget{}; struct Colour_Message_Box:Message_Box{};
+struct Input_Box:Widget{}; struct File_Box:Widget{}; struct List_Box:Widget{}; struct Button:Widget{};
+struct Draw_Box:Widget{ int w=0,h=0; };
+Panel Create_panel(const Text&t); Panel Create_panel(const Text&t,int);
+Vertical_Group Create_vertical_group(int); Horizontal_Group Create_button_group();
+Colour_Message_Box Create_colour_message_box(const Text&t);
+Input_Box Create_input_box(const Text&t,const Message_Box&);
+File_Box Create_file_box(const Text&t,const Message_Box&,int,const Text&);
+List_Box Create_list_box(const Text&t,const Message_Box&,int);
+Button Create_button(const Text&t,const Text&r); Button Create_finish_button(const Text&t,const Text&r);
+Draw_Box Create_draw_box(int w,int h,int);
+int Append(const Widget&child,const Widget&parent);
+int Show_widget(const Widget&); int Hide_widget(const Widget&); int Set_focus(const Widget&);
+int Set_sizing_constraints(const Widget&,int,int); int Set_notify_resizing(const Widget&);
+inline int Set_exit_code(const Text&){ return 0; }
+inline long long Get_id64(const Widget&w){ return w.id; }
+int Set_data(const Colour_Message_Box&,const Text&t);
+int Set_data(const Input_Box&b,const Text&t); int Get_data(const Input_Box&b,Text&t);
+int Set_data(const File_Box&b,const Text&t); int Get_data(const File_Box&b,Text&t);
+int Get_number_of_items(const List_Box&b,int&n); int Delete_item(const List_Box&b,int p); int Add_item(const List_Box&b,const Text&t);
+int Set_selection(const List_Box&b,int p); int Get_selection(const List_Box&b,int&p); int Get_item(const List_Box&b,int p,Text&t);
+int Get_size(const Draw_Box&,int&w,int&h); int Get_position(const Widget&,int&x,int&y);
+int Get_cursor_position(int&x,int&y); int Set_cursor_position(int x,int y);
+int Wait_on_events(long long&id,Text&cmd,Text&msg);
+int Start_batch_draw(const Draw_Box&); int End_batch_draw(const Draw_Box&);
+int Set_colour(const Draw_Box&,int,int,int); int Set_fill_colour(const Draw_Box&,int,int,int);
+int Draw_polygon(const Draw_Box&,int,double*,double*);
+int Move_to(const Draw_Box&,double,double); int Draw_to(const Draw_Box&,double,double);
+int Draw_text(const Draw_Box&,double,double,double,double,const Text&);
+int Set_text_align(const Draw_Box&,int); int Set_text_colour(const Draw_Box&,int,int,int);
+inline int Set_bk_mode(const Draw_Box&,int){ return 0; }
+#endif
+
 // ---------------------------------------------------------------- files
 inline Text fix_path(Text p){ for(auto&c:p) if(c=='\\') c='/'; return p; }
 struct File { std::FILE* f=nullptr; };
@@ -129,7 +177,11 @@ inline int File_write_line(File&f,const Text&t){ fputs(t.c_str(),f.f); fputc('\n
 inline int File_read_line(File&f,Text&t){ char buf[65536]; if(!fgets(buf,sizeof buf,f.f)) return -1; t=buf; while(!t.empty()&&(t.back()=='\n'||t.back()=='\r')) t.pop_back(); return 0; }
 inline int File_exists(const Text&n){ struct stat s; return stat(fix_path(n).c_str(),&s)==0; }
 inline int Directory_exists(const Text&n){ struct stat s; return stat(fix_path(n).c_str(),&s)==0 && S_ISDIR(s.st_mode); }
+#ifdef _WIN32
+inline int Directory_create(const Text&n){ return mkdir(fix_path(n).c_str()); }
+#else
 inline int Directory_create(const Text&n){ return mkdir(fix_path(n).c_str(),0755); }
+#endif
 inline int Delete_files(const Text&n){ return remove(fix_path(n).c_str()); }
 inline int List_files_in_folder(const Text&folder,const Text&pat,int&count,Dynamic_Text&names){
   count=0; DIR*d=opendir(fix_path(folder).c_str()); if(!d) return 1; Text ext=pat.substr(1);

@@ -25,6 +25,14 @@ two minutes while you play. Settings are kept in
 `cubeland_worlds/cubeland_settings.txt`. Worlds saved by the first version
 can't be opened by this one (items were renumbered).
 
+### Without 12d (Windows)
+
+`tools/desktop` builds the same macro into a stand-alone `cubeland.exe` that
+runs on any 64-bit Windows 10 or 11 PC without 12d Model. A ready-built copy
+is in `release/cubeland.exe`. Double-click it, and
+worlds are saved next to it. See [tools/desktop/README.md](tools/desktop/README.md)
+for how to rebuild it after you change the macro.
+
 ## Controls
 
 | Input         | Action                                                       |
