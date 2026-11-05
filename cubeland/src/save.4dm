@@ -477,6 +477,12 @@ Integer load_world(Text p_name, Attributes &p_info, Attributes &p_player, Attrib
   }
   world_finish_maps();
 
+  // The lists of used mob, drop and furnace numbers come from the
+  // "used" fields just read
+  mobs_rebuild_index    (p_cows);
+  drops_rebuild_index   (p_drops);
+  furnaces_rebuild_index(p_furnaces);
+
   // Torches light their surroundings again
   for (l_edit = 1; l_edit <= g_edit_count; ++l_edit) {
     if (block_light_emission(g_edit_block[l_edit]) == 0) continue;
@@ -488,7 +494,7 @@ Integer load_world(Text p_name, Attributes &p_info, Attributes &p_player, Attrib
   for (l_furnace = 1; l_furnace <= MAX_FURNACES; ++l_furnace) {
     if (!furnace_used(p_furnaces, l_furnace)) continue;
     furnace_cell(p_furnaces, l_furnace, l_fx, l_fy, l_fz);
-    if (!block_is_furnace(world_get_block(l_fx, l_fy, l_fz))) record_set_integer_at(p_furnaces, ATTR_USED, l_furnace, FALSE);
+    if (!block_is_furnace(world_get_block(l_fx, l_fy, l_fz))) furnace_set_used(p_furnaces, l_furnace, FALSE);
   }
 
   return SUCCESS;

@@ -9,6 +9,7 @@
 #include "../include/blocks.h"
 #include "../include/world.h"
 #include "../include/physics.h"
+#include "../include/slots.h"
 #include "../include/cows.h"
 
 // ---------------------------------------------------------------- accessors
@@ -23,15 +24,36 @@ void cows_clear(Attributes &p_cows)
   record_clear   (p_cows, DATATYPE_COWS);
   record_set_real(p_cows, ATTR_COW_RESPAWN, 0.0);
   for (l_cow = 1; l_cow <= MAX_COWS; ++l_cow) record_set_integer_at(p_cows, ATTR_USED, l_cow, FALSE);
+  slots_reset(SLOT_POOL_MOBS);
+}
+
+void mobs_rebuild_index(Attributes &p_cows)
+// ----------------------------------------------------------------
+// Rebuild the list of living animals from the record (after a
+// world is loaded)
+// ----------------------------------------------------------------
+{
+  slots_rebuild(SLOT_POOL_MOBS, p_cows, MAX_COWS);
+}
+
+void mob_set_used(Attributes &p_cows, Integer p_cow, Integer p_used)
+// ----------------------------------------------------------------
+// An animal appears (used TRUE) or is gone: the record and the
+// list of living animals change together
+// ----------------------------------------------------------------
+{
+  record_set_integer_at(p_cows, ATTR_USED, p_cow, p_used);
+  slots_set(SLOT_POOL_MOBS, p_cow, p_used);
 }
 
 Integer cow_alive(Attributes &p_cows, Integer p_cow)
 // ----------------------------------------------------------------
-// TRUE if cow number cow exists
+// TRUE if cow number cow exists (from the list of living animals,
+// which mirrors the record's "used" fields)
 // ----------------------------------------------------------------
 {
   if (p_cow < 1 || p_cow > MAX_COWS) return FALSE;
-  return record_integer_at(p_cows, ATTR_USED, p_cow);
+  return slots_used(SLOT_POOL_MOBS, p_cow);
 }
 
 void cow_position(Attributes &p_cows, Integer p_cow, Real &p_x, Real &p_y, Real &p_z)
@@ -118,10 +140,11 @@ Integer mobs_count_kind(Attributes &p_cows, Integer p_kind)
 // ----------------------------------------------------------------
 {
   Integer l_cow   = 0;
+  Integer l_live  = 0;
   Integer l_count = 0;
 
-  for (l_cow = 1; l_cow <= MAX_COWS; ++l_cow) {
-    if (!cow_alive(p_cows, l_cow)) continue;
+  for (l_live = 1; l_live <= slots_count(SLOT_POOL_MOBS); ++l_live) {
+    l_cow = slots_at(SLOT_POOL_MOBS, l_live);
     if (mob_kind(p_cows, l_cow) == p_kind) ++l_count;
   }
   return l_count;
@@ -147,7 +170,7 @@ Integer mobs_spawn(Attributes &p_cows, Attributes &p_random, Integer p_kind, Rea
 
   for (l_cow = 1; l_cow <= MAX_COWS; ++l_cow) {
     if (cow_alive(p_cows, l_cow)) continue;
-    record_set_integer_at(p_cows, ATTR_USED,         l_cow, TRUE);
+    mob_set_used         (p_cows, l_cow, TRUE);
     record_set_integer_at(p_cows, ATTR_MOB_KIND,     l_cow, p_kind);
     record_set_real_at   (p_cows, ATTR_MOB_ATTACK,   l_cow, 0.0);
     cow_set_position     (p_cows, l_cow, p_x, p_y, p_z);
@@ -255,7 +278,7 @@ void zombie_sunlight(Attributes &p_cows, Attributes &p_events, Integer p_cow, Re
   l_health = record_integer_at(p_cows, ATTR_HEALTH, p_cow) - 2;
   record_set_integer_at(p_cows, ATTR_HEALTH, p_cow, l_health);
   if (l_health <= 0) {
-    record_set_integer_at(p_cows, ATTR_USED, p_cow, FALSE);
+    mob_set_used(p_cows, p_cow, FALSE);
     emit_event(p_events, EVT_COW_KILLED, p_cow, MOB_ZOMBIE, 0, 0, l_x, l_y + 0.9, l_z, "");
   }
 }
@@ -436,6 +459,9 @@ void cows_update(Attributes &p_cows, Attributes &p_random, Attributes &p_events,
 // ----------------------------------------------------------------
 {
   Integer l_cow     = 0;
+  Integer l_live    = 0;
+  Integer l_count   = slots_count(SLOT_POOL_MOBS);
+  Integer l_order[MAX_COWS];
   Real    l_x       = 0.0;
   Real    l_y       = 0.0;
   Real    l_z       = 0.0;
@@ -450,7 +476,11 @@ void cows_update(Attributes &p_cows, Attributes &p_random, Attributes &p_events,
     l_target_z = -1000.0;
   }
 
-  for (l_cow = 1; l_cow <= MAX_COWS; ++l_cow) {
+  // A zombie can burn up during the loop, which changes the list, so
+  // go through a copy of it
+  for (l_live = 1; l_live <= l_count; ++l_live) l_order[l_live] = slots_at(SLOT_POOL_MOBS, l_live);
+  for (l_live = 1; l_live <= l_count; ++l_live) {
+    l_cow = l_order[l_live];
     if (!cow_alive(p_cows, l_cow)) continue;
     cow_position(p_cows, l_cow, l_x, l_y, l_z);
     if ((l_x - p_player_x) * (l_x - p_player_x) + (l_z - p_player_z) * (l_z - p_player_z) > COW_ACTIVE_DISTANCE * COW_ACTIVE_DISTANCE) continue;
@@ -479,6 +509,7 @@ Integer cows_ray_hit(Attributes &p_cows, Real p_origin_x, Real p_origin_y, Real 
 // ----------------------------------------------------------------
 {
   Integer l_cow     = 0;
+  Integer l_live    = 0;
   Integer l_best    = 0;
   Real    l_along   = 0.0;
   Real    l_nearest = p_max_distance;
@@ -488,8 +519,8 @@ Integer cows_ray_hit(Attributes &p_cows, Real p_origin_x, Real p_origin_y, Real 
   Real    l_y       = 0.0;
   Real    l_z       = 0.0;
 
-  for (l_cow = 1; l_cow <= MAX_COWS; ++l_cow) {
-    if (!cow_alive(p_cows, l_cow)) continue;
+  for (l_live = 1; l_live <= slots_count(SLOT_POOL_MOBS); ++l_live) {
+    l_cow = slots_at(SLOT_POOL_MOBS, l_live);
     cow_position(p_cows, l_cow, l_x, l_y, l_z);
     l_half   = mob_half_width(mob_kind(p_cows, l_cow));
     l_height = mob_height(mob_kind(p_cows, l_cow));
@@ -536,7 +567,7 @@ void cow_damage(Attributes &p_cows, Attributes &p_events, Attributes &p_random, 
 
   cow_position(p_cows, p_cow, l_x, l_y, l_z);
   if (l_health <= 0) {
-    record_set_integer_at(p_cows, ATTR_USED, p_cow, FALSE);
+    mob_set_used(p_cows, p_cow, FALSE);
     emit_event(p_events, EVT_COW_KILLED, p_cow, mob_kind(p_cows, p_cow), 0, 0, l_x, l_y + 0.6, l_z, "");
   } else {
     emit_event(p_events, EVT_COW_HURT, p_cow, 0, 0, 0, l_x, l_y, l_z, "");
@@ -549,14 +580,15 @@ Integer cows_box_overlaps(Attributes &p_cows, Real p_min_x, Real p_min_y, Real p
 // ----------------------------------------------------------------
 {
   Integer l_cow    = 0;
+  Integer l_live   = 0;
   Real    l_x      = 0.0;
   Real    l_y      = 0.0;
   Real    l_z      = 0.0;
   Real    l_half   = 0.0;
   Real    l_height = 0.0;
 
-  for (l_cow = 1; l_cow <= MAX_COWS; ++l_cow) {
-    if (!cow_alive(p_cows, l_cow)) continue;
+  for (l_live = 1; l_live <= slots_count(SLOT_POOL_MOBS); ++l_live) {
+    l_cow = slots_at(SLOT_POOL_MOBS, l_live);
     cow_position(p_cows, l_cow, l_x, l_y, l_z);
     l_half   = mob_half_width(mob_kind(p_cows, l_cow));
     l_height = mob_height(mob_kind(p_cows, l_cow));

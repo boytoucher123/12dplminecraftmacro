@@ -283,8 +283,19 @@ void hud_draw_item_icon(Draw_Box p_box, Integer p_item, Real p_centre_x, Real p_
 
 void hud_draw_slot(Draw_Box p_box, Real p_x0, Real p_y0, Real p_size, Integer p_item, Integer p_count, Integer p_damage, Integer p_highlight)
 // ----------------------------------------------------------------
+// A dark slot (the hotbar), see hud_draw_slot_style
+// ----------------------------------------------------------------
+{
+  hud_draw_slot_style(p_box, p_x0, p_y0, p_size, p_item, p_count, p_damage, p_highlight, SLOT_STYLE_DARK);
+}
+
+void hud_draw_slot_style(Draw_Box p_box, Real p_x0, Real p_y0, Real p_size, Integer p_item, Integer p_count, Integer p_damage, Integer p_highlight,
+                         Integer p_style)
+// ----------------------------------------------------------------
 // A square inventory slot with its bottom left at (x0, y0), the
-// item's icon, the stack size and, for a worn tool, a wear bar
+// item's icon, the stack size and, for a worn tool, a wear bar.
+// SLOT_STYLE_LIGHT slots are sunk into the light inventory panel:
+// dark top and left edges, light bottom and right edges.
 // ----------------------------------------------------------------
 {
   Text    l_count_text = "";
@@ -292,10 +303,19 @@ void hud_draw_slot(Draw_Box p_box, Real p_x0, Real p_y0, Real p_size, Integer p_
   Integer l_uses       = item_max_uses(p_item);
   Real    l_left       = 0.0;
 
-  render_set_colour(p_box, 26.0, 27.0, 32.0);
-  render_fill_rect (p_box, p_x0, p_y0, p_x0 + p_size, p_y0 + p_size);
-  render_set_colour(p_box, 70.0, 74.0, 84.0);
-  render_fill_rect (p_box, p_x0 + 2.0, p_y0 + 2.0, p_x0 + p_size - 2.0, p_y0 + p_size - 2.0);
+  if (p_style == SLOT_STYLE_LIGHT) {
+    render_set_colour(p_box, 250.0, 250.0, 250.0);
+    render_fill_rect (p_box, p_x0, p_y0, p_x0 + p_size, p_y0 + p_size);
+    render_set_colour(p_box, 86.0, 86.0, 86.0);
+    render_fill_rect (p_box, p_x0, p_y0 + 2.0, p_x0 + p_size - 2.0, p_y0 + p_size);
+    render_set_colour(p_box, 150.0, 150.0, 152.0);
+    render_fill_rect (p_box, p_x0 + 2.0, p_y0 + 2.0, p_x0 + p_size - 2.0, p_y0 + p_size - 2.0);
+  } else {
+    render_set_colour(p_box, 26.0, 27.0, 32.0);
+    render_fill_rect (p_box, p_x0, p_y0, p_x0 + p_size, p_y0 + p_size);
+    render_set_colour(p_box, 70.0, 74.0, 84.0);
+    render_fill_rect (p_box, p_x0 + 2.0, p_y0 + 2.0, p_x0 + p_size - 2.0, p_y0 + p_size - 2.0);
+  }
   if (p_highlight) {
     render_set_colour(p_box, 250.0, 246.0, 220.0);
     hud_frame(p_box, p_x0, p_y0, p_x0 + p_size, p_y0 + p_size);

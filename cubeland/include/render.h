@@ -183,7 +183,7 @@ void    render_add_sprite      (Real p_rel_x, Real p_rel_y, Real p_rel_z, Real p
                                 Real p_shade, Real p_distance_squared);
 void    render_collect_blocks  (Attributes &p_furnaces);
 void    render_add_box         (Real p_centre_x, Real p_centre_y, Real p_centre_z, Real p_yaw, Real p_half_f, Real p_half_y, Real p_half_s,
-                                Integer p_tex_side, Integer p_tex_top, Integer p_tex_front, Real p_tint);
+                                Integer p_tex_side, Integer p_tex_top, Integer p_tex_front, Integer p_tex_back, Real p_tint);
 void    render_collect_cows    (Attributes &p_cows);
 void    render_collect_drops   (Attributes &p_drops);
 Integer render_clip_and_draw   (Draw_Box p_box);
@@ -196,8 +196,10 @@ void    render_view_from       (Attributes &p_player, Attributes &p_settings, Re
 Text    render_stats_text      ();
 Real    render_light_at        (Real p_x, Real p_y, Real p_z);
 void    render_mob_part        (Real p_mob_x, Real p_mob_y, Real p_mob_z, Real p_yaw, Real p_along, Real p_up, Real p_across,
-                                Real p_half_f, Real p_half_y, Real p_half_s, Integer p_tex_side, Integer p_tex_top, Integer p_tex_front, Real p_tint);
+                                Real p_half_f, Real p_half_y, Real p_half_s, Integer p_tex_side, Integer p_tex_top, Integer p_tex_front,
+                                Integer p_tex_back, Real p_tint);
 void    render_zombie          (Real p_x, Real p_y, Real p_z, Real p_yaw, Real p_swing, Real p_tint);
+void    render_cow             (Real p_x, Real p_y, Real p_z, Real p_yaw, Real p_swing, Real p_tint);
 void    render_sky_colours     (Real p_time_of_day);
 void    render_sky_disc        (Draw_Box p_box, Real p_dir_x, Real p_dir_y, Real p_dir_z, Real p_size, Integer p_moon);
 void    render_stars           (Draw_Box p_box, Real p_brightness);

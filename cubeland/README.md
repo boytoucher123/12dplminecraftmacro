@@ -76,8 +76,9 @@ library), so loading a pack takes a moment. It uses the images under
 Cubeland has, samples each to 16 x 16 and keeps 8 colours per texture.
 Grey images that the game colours by biome (grass, leaves, water) are
 tinted with the pack's `colormap/grass.png` and `foliage.png`. Anything the
-pack doesn't have keeps its built-in texture, and the cows always do (the
-pack's mob skins are laid out for a different model). Packs made for
+pack doesn't have keeps its built-in texture. Cows and zombies use the
+pack's mob skins (`entity/cow/cow.png`, `entity/zombie/zombie.png`): every
+face of the model is cut from its own rectangle of the skin. Packs made for
 16 x 16 work best: bigger images are sampled down, and only 8 colours of
 a detailed image survive. Interlaced PNGs aren't supported.
 
@@ -157,7 +158,8 @@ a detailed image survive. Interlaced PNGs aren't supported.
   Coal, logs, planks, sticks, crafting tables and wooden tools burn. It keeps
   cooking while you are in a menu or paused.
 - **Cows:** they wander the grassland and avoid cliffs and water. They run
-  when hit and drop 1–3 raw beef. Raw beef heals 2, cooked beef heals 7
+  when hit and drop 1–3 raw beef. The model has the block game's
+  proportions (body, head with horns, four legs) and a texture per face. Raw beef heals 2, cooked beef heals 7
   and rotten flesh 1.
 
 ## Code layout
@@ -171,6 +173,7 @@ src/build.4dm         includes every source file (in any order)
 include/*.h           constants, record field names and prototypes per module
 src/
   util, records       helpers; Attributes records and the random sequence
+  slots               which numbered slots (mobs, drops, furnaces) are in use
   events              the game event queue (a record)
   settings            the settings record and its file
   blocks, textures    block/item rules and the procedural textures
@@ -286,7 +289,9 @@ Some things could not be checked:
 - **Attributes.** The records rely on `Get_attribute`, `Set_attribute`,
   `Attribute_delete_all` and reading attributes by number for saving. A frame
   makes roughly 1,000–2,000 attribute calls; if those turn out to be slow in
-  12d, the hot loops (cows, drops) are the place to look.
+  12d, see the optimising step (O1) in `docs/scuffedminecraft_plan.md`.
+  Loops over mobs, drops and furnaces already go through a list of the
+  used slots (`slots.4dm`) instead of asking every slot's record.
 
 ## Credits
 

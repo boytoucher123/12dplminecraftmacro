@@ -699,33 +699,86 @@ void make_texture_sand(Integer p_tex)
   texture_speckle(p_tex, 3, 0.06, 24);
 }
 
-void make_texture_cow_hide(Integer p_tex)
+void make_texture_cow_palette(Integer p_tex)
 // ----------------------------------------------------------------
-// White hide with large black patches
+// The colours every cow texture uses
 // ----------------------------------------------------------------
 {
-  texture_set_palette(p_tex, 1, 236, 234, 226);
-  texture_set_palette(p_tex, 2, 44 , 40 , 38 );
+  texture_set_palette(p_tex, 1, 92 , 62 , 42 );   // brown hide
+  texture_set_palette(p_tex, 2, 66 , 44 , 30 );   // darker brown
+  texture_set_palette(p_tex, 3, 230, 226, 216);   // white patches
+  texture_set_palette(p_tex, 4, 22 , 20 , 20 );   // eyes
+  texture_set_palette(p_tex, 5, 206, 176, 156);   // muzzle
+  texture_set_palette(p_tex, 6, 112, 82 , 72 );   // nostrils
+  texture_set_palette(p_tex, 7, 64 , 60 , 58 );   // hooves
+  texture_set_palette(p_tex, 8, 214, 206, 188);   // horn
+}
+
+void make_texture_cow_hide(Integer p_tex)
+// ----------------------------------------------------------------
+// Side of the cow's body: brown hide with big white patches
+// ----------------------------------------------------------------
+{
+  make_texture_cow_palette(p_tex);
   texture_fill  (p_tex, 1);
-  texture_blotch(p_tex, 2, 8, 0.0, 0.40, 25);
+  texture_blotch(p_tex, 2, 4, 0.0, 0.18, 23);
+  texture_blotch(p_tex, 3, 8, 0.0, 0.34, 25);
 }
 
 void make_texture_cow_face(Integer p_tex)
 // ----------------------------------------------------------------
-// Front of the cow's head: hide, two eyes and a pink muzzle
+// Front of the cow's head: white blaze between the eyes and a pale
+// muzzle with nostrils
 // ----------------------------------------------------------------
 {
-  texture_copy(TEX_COW_HIDE, p_tex);
-  texture_set_palette(p_tex, 3, 22 , 20 , 20 );
-  texture_set_palette(p_tex, 4, 224, 166, 156);
-  texture_set_palette(p_tex, 5, 160, 98 , 92 );
+  make_texture_cow_palette(p_tex);
+  texture_row(p_tex, 1 , "1111113333111111");
+  texture_row(p_tex, 2 , "1111113333111111");
+  texture_row(p_tex, 3 , "1111133333311111");
+  texture_row(p_tex, 4 , "1111133333311111");
+  texture_row(p_tex, 5 , "1111113333111111");
+  texture_row(p_tex, 6 , "1344113333114431");
+  texture_row(p_tex, 7 , "1344113333114431");
+  texture_row(p_tex, 8 , "1111113333111111");
+  texture_row(p_tex, 9 , "2111111331111112");
+  texture_row(p_tex, 10, "2211111111111122");
+  texture_row(p_tex, 11, "1155555555555511");
+  texture_row(p_tex, 12, "1555555555555551");
+  texture_row(p_tex, 13, "1556655555566551");
+  texture_row(p_tex, 14, "1556655555566551");
+  texture_row(p_tex, 15, "1555555555555551");
+  texture_row(p_tex, 16, "1155555555555511");
+}
 
-  texture_fill_rect(p_tex, 1 , 4 , 16, 7 , 1);
-  texture_fill_rect(p_tex, 3 , 5 , 5 , 6 , 3);
-  texture_fill_rect(p_tex, 12, 5 , 14, 6 , 3);
-  texture_fill_rect(p_tex, 3 , 10, 14, 16, 4);
-  texture_fill_rect(p_tex, 5 , 12, 6 , 13, 5);
-  texture_fill_rect(p_tex, 11, 12, 12, 13, 5);
+void make_texture_cow(Integer p_tex, Integer p_part)
+// ----------------------------------------------------------------
+// The other faces of a cow: head side (p_part 1), head top (2),
+// back (3), chest and rump (4), leg (5) and horn (6)
+// ----------------------------------------------------------------
+{
+  make_texture_cow_palette(p_tex);
+  texture_fill(p_tex, 1);
+  if (p_part == 1) {
+    texture_blotch   (p_tex, 2, 4, 0.0, 0.20, 31);
+    texture_fill_rect(p_tex, 1, 6, 3, 7, 4);           // the eye seen from the side
+    texture_fill_rect(p_tex, 1, 11, 4, 16, 5);         // muzzle
+  } else if (p_part == 2) {
+    texture_blotch   (p_tex, 2, 4, 0.0, 0.20, 33);
+    texture_fill_rect(p_tex, 6, 1, 11, 16, 3);         // the blaze runs over the top
+  } else if (p_part == 3) {
+    texture_blotch   (p_tex, 2, 4, 0.0, 0.18, 35);
+    texture_blotch   (p_tex, 3, 6, 0.0, 0.28, 37);
+  } else if (p_part == 4) {
+    texture_blotch   (p_tex, 2, 4, 0.0, 0.18, 39);
+    texture_blotch   (p_tex, 3, 8, 0.0, 0.30, 41);
+  } else if (p_part == 5) {
+    texture_blotch   (p_tex, 2, 4, 0.0, 0.18, 43);
+    texture_fill_rect(p_tex, 1, 9 , 16, 13, 3);        // white socks
+    texture_fill_rect(p_tex, 1, 14, 16, 16, 7);        // hooves
+  } else {
+    texture_fill     (p_tex, 8);
+    texture_fill_rect(p_tex, 1, 1, 16, 4, 2);          // dark tip
+  }
 }
 
 void make_texture_sandstone_side(Integer p_tex)
@@ -1045,9 +1098,27 @@ void make_texture_bed_side(Integer p_tex)
 void make_texture_zombie(Integer p_tex, Integer p_part)
 // ----------------------------------------------------------------
 // The undead walker: green skin (p_part 1), its face (2), a torn
-// blue shirt (3) and dark trousers (4)
+// blue shirt (3), dark trousers (4), the side of its shirt (5) and
+// an arm held out in front, sleeve at the shoulder end (6). The top
+// of the head (7) has dark matted hair.
 // ----------------------------------------------------------------
 {
+  if (p_part == 5) {
+    texture_set_palette(p_tex, 1, 40 , 120, 136);
+    texture_set_palette(p_tex, 2, 30 , 96 , 110);
+    texture_fill  (p_tex, 1);
+    texture_blotch(p_tex, 2, 4, 0.0, 0.30, 63);
+    return;
+  }
+  if (p_part == 6) {
+    texture_set_palette(p_tex, 1, 96 , 150, 82 );
+    texture_set_palette(p_tex, 2, 78 , 126, 66 );
+    texture_set_palette(p_tex, 3, 40 , 120, 136);
+    texture_fill     (p_tex, 1);
+    texture_blotch   (p_tex, 2, 4, 0.0, 0.32, 73);
+    texture_fill_rect(p_tex, 1, 1, 5, 16, 3);          // sleeve
+    return;
+  }
   if (p_part == 3) {
     texture_set_palette(p_tex, 1, 40 , 120, 136);
     texture_set_palette(p_tex, 2, 30 , 96 , 110);
@@ -1070,7 +1141,9 @@ void make_texture_zombie(Integer p_tex, Integer p_part)
   texture_set_palette(p_tex, 4, 60 , 96 , 50 );
   texture_fill  (p_tex, 1);
   texture_blotch(p_tex, 2, 4, 0.0, 0.32, 71);
+  if (p_part == 7) texture_blotch(p_tex, 4, 4, 0.0, 0.45, 75);
   if (p_part == 2) {
+    texture_fill_rect(p_tex, 1 , 1 , 16, 2 , 4);       // hairline
     texture_fill_rect(p_tex, 3 , 6 , 6 , 8 , 3);
     texture_fill_rect(p_tex, 11, 6 , 14, 8 , 3);
     texture_fill_rect(p_tex, 7 , 10, 10, 11, 4);
@@ -1419,6 +1492,16 @@ void textures_generate()
   make_texture_zombie        (TEX_ZOMBIE_FACE, 2);
   make_texture_zombie        (TEX_ZOMBIE_SHIRT, 3);
   make_texture_zombie        (TEX_ZOMBIE_PANTS, 4);
+  make_texture_zombie        (TEX_ZOMBIE_SHIRT_SIDE, 5);
+  make_texture_zombie        (TEX_ZOMBIE_ARM, 6);
+  make_texture_zombie        (TEX_ZOMBIE_HEAD_SIDE, 1);
+  make_texture_zombie        (TEX_ZOMBIE_HEAD_TOP, 7);
+  make_texture_cow           (TEX_COW_HEAD_SIDE, 1);
+  make_texture_cow           (TEX_COW_HEAD_TOP, 2);
+  make_texture_cow           (TEX_COW_BODY_TOP, 3);
+  make_texture_cow           (TEX_COW_BODY_END, 4);
+  make_texture_cow           (TEX_COW_LEG, 5);
+  make_texture_cow           (TEX_COW_HORN, 6);
   make_texture_torch         (TEX_TORCH);
   make_texture_chest         (TEX_CHEST_TOP, FALSE);
   make_texture_chest         (TEX_CHEST_SIDE, TRUE);

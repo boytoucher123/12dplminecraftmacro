@@ -19,6 +19,25 @@
 #define TEXT_ALIGN_CENTRE   30    // top centre of the text at (x, y)
 #define ICON_QUICK          0     // block icons as 2 x 2 colours (hotbar, hand)
 #define ICON_FULL           1     // block icons with their whole 16 x 16 texture
+#define SLOT_STYLE_DARK     0     // hotbar slots over the world
+#define SLOT_STYLE_LIGHT    1     // slots on the light inventory panel
+
+// Inventory screen colours (light grey panel, dark text)
+#define UI_BACKDROP_R       104.0
+#define UI_BACKDROP_G       108.0
+#define UI_BACKDROP_B       116.0
+#define UI_PANEL_R          198.0
+#define UI_PANEL_G          198.0
+#define UI_PANEL_B          198.0
+#define UI_FRAME_R          250.0
+#define UI_FRAME_G          250.0
+#define UI_FRAME_B          250.0
+#define UI_TEXT_R           50
+#define UI_TEXT_G           50
+#define UI_TEXT_B           54
+#define UI_HINT_R           92
+#define UI_HINT_G           92
+#define UI_HINT_B           100
 
 #define DATATYPE_HUD        ("hud")
 #define ATTR_HUD_UNTIL      ("until")
@@ -53,6 +72,8 @@ void hud_texture_face   (Draw_Box p_box, Integer p_tex, Real p_shade, Integer p_
                          Real p_origin_x, Real p_origin_y, Real p_u_x, Real p_u_y, Real p_v_x, Real p_v_y);
 void hud_draw_item_icon (Draw_Box p_box, Integer p_item, Real p_centre_x, Real p_centre_y, Real p_size, Integer p_detail);
 void hud_draw_slot      (Draw_Box p_box, Real p_x0, Real p_y0, Real p_size, Integer p_item, Integer p_count, Integer p_damage, Integer p_highlight);
+void hud_draw_slot_style(Draw_Box p_box, Real p_x0, Real p_y0, Real p_size, Integer p_item, Integer p_count, Integer p_damage, Integer p_highlight,
+                         Integer p_style);
 Text hud_facing_name    (Real p_yaw);
 void hud_draw_hand      (Draw_Box p_box, Real p_w, Real p_view_bottom, Real p_h, Integer p_item, Real p_bob, Real p_swing_time);
 void hud_draw_health    (Draw_Box p_box, Real p_x0, Real p_y0, Real p_width, Integer p_health, Real p_now);

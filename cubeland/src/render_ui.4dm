@@ -355,14 +355,14 @@ void ui_draw_arrow(Draw_Box p_box, Real p_x, Real p_y, Real p_length, Real p_siz
 // progress (0..1)
 // ----------------------------------------------------------------
 {
-  render_set_colour(p_box, 60.0, 60.0, 66.0);
+  render_set_colour(p_box, 128.0, 128.0, 132.0);
   render_fill_rect (p_box, p_x, p_y - p_size * 0.12, p_x + p_length, p_y + p_size * 0.12);
   g_icon_x[1] = p_x + p_length;               g_icon_y[1] = p_y - p_size * 0.3;
   g_icon_x[2] = p_x + p_length + p_size * 0.4;  g_icon_y[2] = p_y;
   g_icon_x[3] = p_x + p_length;               g_icon_y[3] = p_y + p_size * 0.3;
   Draw_polygon(p_box, 3, g_icon_x, g_icon_y);
   if (p_progress > 0.0) {
-    render_set_colour(p_box, 236.0, 236.0, 236.0);
+    render_set_colour(p_box, 255.0, 255.0, 255.0);
     render_fill_rect (p_box, p_x, p_y - p_size * 0.12, p_x + p_length * min_real(1.0, p_progress), p_y + p_size * 0.12);
   }
 }
@@ -398,7 +398,7 @@ void ui_draw_furnace(Draw_Box p_box, Attributes &p_furnaces, Integer p_furnace, 
   l_progress = clamp_real(furnace_progress(p_furnaces, p_furnace) / COOK_SECONDS, 0.0, 1.0);
 
   // Flame between the input and fuel slots
-  render_set_colour(p_box, 60.0, 60.0, 66.0);
+  render_set_colour(p_box, 128.0, 128.0, 132.0);
   render_fill_rect (p_box, l_flame_x + l_slot_size * 0.3, l_flame_y, l_flame_x + l_slot_size * 0.7, l_flame_y + l_slot_size * 0.5);
   if (l_burn > 0.0) {
     render_set_colour(p_box, 240.0, 140.0, 40.0);
@@ -409,9 +409,9 @@ void ui_draw_furnace(Draw_Box p_box, Attributes &p_furnaces, Integer p_furnace, 
 
   ui_draw_arrow(p_box, l_inv_x + l_slot_size * 3.4, l_top_y + l_slot_size * 1.5, l_slot_size * 1.6, l_slot_size, l_progress);
 
-  hud_text(p_box, l_inv_x, l_top_y + l_slot_size * 2.7, 11.0, TEXT_ALIGN_LEFT, 196, 196, 170, "Cook");
-  hud_text(p_box, l_inv_x, l_top_y + l_slot_size * 0.7, 11.0, TEXT_ALIGN_LEFT, 196, 196, 170, "Fuel");
-  hud_text(p_box, l_inv_x + l_slot_size * 6.9, l_top_y + l_slot_size * 1.7, 11.0, TEXT_ALIGN_LEFT, 196, 196, 170, "Result");
+  hud_text(p_box, l_inv_x, l_top_y + l_slot_size * 2.7, 11.0, TEXT_ALIGN_LEFT, UI_HINT_R, UI_HINT_G, UI_HINT_B, "Cook");
+  hud_text(p_box, l_inv_x, l_top_y + l_slot_size * 0.7, 11.0, TEXT_ALIGN_LEFT, UI_HINT_R, UI_HINT_G, UI_HINT_B, "Fuel");
+  hud_text(p_box, l_inv_x + l_slot_size * 6.9, l_top_y + l_slot_size * 1.7, 11.0, TEXT_ALIGN_LEFT, UI_HINT_R, UI_HINT_G, UI_HINT_B, "Result");
 }
 
 void ui_draw(Draw_Box p_box, Real p_w, Real p_h, Attributes &p_ui, Attributes &p_inventory, Attributes &p_grid,
@@ -453,21 +453,21 @@ void ui_draw(Draw_Box p_box, Real p_w, Real p_h, Attributes &p_ui, Attributes &p
   l_hovered = ui_slot_at(l_screen, l_width, l_mouse_x, l_mouse_y, p_w, p_h);
   l_recipe  = crafting_match(p_book, p_grid);
 
-  render_set_colour(p_box, 30.0, 34.0, 42.0);
+  render_set_colour(p_box, UI_BACKDROP_R, UI_BACKDROP_G, UI_BACKDROP_B);
   render_fill_rect (p_box, 0.0, STATUS_STRIP_HEIGHT, p_w, p_h);
 
-  render_set_colour(p_box, 46.0, 50.0, 58.0);
+  render_set_colour(p_box, UI_PANEL_R, UI_PANEL_G, UI_PANEL_B);
   render_fill_rect (p_box, l_x0, l_y0, l_x1, l_y1);
-  render_set_colour(p_box, 140.0, 150.0, 168.0);
+  render_set_colour(p_box, UI_FRAME_R, UI_FRAME_G, UI_FRAME_B);
   hud_frame(p_box, l_x0, l_y0, l_x1, l_y1);
 
   if (l_screen == SCREEN_INVENTORY) l_title = "Inventory - crafting (2 x 2)";
   if (l_screen == SCREEN_CRAFTING ) l_title = "Crafting Table (3 x 3)";
   if (l_screen == SCREEN_FURNACE  ) l_title = "Furnace";
   if (l_screen == SCREEN_CHEST    ) l_title = "Chest";
-  hud_text(p_box, l_inv_x, l_y1 - 8.0, 15.0, TEXT_ALIGN_LEFT, 236, 236, 236, l_title);
-  hud_text(p_box, l_x1 - 150.0, l_y1 - 10.0, 11.0, TEXT_ALIGN_LEFT, 160, 168, 180, "E or Q to close");
-  hud_text(p_box, l_inv_x, l_inv_y + l_slot_size * 4.0 + 8.0 + 18.0, 13.0, TEXT_ALIGN_LEFT, 220, 220, 220, "Inventory");
+  hud_text(p_box, l_inv_x, l_y1 - 8.0, 15.0, TEXT_ALIGN_LEFT, UI_TEXT_R, UI_TEXT_G, UI_TEXT_B, l_title);
+  hud_text(p_box, l_x1 - 150.0, l_y1 - 10.0, 11.0, TEXT_ALIGN_LEFT, UI_HINT_R, UI_HINT_G, UI_HINT_B, "E or Q to close");
+  hud_text(p_box, l_inv_x, l_inv_y + l_slot_size * 4.0 + 8.0 + 18.0, 13.0, TEXT_ALIGN_LEFT, UI_TEXT_R, UI_TEXT_G, UI_TEXT_B, "Inventory");
 
   for (l_slot = 1; l_slot <= UI_SLOT_LAST; ++l_slot) {
     if (!ui_slot_rect(l_screen, l_width, l_slot, p_w, p_h, l_x, l_y, l_size)) continue;
@@ -498,7 +498,7 @@ void ui_draw(Draw_Box p_box, Real p_w, Real p_h, Attributes &p_ui, Attributes &p
       l_count  = slot_count (p_furnaces, l_target);
       l_damage = slot_damage(p_furnaces, l_target);
     }
-    hud_draw_slot(p_box, l_x, l_y, l_size, l_item, l_count, l_damage, l_slot == l_hovered);
+    hud_draw_slot_style(p_box, l_x, l_y, l_size, l_item, l_count, l_damage, l_slot == l_hovered, SLOT_STYLE_LIGHT);
     if (l_slot == l_hovered && l_carried == ITEM_NONE) l_name = item_name(l_item);
   }
 
@@ -516,8 +516,8 @@ void ui_draw(Draw_Box p_box, Real p_w, Real p_h, Attributes &p_ui, Attributes &p
       }
     }
     if (l_screen == SCREEN_INVENTORY) {
-      hud_text(p_box, l_inv_x + l_slot_size * 6.7, l_top_y + l_slot_size * 2.2, 11.0, TEXT_ALIGN_LEFT, 170, 176, 190, "Bigger things need");
-      hud_text(p_box, l_inv_x + l_slot_size * 6.7, l_top_y + l_slot_size * 2.2 - 14.0, 11.0, TEXT_ALIGN_LEFT, 170, 176, 190, "a crafting table");
+      hud_text(p_box, l_inv_x + l_slot_size * 6.7, l_top_y + l_slot_size * 2.2, 11.0, TEXT_ALIGN_LEFT, UI_HINT_R, UI_HINT_G, UI_HINT_B, "Bigger things need");
+      hud_text(p_box, l_inv_x + l_slot_size * 6.7, l_top_y + l_slot_size * 2.2 - 14.0, 11.0, TEXT_ALIGN_LEFT, UI_HINT_R, UI_HINT_G, UI_HINT_B, "a crafting table");
     }
   }
 

@@ -94,6 +94,8 @@ static void register_hooks(){
       for(int n=1;n<=CHEST_SLOTS;n++){ int sl=chest_slot(c,n); if(slot_item(g_furnaces,sl)) printf(" [%d]%s x%d",n,item_name(slot_item(g_furnaces,sl)).c_str(),slot_count(g_furnaces,sl)); } printf("\n"); } };
   g_calls["night"]=[]{ world_set_time_of_day(g_info,0.75); printf("[hook] time %s daylight %.2f night %d\n",world_clock_text(0.75).c_str(),world_daylight(0.75),world_is_night(0.75)); };
   g_calls["dusk"]=[]{ world_set_time_of_day(g_info,0.5); };
+  g_calls["cow_turn"]=[]{ for(int c=1;c<=MAX_COWS;c++) if(cow_alive(g_cows,c)){ double y=cow_yaw(g_cows,c)+1.3; record_set_real_at(g_cows,ATTR_YAW,c,y); record_set_real_at(g_cows,ATTR_COW_GOAL_YAW,c,y); record_set_real_at(g_cows,ATTR_TIMER,c,100.0); } };
+  g_calls["mobs_calm"]=[]{ for(int c=1;c<=MAX_COWS;c++) if(cow_alive(g_cows,c)){ record_set_real_at(g_cows,ATTR_MOB_ATTACK,c,100.0); record_set_real_at(g_cows,ATTR_COW_FLASH,c,0.0); } };
   g_calls["noon"]=[]{ world_set_time_of_day(g_info,0.25); };
   g_calls["clock"]=[]{ double t=world_time_of_day(g_info); printf("[hook] clock %s (%.3f) day %d daylight %.2f\n",world_clock_text(t).c_str(),t,record_integer(g_info,ATTR_WORLD_DAYS),world_daylight(t)); };
   g_calls["give_night_kit"]=[]{ inventory_add(g_inventory,ITEM_TORCH,16); inventory_add(g_inventory,ITEM_GLASS,8); inventory_add(g_inventory,ITEM_BED,1); inventory_add(g_inventory,ITEM_IRON_SWORD,1); };
