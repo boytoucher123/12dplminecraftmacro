@@ -39,6 +39,7 @@
 #include "inventory.4dm"
 #include "crafting.4dm"
 #include "furnace.4dm"
+#include "chest.4dm"
 #include "cows.4dm"
 #include "drops.4dm"
 #include "player.4dm"

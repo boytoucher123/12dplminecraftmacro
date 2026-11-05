@@ -13,8 +13,10 @@
 //               starts or read from a resource pack (.zip or
 //               folder); dirt, grass, stone, cobblestone, sand,
 //               sandstone, gravel, coal and iron ore, oak logs,
-//               leaves, planks, water, bedrock, crafting table and
-//               furnace, plus grass and flowers
+//               leaves, planks, water, glass, bedrock, crafting
+//               table, furnace, chest, bed and torches (whose light
+//               spreads), plus grass and flowers
+//   Day/night   a 20 minute day; zombies come out at night
 //   Player      1.8 blocks tall, 5 blocks of reach, gravity and
 //               collision, swimming, flying, fall damage and a
 //               health bar

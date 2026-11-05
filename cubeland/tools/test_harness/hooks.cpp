@@ -49,7 +49,7 @@ static void register_hooks(){
   g_calls["look_cow"]=[]{ double yaw,p; player_look(g_player,yaw,p); set_look(yaw,-0.25); };
   g_calls["hurt"]=[]{ player_set_health(g_player,2); };
   g_calls["full"]=[]{ player_set_health(g_player,20); };
-  for(int s=1;s<=53;s++){ g_calls["slot"+std::to_string(s)]=[s]{ ui_click_slot(s,"click"); }; g_calls["rslot"+std::to_string(s)]=[s]{ ui_click_slot(s,"rclick"); }; }
+  for(int s=1;s<=UI_SLOT_LAST;s++){ g_calls["slot"+std::to_string(s)]=[s]{ ui_click_slot(s,"click"); }; g_calls["rslot"+std::to_string(s)]=[s]{ ui_click_slot(s,"rclick"); }; }
   // Grid layouts, pushed in reverse so they run in order
   g_calls["grid_planks"]=[]{ place_in_grid(ITEM_OAK_LOG,1); };
   g_calls["grid_table"]=[]{ for(int g: {5,4,2,1}) place_in_grid(ITEM_PLANKS,g); };
@@ -81,13 +81,29 @@ static void register_hooks(){
   g_calls["house_view"]=[]{ int hx=record_integer(g_info,ATTR_HOUSE_X),hy=record_integer(g_info,ATTR_HOUSE_Y),hz=record_integer(g_info,ATTR_HOUSE_Z); player_reset(g_player,hx-4.5,hy+3.0,hz-5.0); set_look(0.75,-0.25); printf("[hook] house at %d %d %d\n",hx,hy,hz); };
   g_calls["stone_front"]=[]{ int x=(int)px()+2, y=(int)py(), z=(int)pz(); world_place_block(g_events,x,y,z,2); world_place_block(g_events,x,y+1,z,10); set_look(0,-0.3); };
   g_calls["select_pickaxe"]=[]{ int s=find_item(ITEM_WOODEN_PICKAXE); if(!s) s=find_item(ITEM_STONE_PICKAXE); if(s>0&&s<=9) player_set_selected(g_player,s); else printf("[hook] pickaxe not on hotbar (%d)\n",s); };
-  for(auto pr: std::vector<std::pair<const char*,int>>{{"table",ITEM_CRAFTING_TABLE},{"pickaxe",ITEM_WOODEN_PICKAXE},{"stone_pickaxe",ITEM_STONE_PICKAXE},{"furnace",ITEM_FURNACE},{"cobble",ITEM_COBBLESTONE},{"sword",ITEM_STONE_SWORD},{"beef",ITEM_COOKED_BEEF},{"poppy",ITEM_POPPY},{"iron_pickaxe",ITEM_IRON_PICKAXE}}){
+  for(auto pr: std::vector<std::pair<const char*,int>>{{"table",ITEM_CRAFTING_TABLE},{"pickaxe",ITEM_WOODEN_PICKAXE},{"stone_pickaxe",ITEM_STONE_PICKAXE},{"furnace",ITEM_FURNACE},{"cobble",ITEM_COBBLESTONE},{"sword",ITEM_STONE_SWORD},{"beef",ITEM_COOKED_BEEF},{"poppy",ITEM_POPPY},{"iron_pickaxe",ITEM_IRON_PICKAXE},{"iron_sword",ITEM_IRON_SWORD}}){
     int item=pr.second; g_calls[std::string("hold_")+pr.first]=[item]{ int s=find_item(item); if(!s){ printf("[hook] no %s to hold\n",item_name(item).c_str()); return; }
       int i9=slot_item(g_inventory,9),c9=slot_count(g_inventory,9),d9=slot_damage(g_inventory,9);
       slot_set(g_inventory,9,item,slot_count(g_inventory,s),slot_damage(g_inventory,s)); if(s!=9) slot_set(g_inventory,s,i9,c9,d9); player_set_selected(g_player,9); }; }
   g_calls["aim_last_placed"]=[]{ if(g_edit_count<1) return; int cell=g_edit_index[g_edit_count]-1; int y=cell%WORLD_HEIGHT; cell/=WORLD_HEIGHT; int z=cell%WORLD_SIZE_Z, x=cell/WORLD_SIZE_Z;
      double dx=x+0.5-px(), dy=y+0.5-(py()+1.62), dz=z+0.5-pz(); set_look(wrap_angle(atan2(dz,dx)),atan2(dy,sqrt(dx*dx+dz*dz))); printf("[hook] aim at %d %d %d (block %d)\n",x,y,z,world_get_block(x,y,z)); };
   g_calls["stone_eye"]=[]{ int x=(int)px()-2, y=(int)py()+1, z=(int)pz(); world_place_block(g_events,x,y,z,BLOCK_STONE); set_look(PI,-0.15); printf("[hook] stone at %d %d %d\n",x,y,z); };
+  g_calls["house_inside"]=[]{ int hx=record_integer(g_info,ATTR_HOUSE_X),hy=record_integer(g_info,ATTR_HOUSE_Y),hz=record_integer(g_info,ATTR_HOUSE_Z); player_reset(g_player,hx+3.5,hy+1.0,hz+1.6); set_look(PI/2,-0.2); printf("[hook] inside the house, light %d\n",world_get_light(hx+3,hy+2,hz+2)); };
+  g_calls["chest_front"]=[]{ int x=(int)px()+2,y=(int)py(),z=(int)pz(); world_place_block(g_events,x,y,z,BLOCK_CHEST); };
+  g_calls["chests"]=[]{ for(int c=1;c<=MAX_CHESTS;c++) if(chest_used(g_furnaces,c)){ printf("[chest] %d at %d %d %d holds",c,record_integer_at(g_furnaces,ATTR_CHEST_X,c),record_integer_at(g_furnaces,ATTR_CHEST_Y,c),record_integer_at(g_furnaces,ATTR_CHEST_Z,c));
+      for(int n=1;n<=CHEST_SLOTS;n++){ int sl=chest_slot(c,n); if(slot_item(g_furnaces,sl)) printf(" [%d]%s x%d",n,item_name(slot_item(g_furnaces,sl)).c_str(),slot_count(g_furnaces,sl)); } printf("\n"); } };
+  g_calls["night"]=[]{ world_set_time_of_day(g_info,0.75); printf("[hook] time %s daylight %.2f night %d\n",world_clock_text(0.75).c_str(),world_daylight(0.75),world_is_night(0.75)); };
+  g_calls["dusk"]=[]{ world_set_time_of_day(g_info,0.5); };
+  g_calls["noon"]=[]{ world_set_time_of_day(g_info,0.25); };
+  g_calls["clock"]=[]{ double t=world_time_of_day(g_info); printf("[hook] clock %s (%.3f) day %d daylight %.2f\n",world_clock_text(t).c_str(),t,record_integer(g_info,ATTR_WORLD_DAYS),world_daylight(t)); };
+  g_calls["give_night_kit"]=[]{ inventory_add(g_inventory,ITEM_TORCH,16); inventory_add(g_inventory,ITEM_GLASS,8); inventory_add(g_inventory,ITEM_BED,1); inventory_add(g_inventory,ITEM_IRON_SWORD,1); };
+  g_calls["torch_ahead"]=[]{ int x=(int)px()+2,y=(int)py(),z=(int)pz(); if(world_get_block(x,y,z)!=0||!world_is_solid(x,y-1,z)){ y=world_top_solid_y(x,z)+1; } world_place_block(g_events,x,y,z,BLOCK_TORCH); printf("[hook] torch at %d %d %d: light here %d, 1 away %d, 5 away %d, 14 away %d, light steps %d\n",x,y,z,world_get_light(x,y,z),world_get_light(x,y+1,z),world_get_light(x,y+5,z),world_get_light(x,y+14,z),g_light_steps); };
+  g_calls["torch_light_check"]=[]{ int x=(int)px()+2,y=(int)py(),z=(int)pz(); int lit=0; for(int dx=-15;dx<=15;dx++) for(int dy=-15;dy<=15;dy++) for(int dz=-15;dz<=15;dz++) if(world_get_light(x+dx,y+dy,z+dz)>0) lit++; printf("[hook] lit cells near the torch: %d\n",lit); };
+  g_calls["zombie_front"]=[]{ int c=mobs_spawn(g_cows,g_random,MOB_ZOMBIE,px()+4.5,py()+0.01,pz(),PI); set_look(0,-0.1); printf("[hook] zombie %d\n",c); };
+  g_calls["mobs"]=[]{ printf("[hook] cows %d zombies %d\n",mobs_count_kind(g_cows,MOB_COW),mobs_count_kind(g_cows,MOB_ZOMBIE)); };
+  g_calls["glass_wall"]=[]{ int x=(int)px()+3,y=(int)py(),z=(int)pz(); for(int dz=-1;dz<=1;dz++) for(int dy=0;dy<=2;dy++) world_place_block(g_events,x,y+dy,z+dz,BLOCK_GLASS); set_look(0,0.1); };
+  g_calls["bed_front"]=[]{ int x=(int)px()+2,y=(int)py(),z=(int)pz(); world_place_block(g_events,x,y,z,BLOCK_BED); set_look(0,-0.5); printf("[hook] bed at %d %d %d\n",x,y,z); };
+  g_calls["spawn_point"]=[]{ printf("[hook] spawn %.1f %.1f %.1f\n",record_real(g_info,ATTR_SPAWN_X),record_real(g_info,ATTR_SPAWN_Y),record_real(g_info,ATTR_SPAWN_Z)); };
   g_calls["planks_eye"]=[]{ int x=(int)px()-2, y=(int)py()+1, z=(int)pz(); world_place_block(g_events,x,y,z,BLOCK_PLANKS); set_look(PI,-0.15); };
   g_calls["iron_eye"]=[]{ int x=(int)px()-2, y=(int)py()+1, z=(int)pz(); world_place_block(g_events,x,y,z,BLOCK_IRON_ORE); set_look(PI,-0.15); printf("[hook] iron ore at %d %d %d\n",x,y,z); };
   g_calls["iron_recipes"]=[]{ // lay each iron tool out in the 3 x 3 grid and ask the recipe book

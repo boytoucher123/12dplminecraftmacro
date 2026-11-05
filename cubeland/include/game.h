@@ -53,7 +53,7 @@ Integer game_save_world       (Attributes &p_game, Attributes &p_info, Attribute
                                Attributes &p_furnaces, Attributes &p_cows, Attributes &p_drops, Attributes &p_events);
 void    game_build_nearby     (Attributes &p_player, Integer p_range);
 void    game_respawn          (Attributes &p_info, Attributes &p_player, Attributes &p_events);
-void    game_dispatch_events  (Attributes &p_events, Attributes &p_event, Attributes &p_player, Attributes &p_inventory,
+void    game_dispatch_events  (Attributes &p_events, Attributes &p_event, Attributes &p_info, Attributes &p_player, Attributes &p_inventory,
                                Attributes &p_grid, Attributes &p_furnaces, Attributes &p_drops, Attributes &p_random,
                                Attributes &p_hud, Attributes &p_ui, Real p_now);
 void    game_update           (Real p_dt, Real p_real_dt, Real p_now, Integer p_running,

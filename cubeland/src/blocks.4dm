@@ -20,10 +20,33 @@ Integer block_is_solid(Integer p_block)
 
 Integer block_is_plant(Integer p_block)
 // ----------------------------------------------------------------
-// TRUE for grass tufts, flowers and dead bushes
+// TRUE for grass tufts, flowers, dead bushes and torches: pictures
+// that face the camera, that nothing collides with and that break
+// with one hit
 // ----------------------------------------------------------------
 {
   if (p_block >= BLOCK_TALL_GRASS && p_block <= BLOCK_DEAD_BUSH) return TRUE;
+  if (p_block == BLOCK_TORCH) return TRUE;
+  return FALSE;
+}
+
+Integer block_light_emission(Integer p_block)
+// ----------------------------------------------------------------
+// Light a block gives off (0..LIGHT_MAX_LEVEL)
+// ----------------------------------------------------------------
+{
+  if (p_block == BLOCK_TORCH) return TORCH_LIGHT;
+  return 0;
+}
+
+Integer block_is_see_through(Integer p_block)
+// ----------------------------------------------------------------
+// TRUE for solid blocks you can see through (glass): they don't
+// hide their neighbours' faces, and two of them side by side don't
+// draw the face between them
+// ----------------------------------------------------------------
+{
+  if (p_block == BLOCK_GLASS) return TRUE;
   return FALSE;
 }
 
@@ -34,6 +57,7 @@ Integer block_hides_faces(Integer p_block)
 // the camera is under water)
 // ----------------------------------------------------------------
 {
+  if (block_is_see_through(p_block)) return FALSE;
   return block_is_solid(p_block);
 }
 
@@ -46,6 +70,7 @@ Integer block_plant_texture(Integer p_block)
   if (p_block == BLOCK_POPPY     ) return TEX_PLANT_POPPY;
   if (p_block == BLOCK_DANDELION ) return TEX_PLANT_DANDELION;
   if (p_block == BLOCK_DEAD_BUSH ) return TEX_PLANT_DEAD_BUSH;
+  if (p_block == BLOCK_TORCH     ) return TEX_TORCH;
   return 0;
 }
 
@@ -99,6 +124,9 @@ Integer block_hand_hits(Integer p_block)
   if (p_block == BLOCK_OAK_LOG       ) return 4;
   if (p_block == BLOCK_PLANKS        ) return 4;
   if (p_block == BLOCK_CRAFTING_TABLE) return 4;
+  if (p_block == BLOCK_GLASS         ) return 2;
+  if (p_block == BLOCK_BED           ) return 2;
+  if (p_block == BLOCK_CHEST         ) return 4;
   if (p_block == BLOCK_SANDSTONE     ) return 6;
   if (p_block == BLOCK_COAL_ORE      ) return 10;
   if (p_block == BLOCK_IRON_ORE      ) return 12;
@@ -117,6 +145,8 @@ Integer block_tool_kind(Integer p_block)
   if (p_block == BLOCK_OAK_LOG       ) return TOOL_AXE;
   if (p_block == BLOCK_PLANKS        ) return TOOL_AXE;
   if (p_block == BLOCK_CRAFTING_TABLE) return TOOL_AXE;
+  if (p_block == BLOCK_BED           ) return TOOL_AXE;
+  if (p_block == BLOCK_CHEST         ) return TOOL_AXE;
   if (p_block == BLOCK_STONE         ) return TOOL_PICKAXE;
   if (p_block == BLOCK_COBBLESTONE   ) return TOOL_PICKAXE;
   if (p_block == BLOCK_SANDSTONE     ) return TOOL_PICKAXE;
@@ -222,6 +252,17 @@ Integer block_face_texture(Integer p_block, Integer p_direction)
   if (p_block == BLOCK_COAL_ORE   ) return TEX_COAL_ORE;
   if (p_block == BLOCK_IRON_ORE   ) return TEX_IRON_ORE;
   if (p_block == BLOCK_GRAVEL     ) return TEX_GRAVEL;
+  if (p_block == BLOCK_GLASS      ) return TEX_GLASS;
+
+  if (p_block == BLOCK_CHEST) {
+    if (p_direction == DIR_PY || p_direction == DIR_NY) return TEX_CHEST_TOP;
+    return TEX_CHEST_SIDE;
+  }
+  if (p_block == BLOCK_BED) {
+    if (p_direction == DIR_PY) return TEX_BED_TOP;
+    if (p_direction == DIR_NY) return TEX_PLANKS;
+    return TEX_BED_SIDE;
+  }
 
   if (p_block == BLOCK_GRASS) {
     if (p_direction == DIR_PY) return TEX_GRASS_TOP;
@@ -293,6 +334,11 @@ Text item_name(Integer p_item)
   if (p_item == ITEM_IRON_AXE       ) return "Iron Axe";
   if (p_item == ITEM_IRON_SHOVEL    ) return "Iron Shovel";
   if (p_item == ITEM_IRON_SWORD     ) return "Iron Sword";
+  if (p_item == ITEM_TORCH          ) return "Torch";
+  if (p_item == ITEM_GLASS          ) return "Glass";
+  if (p_item == ITEM_BED            ) return "Bed";
+  if (p_item == ITEM_CHEST          ) return "Chest";
+  if (p_item == ITEM_ROTTEN_FLESH   ) return "Rotten Flesh";
   if (p_item == ITEM_GRAVEL         ) return "Gravel";
   if (p_item == ITEM_POPPY          ) return "Poppy";
   if (p_item == ITEM_DANDELION      ) return "Dandelion";
@@ -403,6 +449,7 @@ Integer item_food_value(Integer p_item)
 {
   if (p_item == ITEM_RAW_BEEF   ) return 2;
   if (p_item == ITEM_COOKED_BEEF) return 7;
+  if (p_item == ITEM_ROTTEN_FLESH) return 1;
   return 0;
 }
 
@@ -428,7 +475,7 @@ Integer item_smelt_result(Integer p_item)
 {
   if (p_item == ITEM_RAW_BEEF   ) return ITEM_COOKED_BEEF;
   if (p_item == ITEM_COBBLESTONE) return ITEM_STONE;
-  if (p_item == ITEM_SAND       ) return ITEM_SANDSTONE;
+  if (p_item == ITEM_SAND       ) return ITEM_GLASS;
   if (p_item == ITEM_IRON_ORE   ) return ITEM_IRON_INGOT;
   if (p_item == ITEM_OAK_LOG    ) return ITEM_COAL;
   return ITEM_NONE;
@@ -475,6 +522,7 @@ Integer item_sprite_texture(Integer p_item)
   if (p_item == ITEM_STONE_SHOVEL  ) return TEX_ITEM_STONE_SHOVEL;
   if (p_item == ITEM_WOODEN_SWORD  ) return TEX_ITEM_WOODEN_SWORD;
   if (p_item == ITEM_STONE_SWORD   ) return TEX_ITEM_STONE_SWORD;
+  if (p_item == ITEM_ROTTEN_FLESH  ) return TEX_ITEM_ROTTEN_FLESH;
   return block_plant_texture(p_item);
 }
 

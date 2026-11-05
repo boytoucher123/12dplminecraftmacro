@@ -7,6 +7,10 @@
 // ----------------------------------------------------------------
 
 Real    clamp_real          (Real p_value, Real p_low, Real p_high);
+Real    angle_of            (Real p_y, Real p_x);
+Text    two_digits          (Integer p_value);
+Integer max_integer         (Integer p_a, Integer p_b);
+Integer min_integer         (Integer p_a, Integer p_b);
 Integer clamp_integer       (Integer p_value, Integer p_low, Integer p_high);
 Real    min_real            (Real p_first, Real p_second);
 Real    max_real            (Real p_first, Real p_second);

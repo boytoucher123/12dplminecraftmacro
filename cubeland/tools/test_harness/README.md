@@ -130,6 +130,8 @@ that were looked up most often (to find hot spots).
 | `12_delete_world`             | deleting a world empties and hides its file; the name can be reused |
 | `13_resource_pack`            | a missing pack is reported; the test pack loads from its folder and from its zip (see below) |
 | `14_iron_fly_pick`            | iron ore needs a stone pickaxe, iron recipes, pick block, hiding the HUD, frame statistics, flying |
+| `15_night_torches_zombies`    | a torch lights a cave and the light goes when it's broken; sunset and night skies; a zombie walks up and hits, a sword kills it; zombies spawn at night and burn at noon; glass; the house at night; a bed skips to morning and sets the spawn point |
+| `16_chest`                    | items put in a chest survive save and load and spill out when it's broken |
 
 ### Resource pack test
 

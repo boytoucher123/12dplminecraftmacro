@@ -59,6 +59,6 @@ void hud_draw_health    (Draw_Box p_box, Real p_x0, Real p_y0, Real p_width, Int
 void hud_draw_help      (Draw_Box p_box, Real p_w, Real p_h);
 void hud_draw           (Draw_Box p_box, Real p_w, Real p_h, Integer p_captured, Integer p_screen_open,
                          Attributes &p_hud, Attributes &p_player, Attributes &p_inventory, Attributes &p_settings,
-                         Integer p_seed, Real p_frame_ms, Text p_render_stats, Real p_now);
+                         Integer p_seed, Real p_time_of_day, Real p_frame_ms, Text p_render_stats, Real p_now);
 
 #endif

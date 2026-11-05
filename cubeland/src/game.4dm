@@ -10,6 +10,7 @@
 #include "../include/textures.h"
 #include "../include/resource_pack.h"
 #include "../include/settings.h"
+#include "../include/chest.h"
 #include "../include/world.h"
 #include "../include/mesh.h"
 #include "../include/physics.h"
@@ -194,7 +195,7 @@ void game_respawn(Attributes &p_info, Attributes &p_player, Attributes &p_events
   emit_simple_event(p_events, EVT_PLAYER_RESPAWNED);
 }
 
-void game_dispatch_events(Attributes &p_events, Attributes &p_event, Attributes &p_player, Attributes &p_inventory,
+void game_dispatch_events(Attributes &p_events, Attributes &p_event, Attributes &p_info, Attributes &p_player, Attributes &p_inventory,
                           Attributes &p_grid, Attributes &p_furnaces, Attributes &p_drops, Attributes &p_random,
                           Attributes &p_hud, Attributes &p_ui, Real p_now)
 // ----------------------------------------------------------------
@@ -211,8 +212,11 @@ void game_dispatch_events(Attributes &p_events, Attributes &p_event, Attributes 
 
   while (next_event(p_events, p_event)) {
     mesh_on_event   (p_event);
+    world_on_event  (p_event, p_info, p_events);
+    player_on_event (p_event, p_player, p_events);
     save_on_event   (p_event);
     furnace_on_event(p_event, p_furnaces, p_events);
+    chest_on_event  (p_event, p_furnaces, p_events);
     drops_on_event  (p_event, p_drops, p_random);
     hud_on_event    (p_event, p_hud, p_now);
     ui_on_event     (p_event, p_ui, p_inventory, p_grid, p_furnaces, p_events, l_x, l_y + 1.3, l_z);
@@ -242,9 +246,10 @@ void game_update(Real p_dt, Real p_real_dt, Real p_now, Integer p_running,
   furnaces_update(p_furnaces, p_real_dt);
 
   if (p_running) {
+    world_advance_time(p_info, p_dt);
     player_update(p_player, p_cows, p_events, settings_flag(p_settings, ATTR_SET_AUTO_JUMP), p_dt, p_now);
     player_position(p_player, l_x, l_y, l_z);
-    cows_update (p_cows, p_random, l_x, l_z, p_dt);
+    cows_update (p_cows, p_random, p_events, l_x, l_y, l_z, world_is_night(world_time_of_day(p_info)), player_is_dead(p_player), p_dt);
     drops_update(p_drops, p_inventory, p_events, l_x, l_y, l_z, player_is_dead(p_player), p_dt);
 
     l_autosave = l_autosave + p_dt;
@@ -255,7 +260,7 @@ void game_update(Real p_dt, Real p_real_dt, Real p_now, Integer p_running,
     record_set_real(p_game, ATTR_GAME_AUTOSAVE, l_autosave);
   }
 
-  game_dispatch_events(p_events, p_event, p_player, p_inventory, p_grid, p_furnaces, p_drops, p_random, p_hud, p_ui, p_now);
+  game_dispatch_events(p_events, p_event, p_info, p_player, p_inventory, p_grid, p_furnaces, p_drops, p_random, p_hud, p_ui, p_now);
 }
 
 void game_select_slot(Attributes &p_player, Attributes &p_hud, Integer p_slot, Real p_now)

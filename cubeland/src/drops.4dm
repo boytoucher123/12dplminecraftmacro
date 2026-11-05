@@ -9,6 +9,7 @@
 #include "../include/blocks.h"
 #include "../include/physics.h"
 #include "../include/inventory.h"
+#include "../include/cows.h"
 #include "../include/drops.h"
 
 // ---------------------------------------------------------------- accessors
@@ -252,7 +253,11 @@ void drops_on_event(Attributes &p_event, Attributes &p_drops, Attributes &p_rand
       drops_spawn(p_drops, p_random, l_item, 1, 0, event_integer(p_event, 1) + 0.5, event_integer(p_event, 2) + 0.5, event_integer(p_event, 3) + 0.5);
     }
   } else if (l_type == EVT_COW_KILLED) {
-    drops_spawn(p_drops, p_random, ITEM_RAW_BEEF, random_range(p_random, 1, 3), 0, event_real(p_event, 1), event_real(p_event, 2), event_real(p_event, 3));
+    if (event_integer(p_event, 2) == MOB_ZOMBIE) {
+      drops_spawn(p_drops, p_random, ITEM_ROTTEN_FLESH, random_range(p_random, 1, 2), 0, event_real(p_event, 1), event_real(p_event, 2), event_real(p_event, 3));
+    } else {
+      drops_spawn(p_drops, p_random, ITEM_RAW_BEEF, random_range(p_random, 1, 3), 0, event_real(p_event, 1), event_real(p_event, 2), event_real(p_event, 3));
+    }
   } else if (l_type == EVT_SPAWN_DROP) {
     drops_spawn(p_drops, p_random, event_integer(p_event, 1), event_integer(p_event, 2), event_integer(p_event, 3),
                 event_real(p_event, 1), event_real(p_event, 2), event_real(p_event, 3));

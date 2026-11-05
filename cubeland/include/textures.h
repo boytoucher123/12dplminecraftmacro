@@ -45,34 +45,45 @@
 #define TEX_COAL_ORE           25
 #define TEX_GRAVEL             26
 #define TEX_IRON_ORE           27
-#define TEX_PLANT_GRASS        28     // plants and items are sprites:
-#define TEX_PLANT_POPPY        29     // they have see-through pixels and
-#define TEX_PLANT_DANDELION    30     // no base colour
-#define TEX_PLANT_DEAD_BUSH    31
-#define TEX_ITEM_STICK         32
-#define TEX_ITEM_RAW_BEEF      33
-#define TEX_ITEM_COOKED_BEEF   34
-#define TEX_ITEM_COAL          35
-#define TEX_ITEM_IRON_INGOT    36
-#define TEX_ITEM_WOODEN_PICKAXE 37
-#define TEX_ITEM_STONE_PICKAXE 38
-#define TEX_ITEM_IRON_PICKAXE  39
-#define TEX_ITEM_WOODEN_AXE    40
-#define TEX_ITEM_STONE_AXE     41
-#define TEX_ITEM_IRON_AXE      42
-#define TEX_ITEM_WOODEN_SHOVEL 43
-#define TEX_ITEM_STONE_SHOVEL  44
-#define TEX_ITEM_IRON_SHOVEL   45
-#define TEX_ITEM_WOODEN_SWORD  46
-#define TEX_ITEM_STONE_SWORD   47
-#define TEX_ITEM_IRON_SWORD    48
-#define NUM_TEXTURES           48
+#define TEX_BED_TOP            28
+#define TEX_BED_SIDE           29
+#define TEX_ZOMBIE_SKIN        30
+#define TEX_ZOMBIE_FACE        31
+#define TEX_ZOMBIE_SHIRT       32
+#define TEX_ZOMBIE_PANTS       33
+#define TEX_CHEST_TOP          34
+#define TEX_CHEST_SIDE         35
+#define TEX_PLANT_GRASS        36     // plants, glass and items are sprites:
+#define TEX_PLANT_POPPY        37     // they have see-through pixels and
+#define TEX_PLANT_DANDELION    38     // no base colour
+#define TEX_PLANT_DEAD_BUSH    39
+#define TEX_TORCH              40
+#define TEX_GLASS              41
+#define TEX_ITEM_STICK         42
+#define TEX_ITEM_RAW_BEEF      43
+#define TEX_ITEM_COOKED_BEEF   44
+#define TEX_ITEM_COAL          45
+#define TEX_ITEM_IRON_INGOT    46
+#define TEX_ITEM_ROTTEN_FLESH  47
+#define TEX_ITEM_WOODEN_PICKAXE 48
+#define TEX_ITEM_STONE_PICKAXE 49
+#define TEX_ITEM_IRON_PICKAXE  50
+#define TEX_ITEM_WOODEN_AXE    51
+#define TEX_ITEM_STONE_AXE     52
+#define TEX_ITEM_IRON_AXE      53
+#define TEX_ITEM_WOODEN_SHOVEL 54
+#define TEX_ITEM_STONE_SHOVEL  55
+#define TEX_ITEM_IRON_SHOVEL   56
+#define TEX_ITEM_WOODEN_SWORD  57
+#define TEX_ITEM_STONE_SWORD   58
+#define TEX_ITEM_IRON_SWORD    59
+#define NUM_TEXTURES           59
 #define TEX_FIRST_SPRITE       TEX_PLANT_GRASS   // every texture from here on is a sprite
 
-#define TEXTURE_PIXELS         12288  // NUM_TEXTURES * 256
+#define TEXTURE_PIXELS         15104  // NUM_TEXTURES * 256
 #define PALETTE_SIZE           8      // colours per texture
-#define TEXTURE_PALETTES       384    // NUM_TEXTURES * PALETTE_SIZE
-#define TEXTURE_QUADRANTS      192    // NUM_TEXTURES * 4
+#define TEXTURE_PALETTES       472    // NUM_TEXTURES * PALETTE_SIZE
+#define TEXTURE_QUADRANTS      236    // NUM_TEXTURES * 4
 #define MAX_TEXTURE_RECTS      12000  // resource pack images can need more than the built-in ones
 
 /*Global variables*/ {

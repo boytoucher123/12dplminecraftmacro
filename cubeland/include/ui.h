@@ -16,19 +16,22 @@
 //
 // Slot numbers on screen: 1..36 the inventory, UI_SLOT_GRID + n
 // grid slot n (1..9), UI_SLOT_OUTPUT the crafting result, and
-// UI_SLOT_FURNACE + FURNACE_SLOT_* the furnace's slots.
+// UI_SLOT_FURNACE + FURNACE_SLOT_* the furnace's slots and
+// UI_SLOT_CHEST + n slot n of the open chest.
 // ----------------------------------------------------------------
 
 #define DATATYPE_UI             ("ui")
 #define ATTR_UI_SCREEN          ("screen")
 #define ATTR_UI_FURNACE         ("furnace")
+#define ATTR_UI_CHEST           ("chest")
 #define ATTR_UI_MOUSE_X         ("mouse_x")
 #define ATTR_UI_MOUSE_Y         ("mouse_y")
 
 #define UI_SLOT_GRID            40
 #define UI_SLOT_OUTPUT          50
 #define UI_SLOT_FURNACE         50   // + FURNACE_SLOT_INPUT .. FURNACE_SLOT_OUTPUT (51..53)
-#define UI_SLOT_LAST            53
+#define UI_SLOT_CHEST           60   // + 1 .. CHEST_SLOTS (61..87)
+#define UI_SLOT_LAST            87
 #define UI_PADDING              14.0
 #define UI_TITLE_HEIGHT         30.0
 

@@ -194,6 +194,9 @@ Integer pack_map_entry(Integer p_entry, Integer &p_tex, Text &p_kind, Text &p_na
   if (p_entry == 44) return pack_entry(p_tex, p_kind, p_name, p_tint, p_overlay, TEX_ITEM_WOODEN_SWORD  , "item", "wooden_sword"       , PACK_TINT_NONE   , "");
   if (p_entry == 45) return pack_entry(p_tex, p_kind, p_name, p_tint, p_overlay, TEX_ITEM_STONE_SWORD   , "item", "stone_sword"        , PACK_TINT_NONE   , "");
   if (p_entry == 46) return pack_entry(p_tex, p_kind, p_name, p_tint, p_overlay, TEX_ITEM_IRON_SWORD    , "item", "iron_sword"         , PACK_TINT_NONE   , "");
+  if (p_entry == 47) return pack_entry(p_tex, p_kind, p_name, p_tint, p_overlay, TEX_TORCH              , "block", "torch"              , PACK_TINT_NONE   , "");
+  if (p_entry == 48) return pack_entry(p_tex, p_kind, p_name, p_tint, p_overlay, TEX_GLASS              , "block", "glass"              , PACK_TINT_NONE   , "");
+  if (p_entry == 49) return pack_entry(p_tex, p_kind, p_name, p_tint, p_overlay, TEX_ITEM_ROTTEN_FLESH  , "item", "rotten_flesh"       , PACK_TINT_NONE   , "");
   return FALSE;
 }
 
