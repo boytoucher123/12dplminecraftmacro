@@ -118,11 +118,77 @@ Integer pack_is_zip(Text p_path)
 
 Text pack_key(Text p_kind, Text p_name)
 // ----------------------------------------------------------------
-// Name used for an image in the pack's records: "block_stone"
-// (no "/", which Attributes might read as a path)
+// Name used for an image in the pack's records: "block_stone",
+// "entity_cow_cow" (no "/", which Attributes might read as a path)
 // ----------------------------------------------------------------
 {
-  return p_kind + "_" + p_name;
+  return pack_replace(p_kind + "_" + p_name, "/", "_");
+}
+
+Text pack_replace(Text p_text, Text p_find, Text p_with)
+// ----------------------------------------------------------------
+// p_text with every p_find (one character) replaced by p_with
+// ----------------------------------------------------------------
+{
+  Text    l_out  = "";
+  Text    l_char = "";
+  Integer l_at   = 0;
+
+  for (l_at = 1; l_at <= Text_length(p_text); ++l_at) {
+    l_char = Get_subtext(p_text, l_at, l_at);
+    if (l_char == p_find) l_char = p_with;
+    l_out = l_out + l_char;
+  }
+  return l_out;
+}
+
+Integer pack_part(Integer &p_tex, Text &p_name, Integer &p_x, Integer &p_y, Integer &p_w, Integer &p_h, Integer &p_turn,
+                  Integer p_set_tex, Text p_set_name, Integer p_set_x, Integer p_set_y, Integer p_set_w, Integer p_set_h, Integer p_set_turn)
+// ----------------------------------------------------------------
+// Fill in one entry of the mob part map (helper for pack_map_part)
+// ----------------------------------------------------------------
+{
+  p_tex  = p_set_tex;
+  p_name = p_set_name;
+  p_x    = p_set_x;
+  p_y    = p_set_y;
+  p_w    = p_set_w;
+  p_h    = p_set_h;
+  p_turn = p_set_turn;
+  return TRUE;
+}
+
+Integer pack_map_part(Integer p_entry, Integer &p_tex, Text &p_name, Integer &p_x, Integer &p_y, Integer &p_w, Integer &p_h,
+                      Integer &p_turn)
+// ----------------------------------------------------------------
+// Entry number p_entry of the map from our mob part textures to
+// rectangles of the pack's mob skins (images under entity/). The
+// rectangles follow the classic skin layout: a box of the model
+// with its corner of the skin at (u, v) and size w x h x d keeps
+// its top at (u + d, v), its sides at (u, v + d) and
+// (u + d + w, v + d) and its front at (u + d, v + d). The cow's
+// body lies on its side in the model, so its pictures are turned.
+// Returns FALSE after the last entry.
+// ----------------------------------------------------------------
+{
+  //                                                                                    x   y   w   h   turn
+  if (p_entry == 1 ) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_COW_FACE         , "cow/cow"      , 6 , 6 , 8 , 8 , PACK_TURN_NONE );
+  if (p_entry == 2 ) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_COW_HEAD_SIDE    , "cow/cow"      , 0 , 6 , 6 , 8 , PACK_TURN_NONE );
+  if (p_entry == 3 ) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_COW_HEAD_TOP     , "cow/cow"      , 6 , 0 , 8 , 6 , PACK_TURN_NONE );
+  if (p_entry == 4 ) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_COW_HIDE         , "cow/cow"      , 18, 14, 10, 18, PACK_TURN_RIGHT);
+  if (p_entry == 5 ) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_COW_BODY_TOP     , "cow/cow"      , 50, 14, 12, 18, PACK_TURN_RIGHT);
+  if (p_entry == 6 ) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_COW_BODY_END     , "cow/cow"      , 28, 4 , 12, 10, PACK_TURN_NONE );
+  if (p_entry == 7 ) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_COW_LEG          , "cow/cow"      , 4 , 20, 4 , 12, PACK_TURN_NONE );
+  if (p_entry == 8 ) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_COW_HORN         , "cow/cow"      , 22, 1 , 1 , 3 , PACK_TURN_NONE );
+  if (p_entry == 9 ) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_ZOMBIE_FACE      , "zombie/zombie", 8 , 8 , 8 , 8 , PACK_TURN_NONE );
+  if (p_entry == 10) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_ZOMBIE_HEAD_SIDE , "zombie/zombie", 0 , 8 , 8 , 8 , PACK_TURN_NONE );
+  if (p_entry == 11) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_ZOMBIE_HEAD_TOP  , "zombie/zombie", 8 , 0 , 8 , 8 , PACK_TURN_NONE );
+  if (p_entry == 12) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_ZOMBIE_SHIRT     , "zombie/zombie", 20, 20, 8 , 12, PACK_TURN_NONE );
+  if (p_entry == 13) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_ZOMBIE_SHIRT_SIDE, "zombie/zombie", 16, 20, 4 , 12, PACK_TURN_NONE );
+  if (p_entry == 14) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_ZOMBIE_PANTS     , "zombie/zombie", 4 , 20, 4 , 12, PACK_TURN_NONE );
+  if (p_entry == 15) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_ZOMBIE_ARM       , "zombie/zombie", 40, 20, 4 , 12, PACK_TURN_LEFT );
+  if (p_entry == 16) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_ZOMBIE_SKIN      , "zombie/zombie", 48, 16, 4 , 4 , PACK_TURN_NONE );
+  return FALSE;
 }
 
 Integer pack_entry(Integer &p_tex, Text &p_kind, Text &p_name, Integer &p_tint, Text &p_overlay,
@@ -144,8 +210,8 @@ Integer pack_map_entry(Integer p_entry, Integer &p_tex, Text &p_kind, Text &p_na
 // Entry number p_entry of the map from our textures to pack images:
 // the texture, the image's folder (block or item) and name, the
 // tint for grey images, and an image drawn over it (grass sides).
-// Returns FALSE after the last entry. The cow textures stay built
-// in: the pack's mob skins are laid out for a different model.
+// Returns FALSE after the last entry. Mob textures come from parts
+// of the mob skins instead (pack_map_part).
 // ----------------------------------------------------------------
 {
   if (p_entry == 1 ) return pack_entry(p_tex, p_kind, p_name, p_tint, p_overlay, TEX_BEDROCK          , "block", "bedrock"             , PACK_TINT_NONE   , "");
@@ -759,7 +825,7 @@ Integer pack_load_png_from_folder(Text p_folder, Text p_kind, Text p_name)
   Text l_prefix = PACK_FOLDER_PREFIX;
   Text l_path   = "";
 
-  l_path = p_folder + "\\" + l_prefix + p_kind + "\\" + p_name + ".png";
+  l_path = p_folder + "\\" + l_prefix + p_kind + "\\" + pack_replace(p_name, "/", "\\") + ".png";
   if (!File_exists(l_path)) return FAILURE;
   if (safe_file_open(l_path, "rb", l_file) != 0) return FAILURE;
   pack_read_bytes(l_file, 0, PACK_BUFFER_FILE);
@@ -819,7 +885,9 @@ Integer png_decode(Integer p_map_x, Integer p_map_y)
 // ----------------------------------------------------------------
 // Decode the PNG in g_pack_file to a 16 x 16 RGBA picture in
 // g_pack_r/g/b/a. A bigger image is sampled (a tall animation strip
-// uses its top frame). With p_map_x >= 0 it reads just the colour at
+// uses its top frame). If g_pack_region_w > 0 only that rectangle of
+// the image is sampled (part of a mob skin), turned by
+// g_pack_region_turn. With p_map_x >= 0 it reads just the colour at
 // (p_map_x, p_map_y) of a 256 x 256 colormap into g_pack_r/g/b[1].
 // Returns SUCCESS or FAILURE.
 // ----------------------------------------------------------------
@@ -854,6 +922,12 @@ Integer png_decode(Integer p_map_x, Integer p_map_y)
   Integer l_grey        = 0;
   Integer l_have_trns   = FALSE;
   Integer l_written     = 0;
+  Integer l_region_x    = 0;
+  Integer l_region_y    = 0;
+  Integer l_region_w    = 0;
+  Integer l_region_h    = 0;
+  Integer l_a           = 0;
+  Integer l_b           = 0;
 
   // Signature
   if (g_pack_file_count < 33) return FAILURE;
@@ -926,6 +1000,17 @@ Integer png_decode(Integer p_map_x, Integer p_map_y)
   l_side = l_width;
   if (l_height < l_side) l_side = l_height;
   l_rows = l_side;
+  l_region_w = l_side;
+  l_region_h = l_side;
+  if (p_map_x < 0 && g_pack_region_w > 0) {
+    // a rectangle of a mob skin, scaled from a PACK_SKIN_WIDTH wide skin
+    l_region_x = floor_divide(g_pack_region_x * l_width, PACK_SKIN_WIDTH);
+    l_region_y = floor_divide(g_pack_region_y * l_width, PACK_SKIN_WIDTH);
+    l_region_w = max_integer(1, floor_divide(g_pack_region_w * l_width, PACK_SKIN_WIDTH));
+    l_region_h = max_integer(1, floor_divide(g_pack_region_h * l_width, PACK_SKIN_WIDTH));
+    if (l_region_x + l_region_w > l_width || l_region_y + l_region_h > l_height) return FAILURE;
+    l_rows = l_region_y + l_region_h;
+  }
   if (p_map_x >= 0) {
     l_x    = floor_divide(p_map_x * l_width, 256);
     l_y    = floor_divide(p_map_y * l_height, 256);
@@ -967,8 +1052,21 @@ Integer png_decode(Integer p_map_x, Integer p_map_y)
     } else {
       l_u = l_pixel - floor_divide(l_pixel - 1, 16) * 16;     // 1..16
       l_v = floor_divide(l_pixel - 1, 16) + 1;                // 1..16
-      l_x = floor_divide((2 * l_u - 1) * l_side, 32);
-      l_y = floor_divide((2 * l_v - 1) * l_side, 32);
+      // (a, b): the column and row of the rectangle, after turning
+      l_a = l_u;
+      l_b = l_v;
+      if (g_pack_region_turn == PACK_TURN_RIGHT) {
+        l_a = l_v;
+        l_b = 17 - l_u;
+      } else if (g_pack_region_turn == PACK_TURN_HALF) {
+        l_a = 17 - l_u;
+        l_b = 17 - l_v;
+      } else if (g_pack_region_turn == PACK_TURN_LEFT) {
+        l_a = 17 - l_v;
+        l_b = l_u;
+      }
+      l_x = l_region_x + floor_divide((2 * l_a - 1) * l_region_w, 32);
+      l_y = l_region_y + floor_divide((2 * l_b - 1) * l_region_h, 32);
     }
     l_start = l_y * (l_row_bytes + 1) + 2;
 
@@ -1273,9 +1371,16 @@ Integer pack_apply(Text p_path, Text &p_report)
   Text       l_name       = "";
   Text       l_overlay    = "";
   Text       l_problem    = "";
+  Integer    l_x          = 0;
+  Integer    l_y          = 0;
+  Integer    l_w          = 0;
+  Integer    l_h          = 0;
+  Integer    l_turn       = 0;
+  Integer    l_result     = 0;
 
   pack_init_tables();
   p_report = "";
+  g_pack_region_w = 0;
 
   if (l_zip) {
     if (!File_exists(p_path)) {
@@ -1288,6 +1393,11 @@ Integer pack_apply(Text p_path, Text &p_report)
     while (pack_map_entry(l_entry, l_tex, l_kind, l_name, l_tint, l_overlay)) {
       record_set_integer(l_wanted, pack_key(l_kind, l_name), TRUE);
       if (l_overlay != "") record_set_integer(l_wanted, pack_key(l_kind, l_overlay), TRUE);
+      ++l_entry;
+    }
+    l_entry = 1;
+    while (pack_map_part(l_entry, l_tex, l_name, l_x, l_y, l_w, l_h, l_turn)) {
+      record_set_integer(l_wanted, pack_key("entity", l_name), TRUE);
       ++l_entry;
     }
     if (pack_zip_index(p_path, l_wanted, l_index, l_problem) == 0) {
@@ -1336,6 +1446,25 @@ Integer pack_apply(Text p_path, Text &p_report)
     if (l_overlay != "") pack_draw_overlay();
 
     pack_to_texture(l_tex, l_sprite);
+    ++l_loaded;
+  }
+
+  // Mob textures: each one is a rectangle of a mob skin
+  l_entry = 1;
+  while (pack_map_part(l_entry, l_tex, l_name, l_x, l_y, l_w, l_h, l_turn)) {
+    ++l_entry;
+    g_pack_region_x    = l_x;
+    g_pack_region_y    = l_y;
+    g_pack_region_w    = l_w;
+    g_pack_region_h    = l_h;
+    g_pack_region_turn = l_turn;
+    l_result = pack_load_image(p_path, l_zip, l_index, "entity", l_name, -1, 0);
+    g_pack_region_w = 0;
+    if (l_result != SUCCESS) {
+      ++l_missing;
+      continue;
+    }
+    pack_to_texture(l_tex, FALSE);
     ++l_loaded;
   }
 

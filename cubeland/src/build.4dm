@@ -29,6 +29,7 @@
 // here doesn't matter)
 #include "util.4dm"
 #include "records.4dm"
+#include "slots.4dm"
 #include "settings.4dm"
 #include "events.4dm"
 #include "blocks.4dm"

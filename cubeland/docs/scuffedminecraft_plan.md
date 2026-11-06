@@ -32,7 +32,7 @@ at the code it cites.
 | B6 Vertical render range | done | sections more than 40 blocks above or below the eye are skipped |
 | Resource packs (not from SM) | done | `.zip` or folder in Settings; zip, deflate and PNG decoded in 12dPL (`resource_pack.4dm`) |
 | Beyond SM | done | zombies at night, glass, beds, chests, iron |
-| O1 Optimising | **next** | measure first, then cut record reads and rebuild work in hot loops (section O below) |
+| O1 Optimising | **started** | slot index for mobs, drops, furnaces done (-26% record reads overall, -46% at night); render measurements and the remaining candidates in section O |
 | Desktop build (not from SM) | done | `tools/desktop`: the same macro as a Windows `.exe`, without 12d |
 
 Suggested next steps: **O1 optimising** (below) before adding much more, then flood-fill sky light (so caves under overhangs darken properly), B2 edge-strip
@@ -422,19 +422,50 @@ change one thing at a time, and keep the test scenarios passing (their dumps sho
   entries are `used_1` ... `used_11` about 2,850 times each. That is the cow/zombie loop asking every
   slot whether it is alive, every frame.
 
+**Done**
+- Slot index (`slots.4dm`): mobs, drops and furnaces keep a list of their used slot numbers. Spawning
+  and dying go through `mob_set_used` / `drop_set_used` / `furnace_set_used`, which write the record
+  and the list together; after loading, the lists are rebuilt from the records. Loops visit only
+  the used slots. Record reads over all 16 scenarios: 1.90M -> 1.41M (-26%); scenario 15 (night,
+  zombies): 367k -> 197k (-46%). Every scenario's dump is unchanged.
+
+**Render measurements** (render distance 50; counted per frame in a scratch build)
+
+| View | faces looked at | faces drawn | polygons | flat / major / full faces (polygons) | underground faces (polygons) |
+|---|---|---|---|---|---|
+| 01 tour, open land | 2,750-3,160 | 730-790 | 2,600-2,770 | 523 (559) / 163 (990) / 41 (1,026) | 23 (23) |
+| 03 cow, near a house | 3,200-3,950 | 670-770 | 2,640-3,190 | 533 (583) / 190 (1,558) / 45 (1,047) | 39-100 (240-300) |
+| 07 scenery, forest | 9,100-9,600 | 310-1,860 | 2,840-4,860 | 20-1,600 (20-1,600) / 260-300 (2,070-2,550) / 30-40 (500-870) | 0-146 (0-589) |
+
+What this says:
+- Most of the per-face work is spent rejecting. 75-96% of the cached faces the loop looks at are
+  thrown away (facing away, too far, or outside the view): in the forest, 9,500 looked at for 350
+  drawn. Sections are culled with a 13.9-block bounding sphere, so a section that is only partly
+  in view sends all its faces through the per-face tests.
+- Polygons come mostly from the nearer faces. A flat face is 1 polygon, a "major" face about 7
+  (base colour plus its larger colour patches), a "full" face about 22. In the forest, 300 major
+  faces make 80% of the polygons. Resource pack textures have more patches than the built-in ones
+  (8,550 rectangles against 7,139), so they cost more.
+- Far faces are many but cheap: 500-1,600 flat faces, one polygon each. Neighbouring faces with the
+  same texture, direction and light could be merged into one polygon (greedy meshing).
+- Faces hidden underground (cave floors seen through the ground) are only 1-10% of polygons.
+- The painter's algorithm draws everything in view, back to front, even what nearer faces cover.
+  That is inherent; occlusion culling would cost more in 12dPL than it saves.
+
 **Candidates, roughly in order of payoff**
-1. Mob and drop slots: keep an `Integer g_cow_used[MAX_COWS]` (and drops, furnaces) mirror of the
-   `used_c` fields, written by the same set function, so the per-frame loops skip empty slots
-   without touching the record. Same idea for `x/y/z` of live mobs during a frame.
-2. Per-frame values read from records more than once (`state`, `selected`, `dead`: thousands of reads):
+1. Rendering, per-face rejects: test each direction group of a section against the view (or use
+   8-block sub-sections) before going through its faces; skip whole groups that are off screen.
+2. Rendering, polygons: raise the "major" detail distance a little or merge small patches of
+   leaves; at far range, merge neighbouring flat faces into strips.
+3. Per-frame values read from records more than once (`state`, `selected`, `dead`: thousands of reads):
    read once at the start of the frame into locals, pass them down.
-3. Light updates: `world_light_update` relights a 31^3 box per block change. Shrink the box to the
+4. Light updates: `world_light_update` relights a 31^3 box per block change. Shrink the box to the
    torch radius actually affected, and skip it entirely when no light source is near.
-4. Mesh rebuilds: count section rebuilds (`builds` in the dump) when breaking one block; rebuild only
+5. Mesh rebuilds: count section rebuilds (`builds` in the dump) when breaking one block; rebuild only
    the touched section and neighbours on its faces.
-5. Rendering: cull faces of sections fully behind the camera before sorting; cache sun/sky colours
-   that only change every few seconds of game time.
-6. Saving: write chunks of the world per line instead of per block if save time is noticeable.
+6. Rendering, small things: only walk the depth buckets that were used (up to 4,096 are cleared
+   and walked every frame); cache sun/sky colours, which only change every few seconds of game time.
+7. Saving: write chunks of the world per line instead of per block if save time is noticeable.
 
 Each change should state the before/after number (frame ms in game, or record reads in the harness)
 in its commit message.

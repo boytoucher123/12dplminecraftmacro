@@ -25,6 +25,8 @@
 #define FURNACE_SLOTS           3
 
 void    furnaces_clear        (Attributes &p_furnaces);
+void    furnaces_rebuild_index(Attributes &p_furnaces);
+void    furnace_set_used      (Attributes &p_furnaces, Integer p_furnace, Integer p_used);
 Integer furnace_slot          (Integer p_furnace, Integer p_which);
 Integer furnace_used          (Attributes &p_furnaces, Integer p_furnace);
 void    furnace_cell          (Attributes &p_furnaces, Integer p_furnace, Integer &p_x, Integer &p_y, Integer &p_z);

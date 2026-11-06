@@ -22,7 +22,11 @@
 // fewer than that anyway).
 //
 // Images are looked up under assets/minecraft/textures/ (block/...,
-// item/...). Grey images that the game colours by biome (grass,
+// item/..., entity/...). Mob skins (entity/cow/cow.png,
+// entity/zombie/zombie.png) hold every face of the model in one
+// image: each of our mob part textures is sampled from its own
+// rectangle of the skin (pack_map_part), given in pixels of a
+// 64 pixel wide skin so larger skins work too. Grey images that the game colours by biome (grass,
 // leaves, water) are tinted with the pack's colormap/grass.png and
 // colormap/foliage.png, or fixed colours if those are missing.
 //
@@ -59,6 +63,14 @@
 // Where a temperate meadow sits on a 256 x 256 colormap
 #define PACK_COLORMAP_X       51
 #define PACK_COLORMAP_Y       173
+
+// A skin rectangle can be turned a quarter (or more) clockwise, for
+// parts whose picture lies on its side in the skin
+#define PACK_SKIN_WIDTH       64
+#define PACK_TURN_NONE        0
+#define PACK_TURN_RIGHT       1
+#define PACK_TURN_HALF        2
+#define PACK_TURN_LEFT        3
 
 // Zip record signatures (little-endian 4 byte words)
 #define ZIP_END_SIGNATURE     101010256   // 0x06054b50
@@ -117,6 +129,14 @@
   Real    g_pack_sum_b    [8];
   Integer g_pack_sum_n    [8];
 
+  // Part of the image png_decode samples: a rectangle in pixels of a
+  // PACK_SKIN_WIDTH wide skin, or the whole top square if width is 0
+  Integer g_pack_region_x     = 0;
+  Integer g_pack_region_y     = 0;
+  Integer g_pack_region_w     = 0;
+  Integer g_pack_region_h     = 0;
+  Integer g_pack_region_turn  = PACK_TURN_NONE;
+
   // Inflate state
   Integer g_inflate_pos       = 0;   // next input byte (1-based)
   Integer g_inflate_bit       = 0;   // next bit of that byte (0..7)
@@ -147,6 +167,9 @@ Integer pack_apply            (Text p_path, Text &p_report);
 // Honest helpers
 Integer pack_is_zip           (Text p_path);
 Integer pack_map_entry        (Integer p_entry, Integer &p_tex, Text &p_kind, Text &p_name, Integer &p_tint, Text &p_overlay);
+Integer pack_map_part         (Integer p_entry, Integer &p_tex, Text &p_name, Integer &p_x, Integer &p_y, Integer &p_w, Integer &p_h,
+                               Integer &p_turn);
+Text    pack_replace          (Text p_text, Text p_find, Text p_with);
 Text    pack_key              (Text p_kind, Text p_name);
 Integer pack_word_byte        (Integer p_word, Integer p_byte);
 Integer pack_paeth            (Integer p_left, Integer p_up, Integer p_up_left);

@@ -10,6 +10,7 @@
 #include "../include/physics.h"
 #include "../include/inventory.h"
 #include "../include/cows.h"
+#include "../include/slots.h"
 #include "../include/drops.h"
 
 // ---------------------------------------------------------------- accessors
@@ -23,14 +24,35 @@ void drops_clear(Attributes &p_drops)
 
   record_clear(p_drops, DATATYPE_DROPS);
   for (l_drop = 1; l_drop <= MAX_DROPS; ++l_drop) record_set_integer_at(p_drops, ATTR_USED, l_drop, FALSE);
+  slots_reset(SLOT_POOL_DROPS);
+}
+
+void drops_rebuild_index(Attributes &p_drops)
+// ----------------------------------------------------------------
+// Rebuild the list of drops lying about from the record (after a
+// world is loaded)
+// ----------------------------------------------------------------
+{
+  slots_rebuild(SLOT_POOL_DROPS, p_drops, MAX_DROPS);
+}
+
+void drop_set_used(Attributes &p_drops, Integer p_drop, Integer p_used)
+// ----------------------------------------------------------------
+// A drop appears (used TRUE) or is gone: the record and the list of
+// drops change together
+// ----------------------------------------------------------------
+{
+  record_set_integer_at(p_drops, ATTR_USED, p_drop, p_used);
+  slots_set(SLOT_POOL_DROPS, p_drop, p_used);
 }
 
 Integer drop_used(Attributes &p_drops, Integer p_drop)
 // ----------------------------------------------------------------
-// TRUE if drop number drop is lying in the world
+// TRUE if drop number drop is lying in the world (from the list of
+// drops, which mirrors the record's "used" fields)
 // ----------------------------------------------------------------
 {
-  return record_integer_at(p_drops, ATTR_USED, p_drop);
+  return slots_used(SLOT_POOL_DROPS, p_drop);
 }
 
 Integer drop_item(Attributes &p_drops, Integer p_drop)
@@ -101,7 +123,7 @@ Integer drops_restore(Attributes &p_drops, Integer p_item, Integer p_count, Inte
     }
   }
 
-  record_set_integer_at(p_drops, ATTR_USED,   l_chosen, TRUE);
+  drop_set_used        (p_drops, l_chosen, TRUE);
   record_set_integer_at(p_drops, ATTR_ITEM,   l_chosen, p_item);
   record_set_integer_at(p_drops, ATTR_COUNT,  l_chosen, p_count);
   record_set_integer_at(p_drops, ATTR_DAMAGE, l_chosen, p_damage);
@@ -164,13 +186,19 @@ void drops_update(Attributes &p_drops, Attributes &p_inventory, Attributes &p_ev
   Real    l_distance = 0.0;
   Real    l_friction = 0.0;
   Real    l_longest  = 0.0;
+  Integer l_live     = 0;
+  Integer l_live_count = slots_count(SLOT_POOL_DROPS);
+  Integer l_order[MAX_DROPS];
 
-  for (l_drop = 1; l_drop <= MAX_DROPS; ++l_drop) {
-    if (!drop_used(p_drops, l_drop)) continue;
+  // Drops are picked up or vanish during the loop, which changes the
+  // list, so go through a copy of it
+  for (l_live = 1; l_live <= l_live_count; ++l_live) l_order[l_live] = slots_at(SLOT_POOL_DROPS, l_live);
+  for (l_live = 1; l_live <= l_live_count; ++l_live) {
+    l_drop = l_order[l_live];
 
     l_age = drop_age(p_drops, l_drop) + p_dt;
     if (l_age > DROP_LIFETIME) {
-      record_set_integer_at(p_drops, ATTR_USED, l_drop, FALSE);
+      drop_set_used(p_drops, l_drop, FALSE);
       continue;
     }
 
@@ -231,7 +259,7 @@ void drops_update(Attributes &p_drops, Attributes &p_inventory, Attributes &p_ev
     l_left  = inventory_add_worn(p_inventory, l_item, l_count, drop_damage(p_drops, l_drop));
     if (l_left < l_count) emit_item_event(p_events, EVT_ITEM_PICKED_UP, l_item, l_count - l_left);
     record_set_integer_at(p_drops, ATTR_COUNT, l_drop, l_left);
-    if (l_left <= 0) record_set_integer_at(p_drops, ATTR_USED, l_drop, FALSE);
+    if (l_left <= 0) drop_set_used(p_drops, l_drop, FALSE);
   }
 }
 

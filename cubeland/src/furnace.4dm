@@ -7,6 +7,7 @@
 #include "../include/blocks.h"
 #include "../include/events.h"
 #include "../include/inventory.h"
+#include "../include/slots.h"
 #include "../include/furnace.h"
 
 // ---------------------------------------------------------------- accessors
@@ -20,6 +21,26 @@ void furnaces_clear(Attributes &p_furnaces)
 
   record_clear(p_furnaces, DATATYPE_FURNACES);
   for (l_furnace = 1; l_furnace <= MAX_FURNACES; ++l_furnace) record_set_integer_at(p_furnaces, ATTR_USED, l_furnace, FALSE);
+  slots_reset(SLOT_POOL_FURNACES);
+}
+
+void furnaces_rebuild_index(Attributes &p_furnaces)
+// ----------------------------------------------------------------
+// Rebuild the list of furnaces from the record (after a world is
+// loaded)
+// ----------------------------------------------------------------
+{
+  slots_rebuild(SLOT_POOL_FURNACES, p_furnaces, MAX_FURNACES);
+}
+
+void furnace_set_used(Attributes &p_furnaces, Integer p_furnace, Integer p_used)
+// ----------------------------------------------------------------
+// A furnace is placed (used TRUE) or gone: the record and the list
+// of furnaces change together
+// ----------------------------------------------------------------
+{
+  record_set_integer_at(p_furnaces, ATTR_USED, p_furnace, p_used);
+  slots_set(SLOT_POOL_FURNACES, p_furnace, p_used);
 }
 
 Integer furnace_slot(Integer p_furnace, Integer p_which)
@@ -36,7 +57,7 @@ Integer furnace_used(Attributes &p_furnaces, Integer p_furnace)
 // ----------------------------------------------------------------
 {
   if (p_furnace < 1 || p_furnace > MAX_FURNACES) return FALSE;
-  return record_integer_at(p_furnaces, ATTR_USED, p_furnace);
+  return slots_used(SLOT_POOL_FURNACES, p_furnace);
 }
 
 void furnace_cell(Attributes &p_furnaces, Integer p_furnace, Integer &p_x, Integer &p_y, Integer &p_z)
@@ -116,7 +137,7 @@ Integer furnace_get_or_create(Attributes &p_furnaces, Integer p_x, Integer p_y, 
 
   for (l_furnace = 1; l_furnace <= MAX_FURNACES; ++l_furnace) {
     if (furnace_used(p_furnaces, l_furnace)) continue;
-    record_set_integer_at(p_furnaces, ATTR_USED, l_furnace, TRUE);
+    furnace_set_used     (p_furnaces, l_furnace, TRUE);
     record_set_integer_at(p_furnaces, ATTR_X,    l_furnace, p_x);
     record_set_integer_at(p_furnaces, ATTR_Y,    l_furnace, p_y);
     record_set_integer_at(p_furnaces, ATTR_Z,    l_furnace, p_z);
@@ -149,7 +170,7 @@ void furnace_remove(Attributes &p_furnaces, Attributes &p_events, Integer p_furn
     slot_clear(p_furnaces, l_slot);
   }
 
-  record_set_integer_at(p_furnaces, ATTR_USED, p_furnace, FALSE);
+  furnace_set_used(p_furnaces, p_furnace, FALSE);
 }
 
 Integer furnace_is_lit(Attributes &p_furnaces, Integer p_x, Integer p_y, Integer p_z)

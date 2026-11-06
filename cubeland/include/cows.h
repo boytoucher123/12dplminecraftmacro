@@ -15,7 +15,9 @@
 // "x_c", "y_c", "z_c", "vy_c", "push_x_c", "push_z_c", "yaw_c",
 // "goal_yaw_c", "health_c", "walking_c", "timer_c", "panic_c",
 // "flash_c", "step_c" and "on_ground_c". Randomness comes from the
-// random record passed in.
+// random record passed in. Which numbers are alive is also kept in
+// the slot index (slots.h): spawning and dying go through
+// mob_set_used, so loops visit only the living ones.
 // ----------------------------------------------------------------
 
 #define COW_WALK_SPEED       1.1
@@ -54,6 +56,8 @@
 #define ATTR_ZOMBIE_SPAWN    ("zombie_timer")
 
 void    cows_clear         (Attributes &p_cows);
+void    mobs_rebuild_index (Attributes &p_cows);
+void    mob_set_used       (Attributes &p_cows, Integer p_cow, Integer p_used);
 Integer cow_alive          (Attributes &p_cows, Integer p_cow);
 void    cow_position       (Attributes &p_cows, Integer p_cow, Real &p_x, Real &p_y, Real &p_z);
 void    cow_set_position   (Attributes &p_cows, Integer p_cow, Real p_x, Real p_y, Real p_z);

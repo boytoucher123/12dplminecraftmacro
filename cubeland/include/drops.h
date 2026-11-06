@@ -9,7 +9,8 @@
 //
 // All drops live in one record. Drop d has the fields "used_d",
 // "item_d", "count_d", "damage_d" (tool wear), "x_d", "y_d", "z_d",
-// "vx_d", "vy_d", "vz_d" and "age_d".
+// "vx_d", "vy_d", "vz_d" and "age_d". Which numbers are in use is also
+// kept in the slot index (slots.h), written through drop_set_used.
 // ----------------------------------------------------------------
 
 #define DROP_PICKUP_DELAY     0.5
@@ -18,6 +19,8 @@
 #define DATATYPE_DROPS        ("drops")
 
 void    drops_clear    (Attributes &p_drops);
+void    drops_rebuild_index(Attributes &p_drops);
+void    drop_set_used  (Attributes &p_drops, Integer p_drop, Integer p_used);
 Integer drop_used      (Attributes &p_drops, Integer p_drop);
 Integer drop_item      (Attributes &p_drops, Integer p_drop);
 Integer drop_count     (Attributes &p_drops, Integer p_drop);

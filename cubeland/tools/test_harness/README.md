@@ -132,6 +132,7 @@ that were looked up most often (to find hot spots).
 | `14_iron_fly_pick`            | iron ore needs a stone pickaxe, iron recipes, pick block, hiding the HUD, frame statistics, flying |
 | `15_night_torches_zombies`    | a torch lights a cave and the light goes when it's broken; sunset and night skies; a zombie walks up and hits, a sword kills it; zombies spawn at night and burn at noon; glass; the house at night; a bed skips to morning and sets the spawn point |
 | `16_chest`                    | items put in a chest survive save and load and spill out when it's broken |
+| `17_mob_models`               | the cow from the front, side and back, and a zombie, with their per-face textures |
 
 ### Resource pack test
 

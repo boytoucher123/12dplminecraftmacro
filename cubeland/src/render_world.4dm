@@ -10,6 +10,7 @@
 #include "../include/mesh.h"
 #include "../include/player.h"
 #include "../include/cows.h"
+#include "../include/slots.h"
 #include "../include/drops.h"
 #include "../include/furnace.h"
 #include "../include/records.h"
@@ -542,12 +543,16 @@ Real render_side_shade(Real p_normal_x, Real p_normal_z)
 }
 
 void render_add_box(Real p_centre_x, Real p_centre_y, Real p_centre_z, Real p_yaw, Real p_half_f, Real p_half_y, Real p_half_s,
-                    Integer p_tex_side, Integer p_tex_top, Integer p_tex_front, Real p_tint)
+                    Integer p_tex_side, Integer p_tex_top, Integer p_tex_front, Integer p_tex_back, Real p_tint)
 // ----------------------------------------------------------------
 // Queue the visible faces of an upright box turned to yaw
 // half_f is its half length along the facing direction, half_s its
 // half width and half_y its half height. tex_front is drawn on the
-// face it looks out of, tex_top on the top and bottom.
+// face it looks out of, tex_back on the opposite one, tex_side on
+// the left and right and tex_top on the top and bottom. On the
+// sides and the top the texture's u runs from the back to the
+// front, so both sides show the same picture (mirrored, like a
+// model's left and right legs).
 // ----------------------------------------------------------------
 {
   Real    l_facing_x = Cos(p_yaw);
@@ -603,14 +608,14 @@ void render_add_box(Real p_centre_x, Real p_centre_y, Real p_centre_z, Real p_ya
   }
   if (l_eye_f < -p_half_f) {
     render_add_face(l_m_x, l_m_y, l_m_z, l_s_x, l_s_y, l_s_z, l_u_x, l_u_y, l_u_z,
-                    p_tex_side, g_box_light * render_side_shade(l_facing_x, l_facing_z), l_dist_sq, l_size, p_tint, 0);
+                    p_tex_back, g_box_light * render_side_shade(l_facing_x, l_facing_z), l_dist_sq, l_size, p_tint, 0);
   }
   if (l_eye_s > p_half_s) {
     render_add_face(l_m_x + l_s_x, l_m_y + l_s_y, l_m_z + l_s_z, l_f_x, l_f_y, l_f_z, l_u_x, l_u_y, l_u_z,
                     p_tex_side, g_box_light * render_side_shade(l_side_x, l_side_z), l_dist_sq, l_size, p_tint, 0);
   }
   if (l_eye_s < -p_half_s) {
-    render_add_face(l_m_x + l_f_x, l_m_y + l_f_y, l_m_z + l_f_z, -l_f_x, -l_f_y, -l_f_z, l_u_x, l_u_y, l_u_z,
+    render_add_face(l_m_x, l_m_y, l_m_z, l_f_x, l_f_y, l_f_z, l_u_x, l_u_y, l_u_z,
                     p_tex_side, g_box_light * render_side_shade(l_side_x, l_side_z), l_dist_sq, l_size, p_tint, 0);
   }
   if (l_eye_y > p_half_y) {
@@ -621,21 +626,6 @@ void render_add_box(Real p_centre_x, Real p_centre_y, Real p_centre_z, Real p_ya
     render_add_face(l_m_x + l_s_x, l_m_y + l_s_y, l_m_z + l_s_z, l_f_x, l_f_y, l_f_z, -l_s_x, -l_s_y, -l_s_z,
                     p_tex_top, 0.55 * g_box_light, l_dist_sq, l_size, p_tint, 0);
   }
-}
-
-void render_cow_part(Real p_cow_x, Real p_cow_y, Real p_cow_z, Real p_yaw, Real p_along, Real p_up, Real p_across,
-                     Real p_half_f, Real p_half_y, Real p_half_s, Integer p_tex_front, Real p_tint)
-// ----------------------------------------------------------------
-// One box of a cow, placed relative to the cow's feet and facing
-// ----------------------------------------------------------------
-{
-  Real l_facing_x = Cos(p_yaw);
-  Real l_facing_z = Sin(p_yaw);
-
-  render_add_box(p_cow_x + l_facing_x * p_along - l_facing_z * p_across,
-                 p_cow_y + p_up,
-                 p_cow_z + l_facing_z * p_along + l_facing_x * p_across,
-                 p_yaw, p_half_f, p_half_y, p_half_s, TEX_COW_HIDE, TEX_COW_HIDE, p_tex_front, p_tint);
 }
 
 Real render_light_at(Real p_x, Real p_y, Real p_z)
@@ -650,7 +640,8 @@ Real render_light_at(Real p_x, Real p_y, Real p_z)
 }
 
 void render_mob_part(Real p_mob_x, Real p_mob_y, Real p_mob_z, Real p_yaw, Real p_along, Real p_up, Real p_across,
-                     Real p_half_f, Real p_half_y, Real p_half_s, Integer p_tex_side, Integer p_tex_top, Integer p_tex_front, Real p_tint)
+                     Real p_half_f, Real p_half_y, Real p_half_s, Integer p_tex_side, Integer p_tex_top, Integer p_tex_front,
+                     Integer p_tex_back, Real p_tint)
 // ----------------------------------------------------------------
 // One box of an animal with its own textures, placed relative to
 // its feet and facing
@@ -662,7 +653,7 @@ void render_mob_part(Real p_mob_x, Real p_mob_y, Real p_mob_z, Real p_yaw, Real 
   render_add_box(p_mob_x + l_facing_x * p_along - l_facing_z * p_across,
                  p_mob_y + p_up,
                  p_mob_z + l_facing_z * p_along + l_facing_x * p_across,
-                 p_yaw, p_half_f, p_half_y, p_half_s, p_tex_side, p_tex_top, p_tex_front, p_tint);
+                 p_yaw, p_half_f, p_half_y, p_half_s, p_tex_side, p_tex_top, p_tex_front, p_tex_back, p_tint);
 }
 
 void render_zombie(Real p_x, Real p_y, Real p_z, Real p_yaw, Real p_swing, Real p_tint)
@@ -670,12 +661,32 @@ void render_zombie(Real p_x, Real p_y, Real p_z, Real p_yaw, Real p_swing, Real 
 // A zombie: two legs, a body, arms held out in front and a head
 // ----------------------------------------------------------------
 {
-  render_mob_part(p_x, p_y, p_z, p_yaw,  p_swing, 0.375,  0.12, 0.12, 0.375, 0.12, TEX_ZOMBIE_PANTS, TEX_ZOMBIE_PANTS, TEX_ZOMBIE_PANTS, p_tint);
-  render_mob_part(p_x, p_y, p_z, p_yaw, -p_swing, 0.375, -0.12, 0.12, 0.375, 0.12, TEX_ZOMBIE_PANTS, TEX_ZOMBIE_PANTS, TEX_ZOMBIE_PANTS, p_tint);
-  render_mob_part(p_x, p_y, p_z, p_yaw,  0.0    , 1.125,  0.0 , 0.13, 0.375, 0.25, TEX_ZOMBIE_SHIRT, TEX_ZOMBIE_SHIRT, TEX_ZOMBIE_SHIRT, p_tint);
-  render_mob_part(p_x, p_y, p_z, p_yaw,  0.30   , 1.38 ,  0.37, 0.32, 0.11, 0.11, TEX_ZOMBIE_SKIN , TEX_ZOMBIE_SHIRT, TEX_ZOMBIE_SKIN , p_tint);
-  render_mob_part(p_x, p_y, p_z, p_yaw,  0.30   , 1.38 , -0.37, 0.32, 0.11, 0.11, TEX_ZOMBIE_SKIN , TEX_ZOMBIE_SHIRT, TEX_ZOMBIE_SKIN , p_tint);
-  render_mob_part(p_x, p_y, p_z, p_yaw,  0.0    , 1.65 ,  0.0 , 0.25, 0.25, 0.25, TEX_ZOMBIE_SKIN , TEX_ZOMBIE_SKIN , TEX_ZOMBIE_FACE , p_tint);
+  //              position                  along     up     across  half f  half y  half s  side                   top                  front             back
+  render_mob_part(p_x, p_y, p_z, p_yaw,  p_swing, 0.375,  0.12, 0.12, 0.375, 0.12, TEX_ZOMBIE_PANTS     , TEX_ZOMBIE_PANTS     , TEX_ZOMBIE_PANTS, TEX_ZOMBIE_PANTS    , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw, -p_swing, 0.375, -0.12, 0.12, 0.375, 0.12, TEX_ZOMBIE_PANTS     , TEX_ZOMBIE_PANTS     , TEX_ZOMBIE_PANTS, TEX_ZOMBIE_PANTS    , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.0    , 1.125,  0.0 , 0.13, 0.375, 0.25, TEX_ZOMBIE_SHIRT_SIDE, TEX_ZOMBIE_SHIRT_SIDE, TEX_ZOMBIE_SHIRT, TEX_ZOMBIE_SHIRT    , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.30   , 1.38 ,  0.37, 0.32, 0.11, 0.11, TEX_ZOMBIE_ARM       , TEX_ZOMBIE_ARM       , TEX_ZOMBIE_SKIN , TEX_ZOMBIE_SHIRT_SIDE, p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.30   , 1.38 , -0.37, 0.32, 0.11, 0.11, TEX_ZOMBIE_ARM       , TEX_ZOMBIE_ARM       , TEX_ZOMBIE_SKIN , TEX_ZOMBIE_SHIRT_SIDE, p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.0    , 1.65 ,  0.0 , 0.25, 0.25, 0.25, TEX_ZOMBIE_HEAD_SIDE , TEX_ZOMBIE_HEAD_TOP  , TEX_ZOMBIE_FACE , TEX_ZOMBIE_HEAD_SIDE, p_tint);
+}
+
+void render_cow(Real p_x, Real p_y, Real p_z, Real p_yaw, Real p_swing, Real p_tint)
+// ----------------------------------------------------------------
+// A cow, sized like the block game's model (1 pixel of its skin is
+// 1/16 block): a 12 x 10 x 18 body on four 4 x 12 legs, an 8 x 8 x 6
+// head with two small horns. The model is moved back 0.15 so it
+// sits over the cow's collision box.
+// ----------------------------------------------------------------
+{
+  //              position                  along             up      across  half f  half y  half s  side              top               front             back
+  render_mob_part(p_x, p_y, p_z, p_yaw, -0.150          , 1.0625,  0.0  , 0.5625, 0.3125, 0.375 , TEX_COW_HIDE     , TEX_COW_BODY_TOP , TEX_COW_BODY_END , TEX_COW_BODY_END , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.5375         , 1.25  ,  0.0  , 0.1875, 0.25  , 0.25  , TEX_COW_HEAD_SIDE, TEX_COW_HEAD_TOP , TEX_COW_FACE     , TEX_COW_HEAD_SIDE, p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.570          , 1.47  ,  0.28 , 0.031 , 0.094 , 0.031 , TEX_COW_HORN     , TEX_COW_HORN     , TEX_COW_HORN     , TEX_COW_HORN     , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.570          , 1.47  , -0.28 , 0.031 , 0.094 , 0.031 , TEX_COW_HORN     , TEX_COW_HORN     , TEX_COW_HORN     , TEX_COW_HORN     , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.1625 + p_swing, 0.375 ,  0.25 , 0.125 , 0.375 , 0.125 , TEX_COW_LEG      , TEX_COW_LEG      , TEX_COW_LEG      , TEX_COW_LEG      , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.1625 - p_swing, 0.375 , -0.25 , 0.125 , 0.375 , 0.125 , TEX_COW_LEG      , TEX_COW_LEG      , TEX_COW_LEG      , TEX_COW_LEG      , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw, -0.5875 - p_swing, 0.375 ,  0.25 , 0.125 , 0.375 , 0.125 , TEX_COW_LEG      , TEX_COW_LEG      , TEX_COW_LEG      , TEX_COW_LEG      , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw, -0.5875 + p_swing, 0.375 , -0.25 , 0.125 , 0.375 , 0.125 , TEX_COW_LEG      , TEX_COW_LEG      , TEX_COW_LEG      , TEX_COW_LEG      , p_tint);
 }
 
 void render_collect_cows(Attributes &p_cows)
@@ -684,6 +695,7 @@ void render_collect_cows(Attributes &p_cows)
 // ----------------------------------------------------------------
 {
   Integer l_cow   = 0;
+  Integer l_live  = 0;
   Real    l_tint  = 0.0;
   Real    l_swing = 0.0;
   Real    l_x     = 0.0;
@@ -691,8 +703,8 @@ void render_collect_cows(Attributes &p_cows)
   Real    l_z     = 0.0;
   Real    l_yaw   = 0.0;
 
-  for (l_cow = 1; l_cow <= MAX_COWS; ++l_cow) {
-    if (!cow_alive(p_cows, l_cow)) continue;
+  for (l_live = 1; l_live <= slots_count(SLOT_POOL_MOBS); ++l_live) {
+    l_cow = slots_at(SLOT_POOL_MOBS, l_live);
     cow_position(p_cows, l_cow, l_x, l_y, l_z);
     if ((l_x - g_cam_x) * (l_x - g_cam_x) + (l_z - g_cam_z) * (l_z - g_cam_z) > (g_render_distance + 2.0) * (g_render_distance + 2.0)) continue;
 
@@ -706,12 +718,7 @@ void render_collect_cows(Attributes &p_cows)
       continue;
     }
 
-    render_cow_part(l_x, l_y, l_z, l_yaw,  0.00        , 0.95, 0.00, 0.60, 0.30, 0.38, TEX_COW_HIDE, l_tint);
-    render_cow_part(l_x, l_y, l_z, l_yaw,  0.80        , 1.12, 0.00, 0.20, 0.22, 0.25, TEX_COW_FACE, l_tint);
-    render_cow_part(l_x, l_y, l_z, l_yaw,  0.42 + l_swing, 0.33, 0.22, 0.10, 0.33, 0.10, TEX_COW_HIDE, l_tint);
-    render_cow_part(l_x, l_y, l_z, l_yaw,  0.42 - l_swing, 0.33,-0.22, 0.10, 0.33, 0.10, TEX_COW_HIDE, l_tint);
-    render_cow_part(l_x, l_y, l_z, l_yaw, -0.42 - l_swing, 0.33, 0.22, 0.10, 0.33, 0.10, TEX_COW_HIDE, l_tint);
-    render_cow_part(l_x, l_y, l_z, l_yaw, -0.42 + l_swing, 0.33,-0.22, 0.10, 0.33, 0.10, TEX_COW_HIDE, l_tint);
+    render_cow(l_x, l_y, l_z, l_yaw, l_swing, l_tint);
   }
 }
 
@@ -722,6 +729,7 @@ void render_collect_drops(Attributes &p_drops)
 // ----------------------------------------------------------------
 {
   Integer l_drop    = 0;
+  Integer l_live    = 0;
   Integer l_item    = 0;
   Real    l_bob     = 0.0;
   Real    l_age     = 0.0;
@@ -730,8 +738,8 @@ void render_collect_drops(Attributes &p_drops)
   Real    l_z       = 0.0;
   Real    l_dist_sq = 0.0;
 
-  for (l_drop = 1; l_drop <= MAX_DROPS; ++l_drop) {
-    if (!drop_used(p_drops, l_drop)) continue;
+  for (l_live = 1; l_live <= slots_count(SLOT_POOL_DROPS); ++l_live) {
+    l_drop = slots_at(SLOT_POOL_DROPS, l_live);
     l_item = drop_item(p_drops, l_drop);
     l_age  = drop_age (p_drops, l_drop);
     drop_position(p_drops, l_drop, l_x, l_y, l_z);
@@ -740,7 +748,7 @@ void render_collect_drops(Attributes &p_drops)
 
     if (item_is_block(l_item)) {
       render_add_box(l_x, l_y + DROP_HALF_SIZE + l_bob, l_z, l_age * 1.8, DROP_HALF_SIZE, DROP_HALF_SIZE, DROP_HALF_SIZE,
-                     item_side_texture(l_item), item_top_texture(l_item), item_side_texture(l_item), 0.0);
+                     item_side_texture(l_item), item_top_texture(l_item), item_side_texture(l_item), item_side_texture(l_item), 0.0);
     } else {
       l_dist_sq = (l_x - g_cam_x) * (l_x - g_cam_x) + (l_y - g_cam_y) * (l_y - g_cam_y) + (l_z - g_cam_z) * (l_z - g_cam_z);
       if (l_dist_sq > g_render_distance * g_render_distance) continue;

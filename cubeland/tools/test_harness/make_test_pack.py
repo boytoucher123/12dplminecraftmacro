@@ -15,7 +15,9 @@ them exactly. The images cycle through every PNG colour type and bit
 depth the macro supports (grey 1/2/4/8/16 bit, RGB 8/16, palette 1/2/4/8
 with transparency, grey + alpha, RGBA 8/16), all five row filters,
 stored and compressed deflate data, images bigger than 16 x 16 and a tall
-animation strip. The zip mixes stored and deflated entries and ends with
+animation strip. Mob skins (a 64 x 32 cow and a 128 x 128 zombie, so the
+scaling to a 64 pixel wide layout is tested) check that each mob part is
+sampled from the right rectangle, turned the right way. The zip mixes stored and deflated entries and ends with
 a comment, so the end record has to be searched for.
 Only the Python standard library is used."""
 import json, os, random, re, struct, sys, zipfile, zlib
@@ -29,6 +31,29 @@ def map_entries():
     """(tex macro name, kind, name, tint, overlay) from pack_map_entry()"""
     src = open(os.path.join(MACRO, 'src', 'resource_pack.4dm')).read()
     return re.findall(r'pack_entry\(p_tex, p_kind, p_name, p_tint, p_overlay, (\w+)\s*, "(\w+)"\s*, "(\w+)"\s*, (\w+)\s*, "(\w*)"\)', src)
+
+def part_entries():
+    """(tex macro name, skin name, x, y, w, h, turn macro) from pack_map_part()"""
+    src = open(os.path.join(MACRO, 'src', 'resource_pack.4dm')).read()
+    return [(t, n, int(x), int(y), int(w), int(h), turn) for t, n, x, y, w, h, turn in re.findall(
+        r'pack_part\(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, (\w+)\s*, "([\w/]+)"\s*, (\d+)\s*, (\d+)\s*, (\d+)\s*, (\d+)\s*, (\w+)\s*\)', src)]
+
+def expected_part(pixels, width, x, y, w, h, turn):
+    """the 16 x 16 picture the macro samples from a skin rectangle"""
+    skin = macro_value('PACK_SKIN_WIDTH')
+    rx, ry = x * width // skin, y * width // skin
+    rw, rh = max(1, w * width // skin), max(1, h * width // skin)
+    out = []
+    for v in range(1, 17):
+        for u in range(1, 17):
+            a, b = u, v
+            if turn == 'PACK_TURN_RIGHT': a, b = v, 17 - u
+            elif turn == 'PACK_TURN_HALF': a, b = 17 - u, 17 - v
+            elif turn == 'PACK_TURN_LEFT': a, b = 17 - v, u
+            px = rx + ((2 * a - 1) * rw) // 32
+            py = ry + ((2 * b - 1) * rh) // 32
+            out.append(list(pixels[py][px]))
+    return out
 
 def macro_value(name):
     for header in ('textures.h', 'resource_pack.h'):
@@ -201,6 +226,18 @@ def make():
 
         expected[str(tex_id)] = {'name': kind + '/' + name, 'encoding': list(encoding), 'size': [w, h],
                                  'sprite': sprite, 'pixels': picture}
+
+    # mob skins: 8 colours each, solid (mob textures have no holes)
+    skins = {}
+    for name, (w, h, ctype) in {'cow/cow': (64, 32, 2), 'zombie/zombie': (128, 128, 6)}.items():
+        colours = [(rng.randrange(256), rng.randrange(256), rng.randrange(256), 255) for _ in range(8)]
+        pixels = [[rng.choice(colours) for _ in range(w)] for _ in range(h)]
+        skins[name] = (pixels, w)
+        files['entity/' + name] = write_png(pixels, w, h, ctype, 8, rng, 6)
+    for tex, name, x, y, w, h, turn in part_entries():
+        pixels, width = skins[name]
+        expected[str(macro_value(tex))] = {'name': 'entity/' + name + ' part', 'encoding': [2, 8], 'size': [w, h],
+                                           'sprite': False, 'pixels': expected_part(pixels, width, x, y, w, h, turn)}
 
     # zip: mixed stored and deflated entries, and a comment at the end
     path = os.path.join(PACKS, 'test_pack.zip')
