@@ -27,10 +27,16 @@
 // mouse_move turns the camera by how far the cursor moved from a
 // parking spot, then puts the cursor back there (alternating by one
 // pixel so each warp makes a fresh event). That gives a steady
-// stream of frames with the mouse still. Keys arrive in the Keys
-// input box, which keeps the keyboard focus. The mouse is released
-// with Q, when a screen opens, when 12d loses focus, or after a
-// minute without input.
+// stream of frames with the mouse still. The parking spot is well
+// inside the view (PARK_HEIGHT_SHARE up from its bottom), so a quick
+// flick doesn't carry the cursor out of it between two events, and
+// if it does the cursor is pulled back. Keys arrive in the Keys
+// input box, which keeps the keyboard focus: if something inside 12d
+// takes it, the game takes it back. The mouse is released with Q,
+// when a screen opens, when another window keeps the focus, when the
+// mouse keeps leaving the view, or after IDLE_RELEASE_SECONDS without
+// input. When paused, a click on the view or a movement key carries
+// on.
 //
 // This is the controller: it is the only place (with the menu and
 // settings panels) that names the game's global records, and it
@@ -226,6 +232,8 @@ Integer game_panel_run(Text p_world_name, Integer p_create, Integer p_seed)
   Integer   l_jiggle          = 0;
   Integer   l_confirmed       = FALSE;
   Integer   l_leaves          = 0;
+  Integer   l_refocus         = 0;
+  Real      l_refocus_window  = 0.0;
   Integer   l_calibration     = 0;
   Real      l_frame_ms        = 0.0;
   Text      l_report          = "";
@@ -410,7 +418,7 @@ Integer game_panel_run(Text p_world_name, Integer p_create, Integer p_seed)
           l_leaves       = 0;
         }
         ++l_leaves;
-        if (!l_confirmed || l_leaves > 4) {
+        if (!l_confirmed || l_leaves > LEAVES_BEFORE_RELEASE) {
           l_release = TRUE;
           l_why     = "the mouse left the view";
         } else {
@@ -478,7 +486,15 @@ Integer game_panel_run(Text p_world_name, Integer p_create, Integer p_seed)
         } else {
           if (l_key == "w" || l_key == "a" || l_key == "s" || l_key == "d" || l_key == " " || l_key == "c") {
             player_key_pressed(g_player, l_key, l_now);
-            if (!l_captured && hud_help_shown(g_hud) && (l_have_origin || l_have_seen)) l_start_request = TRUE;
+            // a movement key while paused carries on (the keys only
+            // reach the game while its panel has the focus)
+            if (!l_captured) {
+              if (l_have_origin || l_have_seen) {
+                l_start_request = TRUE;
+              } else {
+                Set_data(l_message, "Click the view to carry on.");
+              }
+            }
           }
           if (Text_length(l_key) == 1 && Find_text("123456789", l_key) > 0) {
             game_select_slot(g_player, g_hud, Find_text("123456789", l_key), l_now);
@@ -542,8 +558,19 @@ Integer game_panel_run(Text p_world_name, Integer p_create, Integer p_seed)
         Set_data(l_key_box, "");
         Set_focus(l_key_box);
       } else if (l_cmd == "kill_focus" && l_captured) {
-        l_release = TRUE;
-        l_why     = "another window was clicked";
+        // Something took the keyboard focus (often a click inside 12d
+        // itself): take it back, and only give up if it keeps going
+        if (l_now - l_refocus_window > 2.0) {
+          l_refocus_window = l_now;
+          l_refocus        = 0;
+        }
+        ++l_refocus;
+        if (l_refocus > REFOCUS_LIMIT) {
+          l_release = TRUE;
+          l_why     = "another window has the keyboard";
+        } else {
+          Set_focus(l_key_box);
+        }
       }
 
     } else if (l_cmd == "save") {
@@ -602,7 +629,7 @@ Integer game_panel_run(Text p_world_name, Integer p_create, Integer p_seed)
       l_origin_y    = l_request_y;
       l_have_origin = TRUE;
       l_warp_x      = Floor(l_width / 2.0);
-      l_warp_y      = Floor(STATUS_STRIP_HEIGHT / 2.0);
+      l_warp_y      = Floor(STATUS_STRIP_HEIGHT + (l_height - STATUS_STRIP_HEIGHT) * PARK_HEIGHT_SHARE);
       l_jiggle      = 0;
       l_confirmed   = FALSE;
       l_leaves      = 0;
@@ -611,7 +638,7 @@ Integer game_panel_run(Text p_world_name, Integer p_create, Integer p_seed)
       l_last_input  = l_now;
       Set_cursor_position(l_origin_x + l_warp_x, l_origin_y - l_warp_y);
       Set_focus(l_key_box);
-      Set_data(l_message, "Playing " + p_world_name + ". Q frees the mouse, E opens the inventory, O settings, H help.");
+      Set_data(l_message, "Playing " + p_world_name + ". Q frees the mouse (W or a click carries on), E opens the inventory, O settings, H help.");
       l_want_frame = TRUE;
     }
 
@@ -622,9 +649,9 @@ Integer game_panel_run(Text p_world_name, Integer p_create, Integer p_seed)
     if (l_release && l_captured) {
       l_captured = FALSE;
       if (l_why == "") {
-        Set_data(l_message, "Paused. Click the view to carry on.");
+        Set_data(l_message, "Paused. Click the view or press W to carry on.");
       } else {
-        Set_data(l_message, "Paused (" + l_why + "). Click the view to carry on.");
+        Set_data(l_message, "Paused (" + l_why + "). Click the view or press W to carry on.");
       }
       // The panel may have moved: check the mapping again next time
       if (l_why != "") l_have_origin = FALSE;

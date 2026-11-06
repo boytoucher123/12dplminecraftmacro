@@ -81,7 +81,10 @@
 #define MOUSE_SENSITIVITY    0.0045
 #define MAX_PITCH            1.55
 #define MAX_FRAME_DT         0.1
-#define IDLE_RELEASE_SECONDS 60.0
+#define IDLE_RELEASE_SECONDS 180.0     // a captured mouse is freed after this long without input
+#define PARK_HEIGHT_SHARE    0.3       // the cursor is parked this far up the view (share of its height)
+#define LEAVES_BEFORE_RELEASE 12       // the mouse is freed if it leaves the view this often in a second
+#define REFOCUS_LIMIT        3         // keyboard focus is taken back this often in two seconds before giving up
 #define STATUS_STRIP_HEIGHT  22.0
 
 #endif

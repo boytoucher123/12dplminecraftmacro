@@ -37,7 +37,7 @@ for how to rebuild it after you change the macro.
 
 | Input         | Action                                                       |
 |---------------|--------------------------------------------------------------|
-| Click view    | start playing (the mouse then turns the camera)              |
+| Click view    | start playing (the mouse then turns the camera); after a pause, W A S D or Space also carries on |
 | Mouse         | look around                                                  |
 | Left click    | break blocks (harder blocks take more hits), hit animals     |
 | Right click   | place blocks, eat food, open crafting tables, furnaces and chests, sleep in beds |
