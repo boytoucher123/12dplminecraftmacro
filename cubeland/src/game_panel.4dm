@@ -17,6 +17,7 @@
 #include "../include/save.h"
 #include "../include/game.h"
 #include "../include/panels.h"
+#include "../include/font.h"
 
 // ----------------------------------------------------------------
 // Real-time play inside a 12d panel
@@ -96,6 +97,7 @@ void game_panel_notice(Draw_Box p_box, Text p_title, Text p_line)
   l_h = l_height;
 
   Start_batch_draw(p_box);
+  font_apply(p_box, settings_font(g_settings));
   render_set_colour(p_box, 24.0, 28.0, 36.0);
   render_fill_rect (p_box, 0.0, 0.0, l_w, l_h);
   hud_text(p_box, l_w / 2.0, l_h / 2.0 + 30.0, 26.0, TEXT_ALIGN_CENTRE, 132, 220, 116, p_title);
@@ -147,6 +149,7 @@ void game_panel_render(Draw_Box p_box, Integer p_captured, Real p_frame_ms, Real
   l_h = l_height;
 
   Start_batch_draw(p_box);
+  font_apply(p_box, settings_font(g_settings));
   if (ui_screen(g_ui) != SCREEN_NONE) {
     hud_draw(p_box, l_w, l_h, p_captured, TRUE, g_hud, g_player, g_inventory, g_settings, world_info_seed(g_info),
              world_time_of_day(g_info), p_frame_ms, render_stats_text(), p_now);

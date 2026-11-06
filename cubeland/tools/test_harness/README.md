@@ -134,6 +134,17 @@ that were looked up most often (to find hot spots).
 | `16_chest`                    | items put in a chest survive save and load and spill out when it's broken |
 | `17_mob_models`               | the cow from the front, side and back, and a zombie, with their per-face textures |
 | `18_plants`                   | grass, a poppy, a dandelion, a dead bush and a torch drawn as crossed pictures, from the front, an angle and above |
+| `19_fonts`                    | the font list, a typed font name, family names read from font files (Windows and Mac names, a collection, a file that isn't a font, a missing file), and the game drawing its text with the chosen font; run `make_test_fonts.py` first |
+
+### Font files
+
+`make_test_fonts.py` writes the small font files scenario 19 reads into
+`packs/`: just a table directory and a name table, each storing the family
+name a different way.
+
+```bash
+python3 make_test_fonts.py
+```
 
 ### Resource pack test
 

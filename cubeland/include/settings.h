@@ -19,6 +19,7 @@
 #define ATTR_SET_SHOW_HUD        ("show_hud")
 #define ATTR_SET_SHOW_DEBUG      ("show_debug")
 #define ATTR_SET_RESOURCE_PACK   ("resource_pack")   // .zip file or folder, "" for the built-in textures
+#define ATTR_SET_FONT            ("font")            // installed TrueType font for the game's text, "" for 12d's default
 
 #define RENDER_DISTANCE_MIN      8
 #define RENDER_DISTANCE_MAX      64
@@ -52,5 +53,7 @@ Integer settings_save           (Attributes &p_settings, Text p_path);
 Integer settings_load           (Attributes &p_settings, Text p_path);
 Text    settings_resource_pack  (Attributes &p_settings);
 void    settings_set_resource_pack(Attributes &p_settings, Text p_path);
+Text    settings_font           (Attributes &p_settings);
+void    settings_set_font       (Attributes &p_settings, Text p_font);
 
 #endif

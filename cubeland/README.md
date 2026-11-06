@@ -17,7 +17,7 @@ A first-person block-building sandbox for 12d Model, drawn entirely in a
 5. **Settings** (on the world menu, in game, or the **O** key) opens a panel
    of buttons for render distance (50 blocks to start with), texture
    detail, field of view, mouse speed, grass and flowers, shadows,
-   auto-jump, the HUD and statistics, and the resource pack.
+   auto-jump, the HUD and statistics, the resource pack and the font.
 
 Worlds are saved in a `cubeland_worlds` folder inside the 12d working folder.
 A world is saved when you quit to the menu, when you press **Save**, and every
@@ -81,6 +81,25 @@ pack's mob skins (`entity/cow/cow.png`, `entity/zombie/zombie.png`): every
 face of the model is cut from its own rectangle of the skin. Packs made for
 16 x 16 work best: bigger images are sampled down, and only 8 colours of
 a detailed image survive. Interlaced PNGs aren't supported.
+
+## Fonts
+
+The game's text (hotbar counts, messages, the help and inventory screens)
+can use any font installed in Windows. In **Settings**:
+
+- **Next font** steps through fonts that come with Windows (Arial, Segoe
+  UI, Consolas, Courier New, Verdana, Tahoma, Trebuchet MS, Georgia,
+  Comic Sans MS); **12d's default** goes back to the normal font.
+- **Font name** takes the name of any installed font; press **Use this
+  font name**.
+- **Font file** takes a `.ttf`, `.otf` or `.ttc` file; **Use this font
+  file** reads the font's name from the file and uses it.
+
+12d can only draw with fonts that Windows has installed, so a font file
+you pick has to be installed too (double click it, then **Install**). If
+a font isn't installed, Windows draws a similar one instead. The choice is
+saved with the other settings. After switching back to 12d's default, the
+default font comes back the next time the game opens.
 
 ## What's in it
 

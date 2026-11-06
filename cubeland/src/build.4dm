@@ -31,6 +31,7 @@
 #include "records.4dm"
 #include "slots.4dm"
 #include "settings.4dm"
+#include "font.4dm"
 #include "events.4dm"
 #include "blocks.4dm"
 #include "textures.4dm"

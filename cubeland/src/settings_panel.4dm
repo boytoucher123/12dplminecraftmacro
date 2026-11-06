@@ -7,6 +7,7 @@
 #include "../include/save.h"
 #include "../include/panels.h"
 #include "../include/game.h"
+#include "../include/font.h"
 
 // ----------------------------------------------------------------
 // The settings panel: every setting is a line showing its value and
@@ -19,7 +20,7 @@
 void settings_panel_show(Attributes &p_settings, Colour_Message_Box p_render_row, Colour_Message_Box p_detail_row,
                          Colour_Message_Box p_fov_row, Colour_Message_Box p_mouse_row, Colour_Message_Box p_plants_row,
                          Colour_Message_Box p_shading_row, Colour_Message_Box p_jump_row, Colour_Message_Box p_hud_row,
-                         Colour_Message_Box p_debug_row, Colour_Message_Box p_pack_row)
+                         Colour_Message_Box p_debug_row, Colour_Message_Box p_pack_row, Colour_Message_Box p_font_row)
 // ----------------------------------------------------------------
 // Show the current value of every setting
 // ----------------------------------------------------------------
@@ -34,6 +35,7 @@ void settings_panel_show(Attributes &p_settings, Colour_Message_Box p_render_row
   Set_data(p_hud_row    , settings_describe(p_settings, ATTR_SET_SHOW_HUD));
   Set_data(p_debug_row  , settings_describe(p_settings, ATTR_SET_SHOW_DEBUG));
   Set_data(p_pack_row   , settings_describe(p_settings, ATTR_SET_RESOURCE_PACK));
+  Set_data(p_font_row   , settings_describe(p_settings, ATTR_SET_FONT));
 }
 
 Integer settings_panel_run(Attributes &p_settings)
@@ -88,6 +90,16 @@ Integer settings_panel_run(Attributes &p_settings)
   Button             l_pack_load      = Create_button("Use this resource pack", "set_pack_load");
   Button             l_pack_clear     = Create_button("Built-in textures", "set_pack_clear");
 
+  Colour_Message_Box l_font_row       = Create_colour_message_box("");
+  Horizontal_Group   l_font_buttons   = Create_button_group();
+  Button             l_font_next      = Create_button("Next font", "set_font_next");
+  Button             l_font_default   = Create_button("12d's default", "set_font_default");
+  Input_Box          l_font_name_box  = Create_input_box("Font name (any font installed in Windows)", l_message);
+  File_Box           l_font_file_box  = Create_file_box("... or a font file (.ttf, .otf or .ttc)", l_message, PACK_FILE_BOX_MODE, "*.ttf");
+  Horizontal_Group   l_font_use       = Create_button_group();
+  Button             l_font_name_use  = Create_button("Use this font name", "set_font_name");
+  Button             l_font_file_use  = Create_button("Use this font file", "set_font_file");
+
   Horizontal_Group   l_end_buttons    = Create_button_group();
   Button             l_reset_button   = Create_button("Reset to defaults", "set_defaults");
   Button             l_done_button    = Create_finish_button("Done", "set_done");
@@ -99,6 +111,7 @@ Integer settings_panel_run(Attributes &p_settings)
   Text               l_msg            = "";
   Text               l_pack           = "";
   Text               l_report         = "";
+  Text               l_font           = "";
 
   Append(l_render_less, l_render_buttons);
   Append(l_render_more, l_render_buttons);
@@ -117,6 +130,10 @@ Integer settings_panel_run(Attributes &p_settings)
   Append(l_debug_toggle  , l_toggle_buttons);
   Append(l_pack_load , l_pack_buttons);
   Append(l_pack_clear, l_pack_buttons);
+  Append(l_font_next   , l_font_buttons);
+  Append(l_font_default, l_font_buttons);
+  Append(l_font_name_use, l_font_use);
+  Append(l_font_file_use, l_font_use);
   Append(l_reset_button, l_end_buttons);
   Append(l_done_button , l_end_buttons);
 
@@ -137,13 +154,19 @@ Integer settings_panel_run(Attributes &p_settings)
   Append(l_pack_row      , l_vgroup);
   Append(l_pack_box      , l_vgroup);
   Append(l_pack_buttons  , l_vgroup);
+  Append(l_font_row      , l_vgroup);
+  Append(l_font_buttons  , l_vgroup);
+  Append(l_font_name_box , l_vgroup);
+  Append(l_font_file_box , l_vgroup);
+  Append(l_font_use      , l_vgroup);
   Append(l_end_buttons   , l_vgroup);
   Append(l_message       , l_vgroup);
   Append(l_vgroup        , l_panel);
 
   Show_widget(l_panel);
-  settings_panel_show(p_settings, l_render_row, l_detail_row, l_fov_row, l_mouse_row, l_plants_row, l_shading_row, l_jump_row, l_hud_row, l_debug_row, l_pack_row);
+  settings_panel_show(p_settings, l_render_row, l_detail_row, l_fov_row, l_mouse_row, l_plants_row, l_shading_row, l_jump_row, l_hud_row, l_debug_row, l_pack_row, l_font_row);
   Set_data(l_pack_box, settings_resource_pack(p_settings));
+  Set_data(l_font_name_box, settings_font(p_settings));
   Set_data(l_message, "Longer views and higher detail look better but draw more slowly.");
 
   while (l_doit) {
@@ -204,14 +227,37 @@ Integer settings_panel_run(Attributes &p_settings)
       Set_data(l_pack_box, "");
       game_load_textures(p_settings, l_report);
       Set_data(l_message, "Using the built-in textures.");
+    } else if (l_cmd == "set_font_next") {
+      settings_set_font(p_settings, font_next_choice(settings_font(p_settings)));
+      Set_data(l_font_name_box, settings_font(p_settings));
+    } else if (l_cmd == "set_font_default") {
+      settings_set_font(p_settings, "");
+      Set_data(l_font_name_box, "");
+      Set_data(l_message, "The default font comes back when the game is next opened.");
+    } else if (l_cmd == "set_font_name") {
+      l_font = "";
+      Get_data(l_font_name_box, l_font);
+      settings_set_font(p_settings, l_font);
+      Set_data(l_message, "If that font isn't installed, Windows draws a similar one instead.");
+    } else if (l_cmd == "set_font_file") {
+      l_pack = "";
+      Get_data(l_font_file_box, l_pack);
+      if (font_family_from_file(l_pack, l_font, l_report) == SUCCESS) {
+        settings_set_font(p_settings, l_font);
+        Set_data(l_font_name_box, l_font);
+        Set_data(l_message, "Using " + l_font + ". The font has to be installed in Windows (double click the file, then Install) for 12d to draw with it.");
+      } else {
+        Set_data(l_message, l_report);
+      }
     } else if (l_cmd == "set_defaults") {
       l_pack = settings_resource_pack(p_settings);
       settings_defaults(p_settings);
       settings_set_resource_pack(p_settings, l_pack);   // keep the textures: there's a button for that
+      Set_data(l_font_name_box, "");
     } else {
       continue;
     }
-    settings_panel_show(p_settings, l_render_row, l_detail_row, l_fov_row, l_mouse_row, l_plants_row, l_shading_row, l_jump_row, l_hud_row, l_debug_row, l_pack_row);
+    settings_panel_show(p_settings, l_render_row, l_detail_row, l_fov_row, l_mouse_row, l_plants_row, l_shading_row, l_jump_row, l_hud_row, l_debug_row, l_pack_row, l_font_row);
   }
 
   save_ensure_folder();

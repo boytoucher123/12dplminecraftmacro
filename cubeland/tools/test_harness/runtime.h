@@ -121,7 +121,7 @@ int Set_colour(const Draw_Box&,int,int,int); int Set_fill_colour(const Draw_Box&
 int Draw_polygon(const Draw_Box&,int,double*,double*);
 int Move_to(const Draw_Box&,double,double); int Draw_to(const Draw_Box&,double,double);
 int Draw_text(const Draw_Box&,double,double,double,double,const Text&);
-int Set_text_align(const Draw_Box&,int); int Set_text_colour(const Draw_Box&,int,int,int);
+int Set_text_align(const Draw_Box&,int); int Set_text_colour(const Draw_Box&,int,int,int); int Set_text_font(const Draw_Box&,const Text&);
 inline int Set_bk_mode(const Draw_Box&,int){ return 0; }
 
 #else
@@ -158,7 +158,7 @@ int Set_colour(const Draw_Box&,int,int,int); int Set_fill_colour(const Draw_Box&
 int Draw_polygon(const Draw_Box&,int,double*,double*);
 int Move_to(const Draw_Box&,double,double); int Draw_to(const Draw_Box&,double,double);
 int Draw_text(const Draw_Box&,double,double,double,double,const Text&);
-int Set_text_align(const Draw_Box&,int); int Set_text_colour(const Draw_Box&,int,int,int);
+int Set_text_align(const Draw_Box&,int); int Set_text_colour(const Draw_Box&,int,int,int); int Set_text_font(const Draw_Box&,const Text&);
 inline int Set_bk_mode(const Draw_Box&,int){ return 0; }
 #endif
 
@@ -168,6 +168,7 @@ struct File { std::FILE* f=nullptr; };
 inline int File_open(const Text&n,const Text&m,const Text&,File&f){ const char*mode=m=="w"?"w":(m=="rb"?"rb":"r"); f.f=fopen(fix_path(n).c_str(), mode); return f.f?0:1; }
 // Binary reads: little-endian, like 12d on Windows
 inline int File_read(File&f,int&v){ unsigned char b[4]; if(!f.f||fread(b,1,4,f.f)!=4) return 1; v=(int)((unsigned)b[0]|((unsigned)b[1]<<8)|((unsigned)b[2]<<16)|((unsigned)b[3]<<24)); return 0; }
+inline int Set_char(Text&t,int n,int c){ if(n<1||n>(int)t.size()) return 1; t[n-1]=(char)c; return 0; }
 inline int File_read_short(File&f,int&v){ unsigned char b[2]; if(!f.f||fread(b,1,2,f.f)!=2) return 1; v=(short)(b[0]|(b[1]<<8)); return 0; }
 inline int File_read(File&f,int n,Text&t){ t.assign(n,' '); if(!f.f||n<0||(int)fread(&t[0],1,n,f.f)!=n) return 1; return 0; }
 inline int File_seek(File&f,int pos){ return f.f?fseek(f.f,pos,SEEK_SET):1; }

@@ -24,6 +24,23 @@ void settings_defaults(Attributes &p_settings)
   record_set_integer(p_settings, ATTR_SET_SHOW_HUD,        TRUE);
   record_set_integer(p_settings, ATTR_SET_SHOW_DEBUG,      FALSE);
   record_set_text   (p_settings, ATTR_SET_RESOURCE_PACK,   "");
+  record_set_text   (p_settings, ATTR_SET_FONT,            "");
+}
+
+Text settings_font(Attributes &p_settings)
+// ----------------------------------------------------------------
+// The font for the game's text, "" for 12d's default
+// ----------------------------------------------------------------
+{
+  return record_text(p_settings, ATTR_SET_FONT);
+}
+
+void settings_set_font(Attributes &p_settings, Text p_font)
+// ----------------------------------------------------------------
+// Choose the font for the game's text ("" for 12d's default)
+// ----------------------------------------------------------------
+{
+  record_set_text(p_settings, ATTR_SET_FONT, Text_justify(p_font));
 }
 
 Text settings_resource_pack(Attributes &p_settings)
@@ -132,6 +149,10 @@ Text settings_describe(Attributes &p_settings, Text p_field)
     if (settings_resource_pack(p_settings) == "") return "Textures: built in";
     return "Textures: " + settings_resource_pack(p_settings);
   }
+  if (p_field == ATTR_SET_FONT) {
+    if (settings_font(p_settings) == "") return "Font: 12d's default";
+    return "Font: " + settings_font(p_settings);
+  }
 
   l_value = record_integer(p_settings, p_field);
   if (l_value) l_on_off = "On";
@@ -163,12 +184,13 @@ Text settings_line(Text p_name, Integer p_value)
 Integer settings_save(Attributes &p_settings, Text p_path)
 // ----------------------------------------------------------------
 // Write the settings as "name value" lines. Returns SUCCESS or
-// FAILURE. The resource pack line keeps the rest of the line as
-// the path, so the path may contain spaces.
+// FAILURE. The resource pack and font lines keep the rest of the
+// line as the path or name, so they may contain spaces.
 // ----------------------------------------------------------------
 {
   File l_file;
   Text l_pack_line = "";
+  Text l_font_line = ATTR_SET_FONT;
 
   if (safe_file_open(p_path, "w", l_file) != 0) return FAILURE;
 
@@ -183,6 +205,7 @@ Integer settings_save(Attributes &p_settings, Text p_path)
   File_write_line(l_file, settings_line(ATTR_SET_SHOW_DEBUG, settings_flag(p_settings, ATTR_SET_SHOW_DEBUG)));
   l_pack_line = ATTR_SET_RESOURCE_PACK;
   File_write_line(l_file, l_pack_line + " " + settings_resource_pack(p_settings));
+  File_write_line(l_file, l_font_line + " " + settings_font(p_settings));
 
   File_close(l_file);
   return SUCCESS;
@@ -196,25 +219,35 @@ Integer settings_load(Attributes &p_settings, Text p_path)
 // ----------------------------------------------------------------
 {
   File         l_file;
-  Text         l_line  = "";
-  Text         l_name  = "";
-  Text         l_word  = "";
-  Integer      l_value = 0;
-  Integer      l_count = 0;
-  Text         l_pack  = ATTR_SET_RESOURCE_PACK;
-  Integer      l_skip  = 0;
+  Text         l_line      = "";
+  Text         l_name      = "";
+  Text         l_word      = "";
+  Integer      l_value     = 0;
+  Integer      l_count     = 0;
+  Text         l_pack      = ATTR_SET_RESOURCE_PACK;
+  Integer      l_skip      = 0;
+  Text         l_font      = ATTR_SET_FONT;
+  Integer      l_font_skip = 0;
   Dynamic_Text l_words;
 
   settings_defaults(p_settings);
   if (!File_exists(p_path)) return FAILURE;
   if (safe_file_open(p_path, "r", l_file) != 0) return FAILURE;
 
-  l_pack = l_pack + " ";
-  l_skip = Text_length(l_pack);
+  l_pack      = l_pack + " ";
+  l_skip      = Text_length(l_pack);
+  l_font      = l_font + " ";
+  l_font_skip = Text_length(l_font);
   while (File_read_line(l_file, l_line) == 0) {
     if (Text_length(l_line) > l_skip) {
       if (Get_subtext(l_line, 1, l_skip) == l_pack) {
         settings_set_resource_pack(p_settings, Get_subtext(l_line, l_skip + 1, Text_length(l_line)));
+        continue;
+      }
+    }
+    if (Text_length(l_line) > l_font_skip) {
+      if (Get_subtext(l_line, 1, l_font_skip) == l_font) {
+        settings_set_font(p_settings, Get_subtext(l_line, l_font_skip + 1, Text_length(l_line)));
         continue;
       }
     }
