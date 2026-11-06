@@ -124,7 +124,7 @@ static void register_hooks(){
      world_set_block(px+2,py,pz,BLOCK_TORCH); mesh_mark_dirty(px+2,py,pz);
      printf("[hook] plants at x %d, z %d..%d, y %d; torch at x %d\n",px,pz-1,pz+2,py,px+2);
      set_look(0.12,-0.35); };
-[]{ printf("[hook] render: %s\n",render_stats_text().c_str()); };
+  g_calls["render_stats"]=[]{ printf("[hook] render: %s\n",render_stats_text().c_str()); };
   g_calls["frame_stats"]=[]{ printf("[hook] frame stats: %s\n",hud_frame_stats(g_hud).c_str()); };
   g_calls["give_planks_far"]=[]{ slot_set(g_inventory,20,ITEM_PLANKS,7,0); };
   g_calls["settings"]=[]{ printf("[settings] view %d detail %d plants %d shading %d fov %d mouse %d jump %d hud %d\n",settings_render_distance(g_settings),settings_detail(g_settings),

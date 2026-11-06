@@ -1301,38 +1301,6 @@ void render_cover_reset()
   }
 }
 
-void render_cover_extent(Real p_x, Real &p_low, Real &p_high)
-// ----------------------------------------------------------------
-// Lowest and highest screen y of the face in g_cover_x/y (a convex
-// quadrilateral) on the vertical line at x, which must cross it
-// ----------------------------------------------------------------
-{
-  Integer l_corner = 0;
-  Integer l_next   = 0;
-  Real    l_x0     = 0.0;
-  Real    l_x1     = 0.0;
-  Real    l_y      = 0.0;
-
-  p_low  =  1.0e30;
-  p_high = -1.0e30;
-  for (l_corner = 1; l_corner <= 4; ++l_corner) {
-    l_next = l_corner + 1;
-    if (l_next > 4) l_next = 1;
-    l_x0 = g_cover_x[l_corner];
-    l_x1 = g_cover_x[l_next];
-    if (l_x0 < p_x && l_x1 < p_x) continue;
-    if (l_x0 > p_x && l_x1 > p_x) continue;
-    if (l_x0 == l_x1) {
-      p_low  = min_real(p_low,  min_real(g_cover_y[l_corner], g_cover_y[l_next]));
-      p_high = max_real(p_high, max_real(g_cover_y[l_corner], g_cover_y[l_next]));
-      continue;
-    }
-    l_y = g_cover_y[l_corner] + (p_x - l_x0) * (g_cover_y[l_next] - g_cover_y[l_corner]) / (l_x1 - l_x0);
-    if (l_y < p_low ) p_low  = l_y;
-    if (l_y > p_high) p_high = l_y;
-  }
-}
-
 void render_cover_add(Integer p_line, Real p_low, Real p_high)
 // ----------------------------------------------------------------
 // Add the stretch low..high to a line's covered spans, merging it
@@ -1374,8 +1342,9 @@ void render_cover_add(Integer p_line, Real p_low, Real p_high)
   }
 
   // Merge the run into its first span and close the gap after it
-  g_cover_low [l_base + l_first] = min_real(g_cover_low [l_base + l_first], p_low);
-  g_cover_high[l_base + l_first] = max_real(g_cover_high[l_base + l_last ], p_high);
+  if (p_low < g_cover_low[l_base + l_first]) g_cover_low[l_base + l_first] = p_low;
+  g_cover_high[l_base + l_first] = g_cover_high[l_base + l_last];
+  if (p_high > g_cover_high[l_base + l_first]) g_cover_high[l_base + l_first] = p_high;
   l_gone = l_last - l_first;
   if (l_gone == 0) return;
   for (l_span = l_last + 1; l_span <= l_count; ++l_span) {
@@ -1439,6 +1408,11 @@ void render_cover_face(Integer p_face)
   Real    l_max_y   = -1.0e30;
   Real    l_low     = 0.0;
   Real    l_high    = 0.0;
+  Real    l_line_x  = 0.0;
+  Real    l_x0      = 0.0;
+  Real    l_x1      = 0.0;
+  Real    l_y       = 0.0;
+  Integer l_next    = 0;
 
   // Faces cut by the near plane are always drawn and hide nothing
   if (!g_df_front[p_face]) return;
@@ -1483,14 +1457,30 @@ void render_cover_face(Integer p_face)
 
   if (!g_df_opaque[p_face]) return;
 
-  // Lines that cross the face
+  // Lines that cross the face: where each crosses the face's edges
+  // (written out here rather than calling render_cover_extent, this
+  // runs for every line of every opaque face)
   l_first = Floor(l_min_x / COVER_COLUMN_PIXELS) + 1;
   if ((l_first - 1) * COVER_COLUMN_PIXELS < l_min_x) ++l_first;
   l_last  = Floor(l_max_x / COVER_COLUMN_PIXELS) + 1;
   if (l_first < 1) l_first = 1;
   if (l_last > g_cover_columns) l_last = g_cover_columns;
   for (l_line = l_first; l_line <= l_last; ++l_line) {
-    render_cover_extent((l_line - 1) * COVER_COLUMN_PIXELS, l_low, l_high);
+    l_line_x = (l_line - 1) * COVER_COLUMN_PIXELS;
+    l_low    =  1.0e30;
+    l_high   = -1.0e30;
+    for (l_corner = 1; l_corner <= 4; ++l_corner) {
+      l_next = l_corner + 1;
+      if (l_next > 4) l_next = 1;
+      l_x0 = g_cover_x[l_corner];
+      l_x1 = g_cover_x[l_next];
+      if (l_x0 < l_line_x && l_x1 < l_line_x) continue;
+      if (l_x0 > l_line_x && l_x1 > l_line_x) continue;
+      if (l_x0 == l_x1) continue;   // an upright edge on the line: its ends are on the other edges
+      l_y = g_cover_y[l_corner] + (l_line_x - l_x0) * (g_cover_y[l_next] - g_cover_y[l_corner]) / (l_x1 - l_x0);
+      if (l_y < l_low ) l_low  = l_y;
+      if (l_y > l_high) l_high = l_y;
+    }
     if (l_high > l_low) render_cover_add(l_line, l_low, l_high);
   }
 }

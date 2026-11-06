@@ -51,8 +51,8 @@
 // COVER_SPANS separate spans each) opaque faces already cover. A
 // face that falls entirely inside covered spans of the lines it
 // spans would be painted over, so it is not drawn at all.
-#define COVER_COLUMN_PIXELS 2.0   // gap between coverage lines
-#define MAX_COVER_COLUMNS   1600  // enough for a view 3200 pixels wide
+#define COVER_COLUMN_PIXELS 4.0   // gap between coverage lines
+#define MAX_COVER_COLUMNS   1600  // enough for a view 6400 pixels wide
 #define COVER_SPANS         6     // separate covered spans a line can hold
 #define COVER_SPAN_SLOTS    9600  // MAX_COVER_COLUMNS * COVER_SPANS
 #define COVER_JOIN          0.5   // a face this close to the covered part extends it (pixels)
@@ -238,7 +238,6 @@ Integer render_clip_and_draw   (Draw_Box p_box);
 void    render_quad            (Draw_Box p_box, Real p_u0, Real p_v0, Real p_u1, Real p_v1);
 void    render_draw_face       (Draw_Box p_box, Integer p_face);
 void    render_cover_reset     ();
-void    render_cover_extent    (Real p_x, Real &p_low, Real &p_high);
 void    render_cover_add       (Integer p_line, Real p_low, Real p_high);
 void    render_cover_corners   (Integer p_face);
 void    render_cover_face      (Integer p_face);
