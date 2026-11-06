@@ -1,40 +1,29 @@
-#ifndef TO_TEXT_H_INCLUDED
-#define TO_TEXT_H_INCLUDED
+#ifndef to_text_h_included
+#define to_text_h_included
 
-// ----------------------------------------------------------------
-// to_text(value): any value as Text, for messages and debugging
-// ----------------------------------------------------------------
-
-Text to_text(Text p_text)
-// ----------------------------------------------------------------
-// Text as itself
-// ----------------------------------------------------------------
+Text to_text(Text text)
 {
-  return p_text;
+  return text;
 }
 
-Text to_text(Real p_real)
-// ----------------------------------------------------------------
-// Real with 3 decimals
-// ----------------------------------------------------------------
+Text to_text(void)
 {
-  return To_text(p_real, 3);
+  return "void";
 }
 
-Text to_text(Integer p_integer)
-// ----------------------------------------------------------------
-// Integer in decimal
-// ----------------------------------------------------------------
+Text to_text(Real real)
 {
-  return To_text(p_integer);
+  return To_text(real, 3);
 }
 
-Text to_text(Menu p_menu)
-// ----------------------------------------------------------------
-// A Menu has no printable value
-// ----------------------------------------------------------------
+Text to_text(Menu menu)
 {
   return "menu";
+}
+
+Text to_text(Integer integer)
+{
+  return To_text(integer);
 }
 
 #endif
