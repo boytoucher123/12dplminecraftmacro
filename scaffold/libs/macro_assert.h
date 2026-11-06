@@ -1,152 +1,109 @@
-#ifndef macro_assert_h_included
-#define macro_assert_h_included
+#ifndef MACRO_ASSERT_H_INCLUDED
+#define MACRO_ASSERT_H_INCLUDED
 
-#define RETURN_MACRO_ASSERT_RETRY  1
-#define RETURN_MACRO_ASSERT_IGNORE 2
-#define RETURN_MACRO_ASSERT_STOP   3
+// ----------------------------------------------------------------
+// Assert panel
+// ASSERT(condition, info) shows a panel with the line number and the
+// lines of info (a Dynamic_Text) when condition is FALSE. It compiles
+// to nothing unless DEBUG is defined in build.4dm.
+//
+// The panel returns one of
+//   MACRO_ASSERT_RETRY   not implemented yet, carries on like Ignore
+//   MACRO_ASSERT_IGNORE  carry on
+//   MACRO_ASSERT_STOP    the caller should stop the macro
+//   SHUTDOWN_CODE        12d asked the macro to stop
+// ----------------------------------------------------------------
 
-Integer macro_assert_panel(Dynamic_Text &dt_assert_info)
-// ------------------------------------------------
-// Pops ups a panel, displaying assert information
-// 3 buttons
-// Retry - Not implemented
-// Ignore - Return and continue executing program
-// Stop - Shut down macro
-// ------------------------------------------------
+#include "../include/common.h"
+
+#define MACRO_ASSERT_RETRY   1
+#define MACRO_ASSERT_IGNORE  2
+#define MACRO_ASSERT_STOP    3
+#define MACRO_ASSERT_LINES   12   // height of the information box
+
+#define CMD_ASSERT_RETRY     ("assert_retry")
+#define CMD_ASSERT_IGNORE    ("assert_ignore")
+#define CMD_ASSERT_STOP      ("assert_stop")
+
+Integer macro_assert_panel(Integer p_line, Dynamic_Text &p_info)
+// ----------------------------------------------------------------
+// Show the assert information and wait for Retry, Ignore or Stop
+// Closing the panel counts as Ignore
+// ----------------------------------------------------------------
 {
-  Integer macro_assert_choice = 0;
+  Integer          l_choice        = MACRO_ASSERT_IGNORE;
+  Integer          l_doit          = TRUE;
+  Integer64        l_id            = 0;
+  Text             l_cmd           = "";
+  Text             l_msg           = "";
+  Dynamic_Text     l_shown;
+  Panel            l_panel         = Create_panel("Assert failed");
+  Vertical_Group   l_vgroup        = Create_vertical_group(-1);
+  Message_Box      l_message       = Create_message_box("");
+  Text_Edit_Box    l_info_box      = Create_text_edit_box("Assert information", l_message, MACRO_ASSERT_LINES);
+  Horizontal_Group l_buttons       = Create_button_group();
+  Button           l_retry_button  = Create_button("Retry" , CMD_ASSERT_RETRY);
+  Button           l_ignore_button = Create_button("Ignore", CMD_ASSERT_IGNORE);
+  Button           l_stop_button   = Create_button("Stop"  , CMD_ASSERT_STOP);
 
-  Integer num_lines_teb = 0;
-  Get_number_of_items(dt_assert_info, num_lines_teb);
+  Append(l_retry_button , l_buttons);
+  Append(l_ignore_button, l_buttons);
+  Append(l_stop_button  , l_buttons);
 
-  Panel          panel   = Create_panel("Assert");
-  Message_Box    message = Create_message_box("");
-  Vertical_Group vgroup  = Create_vertical_group(-1);
+  Append(l_info_box, l_vgroup);
+  Append(l_message , l_vgroup);
+  Append(l_buttons , l_vgroup);
+  Append(l_vgroup  , l_panel);
 
-  Text_Edit_Box teb_assert_info = Create_text_edit_box("Assert Information", message, num_lines_teb);
+  Append("Line " + To_text(p_line), l_shown);
+  Append(p_info, l_shown);
+  Set_data(l_info_box, l_shown);
 
-  Horizontal_Group bgroup = Create_button_group();
-  Button bn_retry  = Create_button("Retry", "Retry");
-  Button bn_ignore = Create_button("Ignore", "Ignore");
-  Button bn_stop   = Create_button("Stop", "Stop");
+  Show_widget(l_panel);
 
-  Append(vgroup, panel);
-  {
-    Append(teb_assert_info, vgroup);
-    Append(messsage       , vgroup);
-    Append(bgroup         , vgroup);
-    {
-      Append(bn_retry , bgroup);
-      Append(bn_ignore, bgroup);
-      Append(bn_stop  , bgroup);
+  while (l_doit) {
+    l_id  = 0;
+    l_cmd = "";
+    l_msg = "";
+    if (Wait_on_events(l_id, l_cmd, l_msg) != 0) continue;
+
+    if (l_cmd == "keystroke" || l_cmd == "set_focus" || l_cmd == "kill_focus") continue;
+
+    if (l_cmd == "CodeShutdown") {
+      Set_exit_code(l_cmd);
+      l_choice = SHUTDOWN_CODE;
+      l_doit   = FALSE;
+    } else if (l_cmd == "Panel Quit" || l_cmd == CMD_ASSERT_IGNORE) {
+      l_choice = MACRO_ASSERT_IGNORE;
+      l_doit   = FALSE;
+    } else if (l_cmd == CMD_ASSERT_RETRY) {
+      l_choice = MACRO_ASSERT_RETRY;
+      l_doit   = FALSE;
+    } else if (l_cmd == CMD_ASSERT_STOP) {
+      l_choice = MACRO_ASSERT_STOP;
+      l_doit   = FALSE;
     }
   }
 
-  Show_widget(panel);
+  Hide_widget(l_panel);
 
-  Integer doit = 1;
-  Integer shutdown = 0;
-
-  while (doit)
-  {
-    Integer64 id = 0LL;
-    Text cmd = "", msg = "";
-    Integer ret = Wait_on_events(id, cmd, msg);
-    if (ret != 0) {
-      continue;
-    }
-
-
-    switch(cmd) {
-      case "keystroke"  :   // When a key is pressed
-      case "set_focus"  :   // When 12d Model has gained focus
-      case "kill_focus" : { // When 12d Model has lost focus
-
-        continue;
-
-      } break;
-
-      case "CodeShutdown" : { // Allows 12d Model to shutdown this macro automatically
-
-        Set_exit_code(cmd);
-        doit = 0;
-
-      } break;
-    }
-
-
-    switch(id) {
-
-      case Get_id64(panel) : {
-
-        if (cmd == "Panel Quit") {
-
-          macro_assert_choice = RETURN_MACRO_ASSERT_IGNORE;
-          doit = 0;
-        }
-        else if (cmd == "Panel About") {
-
-          about_panel(panel);
-        }
-
-      } break;
-
-      case Get_id64(retry_button) : {
-
-        if (cmd != "Retry") {
-          break;
-        }
-
-        macro_assert_choice = RETURN_MACRO_ASSERT_RETRY;
-        doit = 0;
-
-      } break;
-
-      case Get_id64(ignore_button) : {
-
-        if (cmd != "Ignore") {
-          break;
-        }
-
-        macro_assert_choice = RETURN_MACRO_ASSERT_IGNORE;
-        doit = 0;
-
-      } break;
-
-      case Get_id64(stop_button) : {
-
-        if (cmd != "Stop") {
-          break;
-        }
-
-        macro_assert_choice = RETURN_MACRO_ASSERT_STOP;
-        doit = 0;
-
-      } break;
-
-      default : {
-      }
-    }
-  }
-
-  if (shutdown == Shutdown_code) {
-    // Get out quick
-    return Shutdown_code;
-  }
-
-  return macro_assert_choice;
+  return l_choice;
 }
 
-
-Integer assert(Integer line_num, Dynamic_Text &dt_assert_info)
-// ----------------------------------------------------
+Integer macro_assert(Integer p_condition, Integer p_line, Dynamic_Text &p_info)
+// ----------------------------------------------------------------
 // Don't call directly, call via ASSERT
-// Need to build dynamic text beforehand and pass it in
-// ----------------------------------------------------
+// Returns MACRO_ASSERT_IGNORE when the condition holds
+// ----------------------------------------------------------------
 {
-  return macro_assert_panel(dt_assert_info);
+  if (p_condition) return MACRO_ASSERT_IGNORE;
+  return macro_assert_panel(p_line, p_info);
 }
 
-#define ASSERT(I01) assert(__LINE__, I01)
+#ifdef DEBUG
+#define ASSERT(I01, I02)  macro_assert(I01, __LINE__, I02)
+#else
+#define ASSERT(I01, I02)  MACRO_ASSERT_IGNORE
+#endif
 
 #endif
