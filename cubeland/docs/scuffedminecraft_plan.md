@@ -14,7 +14,7 @@ at the code it cites.
 | Item | Status | Notes |
 |---|---|---|
 | A1 Caves | done (differently) | random-walk "worm" tunnels (`world_carve_caves`) rather than a 3D noise lattice, which was too slow to generate in 12dPL |
-| A2 Plants (billboards) | done | tall grass, poppy, dandelion, dead bush as camera-facing sprites (`DIR_PLANT` faces) |
+| A2 Plants | done | tall grass, poppy, dandelion, dead bush (and torches): first camera-facing sprites, now two pictures crossed in an X fixed in the world, split into four half pictures so they paint in the right order (`render_add_plant`) |
 | A3 Block light and torches | done | flood-fill block light packed into `g_world` (`block + 64 * light`, option 2 of the plan), relit in a 31^3 box per change and after loading; torches (light 14); faces store sky and torch light separately |
 | A3 Flood-fill sky light | not done | sky light is still the cheaper depth-below-sky-top estimate; glass lets it through |
 | A3 Per-face AO | done | edges weigh 2, corners 1, out of 12 (`LIGHT_AO_STRENGTH`) |
@@ -32,11 +32,15 @@ at the code it cites.
 | B6 Vertical render range | done | sections more than 40 blocks above or below the eye are skipped |
 | Resource packs (not from SM) | done | `.zip` or folder in Settings; zip, deflate and PNG decoded in 12dPL (`resource_pack.4dm`) |
 | Beyond SM | done | zombies at night, glass, beds, chests, iron |
-| O1 Optimising | **started** | slot index for mobs, drops, furnaces done (-26% record reads overall, -46% at night); render measurements and the remaining candidates in section O |
+| O1 Optimising | done (first pass) | slot index for mobs, drops, furnaces; layer-sorted faces; hidden face removal (30-58% fewer polygons); table-driven section building (-79% calls to create a world); background section loading; see section O |
+| Chunk loading | done (as section loading) | the world stays one 128 x 128 x 96 grid generated at once (generation is cheap next to meshing); sections are built on demand and in the background, nearest first |
+| Lit furnace light | done | a burning furnace becomes a lit furnace block (light 13) |
+| More animals | done (pigs) | pigs with porkchops, built-in and pack skins |
+| Fonts (not from SM) | done | Windows font list, typed font name, or family name read from a .ttf/.otf/.ttc |
 | Desktop build (not from SM) | done | `tools/desktop`: the same macro as a Windows `.exe`, without 12d |
 
-Suggested next steps: **O1 optimising** (below) before adding much more, then flood-fill sky light (so caves under overhangs darken properly), B2 edge-strip
-AO, a lit furnace giving off light, doors, more animals.
+Suggested next steps: flood-fill sky light (so caves under overhangs darken properly), B2 edge-strip AO, doors, sheep and
+chickens, and the remaining O candidates (per-frame record reads, smaller light boxes, merging far faces).
 
 ## 0. Which ScuffedMinecraft?
 
@@ -450,21 +454,39 @@ What this says:
   same texture, direction and light could be merged into one polygon (greedy meshing).
 - Faces hidden underground (cave floors seen through the ground) are only 1-10% of polygons.
 - The painter's algorithm draws everything in view, back to front, even what nearer faces cover.
-  That is inherent; occlusion culling would cost more in 12dPL than it saves.
+  (Measured afterwards: 40-60% of the polygons in hills, houses and caves were completely covered.
+  Hidden face removal, below, now skips them.)
 
-**Candidates, roughly in order of payoff**
-1. Rendering, per-face rejects: test each direction group of a section against the view (or use
-   8-block sub-sections) before going through its faces; skip whole groups that are off screen.
-2. Rendering, polygons: raise the "major" detail distance a little or merge small patches of
-   leaves; at far range, merge neighbouring flat faces into strips.
+**Done since** (measured in the harness at render distance 50; game state and every test picture unchanged)
+- Faces are sorted by direction *and layer* (the cell's position across the section along the
+  face's axis), so only the layers facing the eye are walked; each face keeps its block, and the
+  per-face screen test is written out in the loop. 10-20% fewer faces looked at.
+- Hidden face removal: queued faces are checked nearest first against covered spans of vertical
+  screen lines every 4 pixels; a face inside covered spans on every line it touches is skipped.
+  Polygons: house 4,855 -> 2,563, meadow 3,748 -> 2,398, hill 2,636 -> 1,845, cave 761 -> 322,
+  looking down 1,169 -> 517. Total function calls stay within 1% (the check costs about what the
+  skipped drawing saved) while `Draw_polygon` calls drop 46%.
+- Section building reads `g_world` directly through lookup tables by cell value (kind, block,
+  light, solid) instead of chains of `block_*` calls, face light reads its neighbours the same way,
+  and column scans skip air: creating a world and drawing its first frame went from 21.0M to
+  4.4M function calls.
+- Background loading: a couple of out-of-view sections in range are built per frame, nearest first.
+- Only the buckets used are walked and emptied; stars are worked out once; the renderer no longer
+  looks furnaces up per face (lit furnaces are their own blocks).
+- Light changes rebuild every section within the light radius (before, light spreading into the
+  next section showed late).
+
+**Remaining candidates**
+1. Rendering, per-face rejects: most remaining rejects are faces off screen or out of range in
+   sections only partly in view; 8-block sub-sections would cut them.
+2. Rendering, polygons: at far range, merge neighbouring flat faces into strips.
 3. Per-frame values read from records more than once (`state`, `selected`, `dead`: thousands of reads):
    read once at the start of the frame into locals, pass them down.
 4. Light updates: `world_light_update` relights a 31^3 box per block change. Shrink the box to the
    torch radius actually affected, and skip it entirely when no light source is near.
 5. Mesh rebuilds: count section rebuilds (`builds` in the dump) when breaking one block; rebuild only
    the touched section and neighbours on its faces.
-6. Rendering, small things: only walk the depth buckets that were used (up to 4,096 are cleared
-   and walked every frame); cache sun/sky colours, which only change every few seconds of game time.
+6. Rendering, small things: cache sun/sky colours, which only change every few seconds of game time.
 7. Saving: write chunks of the world per line instead of per block if save time is noticeable.
 
 Each change should state the before/after number (frame ms in game, or record reads in the harness)
@@ -478,7 +500,7 @@ in its commit message.
 | Vulkan/OpenGL pipeline, Slang/GLSL shaders, framebuffer post-processing, depth-buffer fog, mipmaps, texture atlas (`block_map.psd/.ase`) | No GPU. The equivalent effects already exist (palette rect textures, LOD, distance fog, underwater fog) |
 | See-through leaves (LEAVES render type drawing faces behind) | Would multiply visible faces in forests (each leaf cube shows up to 6 faces plus everything behind). That breaks the 2,000-polygon budget. Keep leaves opaque. A "fancy leaves" toggle is not worth it |
 | Per-vertex smooth lighting gradients | Draw_Box fills flat colours. A3 per-face AO and B2 edge strips approximate it |
-| Crossed-quad billboards | Intersecting quads can't be painter-sorted. Use a camera-facing single quad (A2) |
+| Crossed-quad billboards | ~~Intersecting quads can't be painter-sorted~~: done after all, by splitting each picture at the crossing into two halves that only meet along the middle (A2) |
 | SM terrain height function itself | Cubeland's is already richer, and the user is reworking hills. The SM numbers (base 20 + 20·n(0.01) + 3·n(0.05)) can serve as a reference "smooth" profile: low-frequency amplitude about 7× the detail amplitude |
 | SM's 0.01-step raycast, free-fly-only physics | Cubeland's DDA and collision are better |
 | ImGui widgets (sliders, checkboxes, InputInt FPS cap), vsync, fullscreen | Not available in 12d. The user's button settings menu covers this. There is no frame cap: the macro runs as fast as it can |
