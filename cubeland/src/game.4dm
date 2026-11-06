@@ -117,9 +117,13 @@ Integer game_new_world(Text p_name, Integer p_seed, Attributes &p_game, Attribut
   player_reset    (p_player, l_spawn_x, l_spawn_y + COLLISION_EPSILON, l_spawn_z);
   player_set_look (p_player, HALF_PI * 3.0, -0.1);
 
-  // Cows come from the seed too, so a seed always starts the same
+  // Cows and pigs come from the seed too, so a seed always starts
+  // the same (pigs from a sequence of their own, so they don't move
+  // the cows of a seed)
   random_seed      (l_cow_random, p_seed);
   cows_spawn_random(p_cows, l_cow_random, COW_TARGET_COUNT, l_spawn_x, l_spawn_z, 10.0);
+  random_seed      (l_cow_random, p_seed + 7919);
+  mobs_spawn_random(p_cows, l_cow_random, MOB_PIG, PIG_TARGET_COUNT, l_spawn_x, l_spawn_z, 10.0);
 
   if (game_save_world(p_game, p_info, p_player, p_inventory, p_furnaces, p_cows, p_drops, p_events) != SUCCESS) return FAILURE;
   events_clear(p_events);

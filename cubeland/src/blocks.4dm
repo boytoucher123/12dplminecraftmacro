@@ -374,6 +374,8 @@ Text item_name(Integer p_item)
   if (p_item == ITEM_STICK          ) return "Stick";
   if (p_item == ITEM_RAW_BEEF       ) return "Raw Beef";
   if (p_item == ITEM_COOKED_BEEF    ) return "Cooked Beef";
+  if (p_item == ITEM_RAW_PORKCHOP   ) return "Raw Porkchop";
+  if (p_item == ITEM_COOKED_PORKCHOP) return "Cooked Porkchop";
   if (p_item == ITEM_COAL           ) return "Coal";
   if (p_item == ITEM_WOODEN_PICKAXE ) return "Wooden Pickaxe";
   if (p_item == ITEM_STONE_PICKAXE  ) return "Stone Pickaxe";
@@ -476,9 +478,11 @@ Integer item_food_value(Integer p_item)
 // Health restored by eating an item, 0 if it is not food
 // ----------------------------------------------------------------
 {
-  if (p_item == ITEM_RAW_BEEF   ) return 2;
-  if (p_item == ITEM_COOKED_BEEF) return 7;
-  if (p_item == ITEM_ROTTEN_FLESH) return 1;
+  if (p_item == ITEM_RAW_BEEF       ) return 2;
+  if (p_item == ITEM_COOKED_BEEF    ) return 7;
+  if (p_item == ITEM_RAW_PORKCHOP   ) return 2;
+  if (p_item == ITEM_COOKED_PORKCHOP) return 7;
+  if (p_item == ITEM_ROTTEN_FLESH   ) return 1;
   return 0;
 }
 
@@ -502,11 +506,12 @@ Integer item_smelt_result(Integer p_item)
 // What a furnace turns an item into, ITEM_NONE if it cannot
 // ----------------------------------------------------------------
 {
-  if (p_item == ITEM_RAW_BEEF   ) return ITEM_COOKED_BEEF;
-  if (p_item == ITEM_COBBLESTONE) return ITEM_STONE;
-  if (p_item == ITEM_SAND       ) return ITEM_GLASS;
-  if (p_item == ITEM_IRON_ORE   ) return ITEM_IRON_INGOT;
-  if (p_item == ITEM_OAK_LOG    ) return ITEM_COAL;
+  if (p_item == ITEM_RAW_BEEF    ) return ITEM_COOKED_BEEF;
+  if (p_item == ITEM_RAW_PORKCHOP) return ITEM_COOKED_PORKCHOP;
+  if (p_item == ITEM_COBBLESTONE ) return ITEM_STONE;
+  if (p_item == ITEM_SAND        ) return ITEM_GLASS;
+  if (p_item == ITEM_IRON_ORE    ) return ITEM_IRON_INGOT;
+  if (p_item == ITEM_OAK_LOG     ) return ITEM_COAL;
   return ITEM_NONE;
 }
 
@@ -534,24 +539,26 @@ Integer item_sprite_texture(Integer p_item)
 // sprite in slots, in the hand and when dropped), 0 for blocks
 // ----------------------------------------------------------------
 {
-  if (p_item == ITEM_STICK         ) return TEX_ITEM_STICK;
-  if (p_item == ITEM_RAW_BEEF      ) return TEX_ITEM_RAW_BEEF;
-  if (p_item == ITEM_COOKED_BEEF   ) return TEX_ITEM_COOKED_BEEF;
-  if (p_item == ITEM_COAL          ) return TEX_ITEM_COAL;
-  if (p_item == ITEM_IRON_INGOT    ) return TEX_ITEM_IRON_INGOT;
-  if (p_item == ITEM_IRON_PICKAXE  ) return TEX_ITEM_IRON_PICKAXE;
-  if (p_item == ITEM_IRON_AXE      ) return TEX_ITEM_IRON_AXE;
-  if (p_item == ITEM_IRON_SHOVEL   ) return TEX_ITEM_IRON_SHOVEL;
-  if (p_item == ITEM_IRON_SWORD    ) return TEX_ITEM_IRON_SWORD;
-  if (p_item == ITEM_WOODEN_PICKAXE) return TEX_ITEM_WOODEN_PICKAXE;
-  if (p_item == ITEM_STONE_PICKAXE ) return TEX_ITEM_STONE_PICKAXE;
-  if (p_item == ITEM_WOODEN_AXE    ) return TEX_ITEM_WOODEN_AXE;
-  if (p_item == ITEM_STONE_AXE     ) return TEX_ITEM_STONE_AXE;
-  if (p_item == ITEM_WOODEN_SHOVEL ) return TEX_ITEM_WOODEN_SHOVEL;
-  if (p_item == ITEM_STONE_SHOVEL  ) return TEX_ITEM_STONE_SHOVEL;
-  if (p_item == ITEM_WOODEN_SWORD  ) return TEX_ITEM_WOODEN_SWORD;
-  if (p_item == ITEM_STONE_SWORD   ) return TEX_ITEM_STONE_SWORD;
-  if (p_item == ITEM_ROTTEN_FLESH  ) return TEX_ITEM_ROTTEN_FLESH;
+  if (p_item == ITEM_STICK          ) return TEX_ITEM_STICK;
+  if (p_item == ITEM_RAW_BEEF       ) return TEX_ITEM_RAW_BEEF;
+  if (p_item == ITEM_COOKED_BEEF    ) return TEX_ITEM_COOKED_BEEF;
+  if (p_item == ITEM_RAW_PORKCHOP   ) return TEX_ITEM_RAW_PORKCHOP;
+  if (p_item == ITEM_COOKED_PORKCHOP) return TEX_ITEM_COOKED_PORKCHOP;
+  if (p_item == ITEM_COAL           ) return TEX_ITEM_COAL;
+  if (p_item == ITEM_IRON_INGOT     ) return TEX_ITEM_IRON_INGOT;
+  if (p_item == ITEM_IRON_PICKAXE   ) return TEX_ITEM_IRON_PICKAXE;
+  if (p_item == ITEM_IRON_AXE       ) return TEX_ITEM_IRON_AXE;
+  if (p_item == ITEM_IRON_SHOVEL    ) return TEX_ITEM_IRON_SHOVEL;
+  if (p_item == ITEM_IRON_SWORD     ) return TEX_ITEM_IRON_SWORD;
+  if (p_item == ITEM_WOODEN_PICKAXE ) return TEX_ITEM_WOODEN_PICKAXE;
+  if (p_item == ITEM_STONE_PICKAXE  ) return TEX_ITEM_STONE_PICKAXE;
+  if (p_item == ITEM_WOODEN_AXE     ) return TEX_ITEM_WOODEN_AXE;
+  if (p_item == ITEM_STONE_AXE      ) return TEX_ITEM_STONE_AXE;
+  if (p_item == ITEM_WOODEN_SHOVEL  ) return TEX_ITEM_WOODEN_SHOVEL;
+  if (p_item == ITEM_STONE_SHOVEL   ) return TEX_ITEM_STONE_SHOVEL;
+  if (p_item == ITEM_WOODEN_SWORD   ) return TEX_ITEM_WOODEN_SWORD;
+  if (p_item == ITEM_STONE_SWORD    ) return TEX_ITEM_STONE_SWORD;
+  if (p_item == ITEM_ROTTEN_FLESH   ) return TEX_ITEM_ROTTEN_FLESH;
   return block_plant_texture(p_item);
 }
 

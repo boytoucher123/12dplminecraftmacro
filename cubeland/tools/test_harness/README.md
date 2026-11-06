@@ -136,6 +136,7 @@ that were looked up most often (to find hot spots).
 | `18_plants`                   | grass, a poppy, a dandelion, a dead bush and a torch drawn as crossed pictures, from the front, an angle and above |
 | `19_fonts`                    | the font list, a typed font name, family names read from font files (Windows and Mac names, a collection, a file that isn't a font, a missing file), and the game drawing its text with the chosen font; run `make_test_fonts.py` first |
 | `20_lit_furnace`              | a furnace with fuel becomes a lit furnace block that gives off light, and goes dark again when it stops burning |
+| `21_pigs`                     | a new world has pigs; the pig model from the side and the front; a pig killed with a sword drops raw porkchops |
 
 ### Font files
 

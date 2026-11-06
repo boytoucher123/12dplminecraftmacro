@@ -39,7 +39,7 @@ for how to rebuild it after you change the macro.
 |---------------|--------------------------------------------------------------|
 | Click view    | start playing (the mouse then turns the camera)              |
 | Mouse         | look around                                                  |
-| Left click    | break blocks (harder blocks take more hits), hit cows        |
+| Left click    | break blocks (harder blocks take more hits), hit animals     |
 | Right click   | place blocks, eat food, open crafting tables, furnaces and chests, sleep in beds |
 | W A S D       | walk                                                         |
 | Space         | jump, swim up, fly up                                        |
@@ -76,8 +76,9 @@ library), so loading a pack takes a moment. It uses the images under
 Cubeland has, samples each to 16 x 16 and keeps 8 colours per texture.
 Grey images that the game colours by biome (grass, leaves, water) are
 tinted with the pack's `colormap/grass.png` and `foliage.png`. Anything the
-pack doesn't have keeps its built-in texture. Cows and zombies use the
-pack's mob skins (`entity/cow/cow.png`, `entity/zombie/zombie.png`): every
+pack doesn't have keeps its built-in texture. Cows, pigs and zombies use
+the pack's mob skins (`entity/cow/cow.png`, `entity/pig/pig.png`,
+`entity/zombie/zombie.png`): every
 face of the model is cut from its own rectangle of the skin. Packs made for
 16 x 16 work best: bigger images are sampled down, and only 8 colours of
 a detailed image survive. Interlaced PNGs aren't supported.
@@ -179,10 +180,14 @@ default font comes back the next time the game opens.
   ingots, and turns logs into coal.
   Coal, logs, planks, sticks, crafting tables and wooden tools burn. It keeps
   cooking while you are in a menu or paused.
-- **Cows:** they wander the grassland and avoid cliffs and water. They run
-  when hit and drop 1–3 raw beef. The model has the block game's
-  proportions (body, head with horns, four legs) and a texture per face. Raw beef heals 2, cooked beef heals 7
-  and rotten flesh 1.
+- **Cows and pigs:** they wander the grassland and avoid cliffs and
+  water. They run when hit; cows drop 1–3 raw beef and pigs 1–3 raw
+  porkchops, which cook in a furnace. The models have the block game's
+  proportions (cow: body, head with horns, four legs; pig: body, head
+  with a snout, four short legs) and a texture per face. A new world
+  starts with 10 cows and 6 pigs, and more turn up now and then away
+  from you. Raw beef and porkchops heal 2, cooked ones 7 and rotten
+  flesh 1.
 
 ## Code layout
 

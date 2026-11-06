@@ -110,7 +110,7 @@ Integer cows_alive_count(Attributes &p_cows)
 
 Integer mob_kind(Attributes &p_cows, Integer p_cow)
 // ----------------------------------------------------------------
-// MOB_COW or MOB_ZOMBIE
+// MOB_COW, MOB_PIG or MOB_ZOMBIE
 // ----------------------------------------------------------------
 {
   return record_integer_at(p_cows, ATTR_MOB_KIND, p_cow);
@@ -122,6 +122,7 @@ Real mob_half_width(Integer p_kind)
 // ----------------------------------------------------------------
 {
   if (p_kind == MOB_ZOMBIE) return ZOMBIE_HALF_WIDTH;
+  if (p_kind == MOB_PIG   ) return PIG_HALF_WIDTH;
   return COW_HALF_WIDTH;
 }
 
@@ -131,6 +132,7 @@ Real mob_height(Integer p_kind)
 // ----------------------------------------------------------------
 {
   if (p_kind == MOB_ZOMBIE) return ZOMBIE_HEIGHT;
+  if (p_kind == MOB_PIG   ) return PIG_HEIGHT;
   return COW_HEIGHT;
 }
 
@@ -181,6 +183,7 @@ Integer mobs_spawn(Attributes &p_cows, Attributes &p_random, Integer p_kind, Rea
     record_set_real_at   (p_cows, ATTR_COW_GOAL_YAW, l_cow, p_yaw);
     record_set_integer_at(p_cows, ATTR_HEALTH,       l_cow, COW_HEALTH);
     if (p_kind == MOB_ZOMBIE) record_set_integer_at(p_cows, ATTR_HEALTH, l_cow, ZOMBIE_HEALTH);
+    if (p_kind == MOB_PIG   ) record_set_integer_at(p_cows, ATTR_HEALTH, l_cow, PIG_HEALTH);
     record_set_integer_at(p_cows, ATTR_COW_WALKING,  l_cow, FALSE);
     record_set_real_at   (p_cows, ATTR_TIMER,        l_cow, random_between(p_random, 1.0, 4.0));
     record_set_real_at   (p_cows, ATTR_COW_PANIC,    l_cow, 0.0);
@@ -194,8 +197,16 @@ Integer mobs_spawn(Attributes &p_cows, Attributes &p_random, Integer p_kind, Rea
 
 Integer cows_spawn_random(Attributes &p_cows, Attributes &p_random, Integer p_count, Real p_away_x, Real p_away_z, Real p_keep_away)
 // ----------------------------------------------------------------
-// Put up to count cows on random grass blocks at least keep_away
-// blocks from (away_x, away_z). Returns how many spawned.
+// Put up to count cows on random grass blocks (see mobs_spawn_random)
+// ----------------------------------------------------------------
+{
+  return mobs_spawn_random(p_cows, p_random, MOB_COW, p_count, p_away_x, p_away_z, p_keep_away);
+}
+
+Integer mobs_spawn_random(Attributes &p_cows, Attributes &p_random, Integer p_kind, Integer p_count, Real p_away_x, Real p_away_z, Real p_keep_away)
+// ----------------------------------------------------------------
+// Put up to count animals of a kind on random grass blocks at least
+// keep_away blocks from (away_x, away_z). Returns how many spawned.
 // ----------------------------------------------------------------
 {
   Integer l_spawned = 0;
@@ -216,7 +227,7 @@ Integer cows_spawn_random(Attributes &p_cows, Attributes &p_random, Integer p_co
     l_dx = l_x + 0.5 - p_away_x;
     l_dz = l_z + 0.5 - p_away_z;
     if (l_dx * l_dx + l_dz * l_dz < p_keep_away * p_keep_away) continue;
-    if (cows_spawn(p_cows, p_random, l_x + 0.5, l_top + 1.0 + COLLISION_EPSILON, l_z + 0.5, random_between(p_random, 0.0, TWO_PI)) == 0) break;
+    if (mobs_spawn(p_cows, p_random, p_kind, l_x + 0.5, l_top + 1.0 + COLLISION_EPSILON, l_z + 0.5, random_between(p_random, 0.0, TWO_PI)) == 0) break;
     ++l_spawned;
   }
   return l_spawned;
@@ -385,7 +396,7 @@ void cow_update(Attributes &p_cows, Attributes &p_random, Attributes &p_events, 
     l_ahead_x = Floor(l_x + l_dir_x * 0.9);
     l_ahead_z = Floor(l_z + l_dir_z * 0.9);
     l_foot_y  = Floor(l_y + 0.1);
-    if (!l_in_water && l_on_ground && l_kind == MOB_COW) {
+    if (!l_in_water && l_on_ground && l_kind != MOB_ZOMBIE) {
       if (!world_is_solid(l_ahead_x, l_foot_y - 1, l_ahead_z) && !world_is_solid(l_ahead_x, l_foot_y - 2, l_ahead_z)) {
         l_speed    = 0.0;
         l_goal_yaw = l_yaw + PI;
@@ -496,7 +507,11 @@ void cows_update(Attributes &p_cows, Attributes &p_random, Attributes &p_events,
 
   if (l_respawn > COW_RESPAWN_SECONDS) {
     l_respawn = 0.0;
-    if (cows_alive_count(p_cows) < COW_TARGET_COUNT) cows_spawn_random(p_cows, p_random, 1, p_player_x, p_player_z, 24.0);
+    if (cows_alive_count(p_cows) < COW_TARGET_COUNT) {
+      cows_spawn_random(p_cows, p_random, 1, p_player_x, p_player_z, 24.0);
+    } else if (mobs_count_kind(p_cows, MOB_PIG) < PIG_TARGET_COUNT) {
+      mobs_spawn_random(p_cows, p_random, MOB_PIG, 1, p_player_x, p_player_z, 24.0);
+    }
   }
   record_set_real(p_cows, ATTR_COW_RESPAWN, l_respawn);
 }

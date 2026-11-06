@@ -255,6 +255,7 @@ void    render_mob_part        (Real p_mob_x, Real p_mob_y, Real p_mob_z, Real p
                                 Integer p_tex_back, Real p_tint);
 void    render_zombie          (Real p_x, Real p_y, Real p_z, Real p_yaw, Real p_swing, Real p_tint);
 void    render_cow             (Real p_x, Real p_y, Real p_z, Real p_yaw, Real p_swing, Real p_tint);
+void    render_pig             (Real p_x, Real p_y, Real p_z, Real p_yaw, Real p_swing, Real p_tint);
 void    render_sky_colours     (Real p_time_of_day);
 void    render_sky_disc        (Draw_Box p_box, Real p_dir_x, Real p_dir_y, Real p_dir_z, Real p_size, Integer p_moon);
 void    render_stars           (Draw_Box p_box, Real p_brightness);

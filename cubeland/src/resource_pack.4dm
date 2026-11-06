@@ -188,6 +188,13 @@ Integer pack_map_part(Integer p_entry, Integer &p_tex, Text &p_name, Integer &p_
   if (p_entry == 14) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_ZOMBIE_PANTS     , "zombie/zombie", 4 , 20, 4 , 12, PACK_TURN_NONE );
   if (p_entry == 15) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_ZOMBIE_ARM       , "zombie/zombie", 40, 20, 4 , 12, PACK_TURN_LEFT );
   if (p_entry == 16) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_ZOMBIE_SKIN      , "zombie/zombie", 48, 16, 4 , 4 , PACK_TURN_NONE );
+  if (p_entry == 17) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_PIG_FACE         , "pig/pig"      , 8 , 8 , 8 , 8 , PACK_TURN_NONE );
+  if (p_entry == 18) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_PIG_HEAD_SIDE    , "pig/pig"      , 0 , 8 , 8 , 8 , PACK_TURN_NONE );
+  if (p_entry == 19) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_PIG_BODY_SIDE    , "pig/pig"      , 28, 16, 8 , 16, PACK_TURN_RIGHT);
+  if (p_entry == 20) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_PIG_BODY_TOP     , "pig/pig"      , 54, 16, 10, 16, PACK_TURN_RIGHT);
+  if (p_entry == 21) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_PIG_BODY_END     , "pig/pig"      , 46, 8 , 10, 8 , PACK_TURN_NONE );
+  if (p_entry == 22) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_PIG_LEG          , "pig/pig"      , 4 , 20, 4 , 6 , PACK_TURN_NONE );
+  if (p_entry == 23) return pack_part(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, TEX_PIG_SNOUT        , "pig/pig"      , 17, 17, 4 , 3 , PACK_TURN_NONE );
   return FALSE;
 }
 
@@ -263,6 +270,8 @@ Integer pack_map_entry(Integer p_entry, Integer &p_tex, Text &p_kind, Text &p_na
   if (p_entry == 47) return pack_entry(p_tex, p_kind, p_name, p_tint, p_overlay, TEX_TORCH              , "block", "torch"              , PACK_TINT_NONE   , "");
   if (p_entry == 48) return pack_entry(p_tex, p_kind, p_name, p_tint, p_overlay, TEX_GLASS              , "block", "glass"              , PACK_TINT_NONE   , "");
   if (p_entry == 49) return pack_entry(p_tex, p_kind, p_name, p_tint, p_overlay, TEX_ITEM_ROTTEN_FLESH  , "item", "rotten_flesh"       , PACK_TINT_NONE   , "");
+  if (p_entry == 50) return pack_entry(p_tex, p_kind, p_name, p_tint, p_overlay, TEX_ITEM_RAW_PORKCHOP  , "item", "porkchop"           , PACK_TINT_NONE   , "");
+  if (p_entry == 51) return pack_entry(p_tex, p_kind, p_name, p_tint, p_overlay, TEX_ITEM_COOKED_PORKCHOP, "item", "cooked_porkchop"   , PACK_TINT_NONE   , "");
   return FALSE;
 }
 

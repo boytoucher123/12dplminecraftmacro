@@ -5,11 +5,12 @@
 #include "records.h"
 
 // ----------------------------------------------------------------
-// Cows: wander about on land, run off when hit and drop raw beef
+// Cows and pigs: wander about on land, run off when hit and drop raw
+// beef or porkchops
 // Zombies: come out at night, walk at the player and hit them, burn
-// in daylight and drop rotten flesh. They share the cows' record and
-// code (field "kind_c" says which), so hitting, collisions, drawing
-// order and saving work the same for both.
+// in daylight and drop rotten flesh. They all share the cows' record
+// and code (field "kind_c" says which), so hitting, collisions,
+// drawing order and saving work the same for every kind.
 //
 // All cows live in one record. Cow c has the fields "used_c" (alive),
 // "x_c", "y_c", "z_c", "vy_c", "push_x_c", "push_z_c", "yaw_c",
@@ -28,6 +29,11 @@
 
 #define MOB_COW              0
 #define MOB_ZOMBIE           1
+#define MOB_PIG              2
+#define PIG_TARGET_COUNT     6
+#define PIG_HEALTH           5
+#define PIG_HALF_WIDTH       0.45
+#define PIG_HEIGHT           0.9
 #define MAX_ZOMBIES          6
 #define ZOMBIE_HEALTH        10
 #define ZOMBIE_HALF_WIDTH    0.3
@@ -74,6 +80,7 @@ Integer zombies_spawn_near (Attributes &p_cows, Attributes &p_random, Real p_pla
 void    zombie_sunlight    (Attributes &p_cows, Attributes &p_events, Integer p_cow, Real p_dt);
 Integer cows_spawn         (Attributes &p_cows, Attributes &p_random, Real p_x, Real p_y, Real p_z, Real p_yaw);
 Integer cows_spawn_random  (Attributes &p_cows, Attributes &p_random, Integer p_count, Real p_away_x, Real p_away_z, Real p_keep_away);
+Integer mobs_spawn_random  (Attributes &p_cows, Attributes &p_random, Integer p_kind, Integer p_count, Real p_away_x, Real p_away_z, Real p_keep_away);
 void    cow_update         (Attributes &p_cows, Attributes &p_random, Attributes &p_events, Integer p_cow,
                             Real p_player_x, Real p_player_y, Real p_player_z, Real p_dt);
 void    cows_update        (Attributes &p_cows, Attributes &p_random, Attributes &p_events,

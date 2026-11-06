@@ -102,7 +102,10 @@ static void register_hooks(){
   g_calls["torch_ahead"]=[]{ int x=(int)px()+2,y=(int)py(),z=(int)pz(); if(world_get_block(x,y,z)!=0||!world_is_solid(x,y-1,z)){ y=world_top_solid_y(x,z)+1; } world_place_block(g_events,x,y,z,BLOCK_TORCH); printf("[hook] torch at %d %d %d: light here %d, 1 away %d, 5 away %d, 14 away %d, light steps %d\n",x,y,z,world_get_light(x,y,z),world_get_light(x,y+1,z),world_get_light(x,y+5,z),world_get_light(x,y+14,z),g_light_steps); };
   g_calls["torch_light_check"]=[]{ int x=(int)px()+2,y=(int)py(),z=(int)pz(); int lit=0; for(int dx=-15;dx<=15;dx++) for(int dy=-15;dy<=15;dy++) for(int dz=-15;dz<=15;dz++) if(world_get_light(x+dx,y+dy,z+dz)>0) lit++; printf("[hook] lit cells near the torch: %d\n",lit); };
   g_calls["zombie_front"]=[]{ int c=mobs_spawn(g_cows,g_random,MOB_ZOMBIE,px()+4.5,py()+0.01,pz(),PI); set_look(0,-0.1); printf("[hook] zombie %d\n",c); };
-  g_calls["mobs"]=[]{ printf("[hook] cows %d zombies %d\n",mobs_count_kind(g_cows,MOB_COW),mobs_count_kind(g_cows,MOB_ZOMBIE)); };
+  g_calls["mobs"]=[]{ printf("[hook] cows %d pigs %d zombies %d\n",mobs_count_kind(g_cows,MOB_COW),mobs_count_kind(g_cows,MOB_PIG),mobs_count_kind(g_cows,MOB_ZOMBIE)); };
+  g_calls["pig_near"]=[]{ int c=mobs_spawn(g_cows,g_random,MOB_PIG,px()+2.5,py()+0.2,pz()+0.8,2.3); record_set_real_at(g_cows,ATTR_TIMER,c,100.0); record_set_integer_at(g_cows,ATTR_COW_WALKING,c,0); printf("[hook] pig %d\n",c); };
+  // Items on the ground, by item
+  g_calls["drop_items"]=[]{ printf("[hook] drops:"); for(int d=1;d<=MAX_DROPS;d++) if(drop_used(g_drops,d)) printf(" %s x%d",item_name(drop_item(g_drops,d)).c_str(),drop_count(g_drops,d)); printf("\n"); };
   g_calls["glass_wall"]=[]{ int x=(int)px()+3,y=(int)py(),z=(int)pz(); for(int dz=-1;dz<=1;dz++) for(int dy=0;dy<=2;dy++) world_place_block(g_events,x,y+dy,z+dz,BLOCK_GLASS); set_look(0,0.1); };
   g_calls["bed_front"]=[]{ int x=(int)px()+2,y=(int)py(),z=(int)pz(); world_place_block(g_events,x,y,z,BLOCK_BED); set_look(0,-0.5); printf("[hook] bed at %d %d %d\n",x,y,z); };
   g_calls["spawn_point"]=[]{ printf("[hook] spawn %.1f %.1f %.1f\n",record_real(g_info,ATTR_SPAWN_X),record_real(g_info,ATTR_SPAWN_Y),record_real(g_info,ATTR_SPAWN_Z)); };

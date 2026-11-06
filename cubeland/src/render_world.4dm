@@ -866,9 +866,27 @@ void render_cow(Real p_x, Real p_y, Real p_z, Real p_yaw, Real p_swing, Real p_t
   render_mob_part(p_x, p_y, p_z, p_yaw, -0.5875 + p_swing, 0.375 , -0.25 , 0.125 , 0.375 , 0.125 , TEX_COW_LEG      , TEX_COW_LEG      , TEX_COW_LEG      , TEX_COW_LEG      , p_tint);
 }
 
+void render_pig(Real p_x, Real p_y, Real p_z, Real p_yaw, Real p_swing, Real p_tint)
+// ----------------------------------------------------------------
+// A pig, sized like the block game's model: a 10 x 8 x 16 body on
+// four 4 x 6 legs, an 8 x 8 x 8 head with a 4 x 3 snout. Moved back
+// 0.19 so it sits over the pig's collision box.
+// ----------------------------------------------------------------
+{
+  //              position                  along             up      across  half f  half y  half s  side               top                front             back
+  render_mob_part(p_x, p_y, p_z, p_yaw, -0.19           , 0.625 ,  0.0   , 0.5   , 0.25  , 0.3125, TEX_PIG_BODY_SIDE , TEX_PIG_BODY_TOP , TEX_PIG_BODY_END , TEX_PIG_BODY_END , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.435          , 0.75  ,  0.0   , 0.25  , 0.25  , 0.25  , TEX_PIG_HEAD_SIDE , TEX_PIG_HEAD_SIDE, TEX_PIG_FACE     , TEX_PIG_HEAD_SIDE, p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.716          , 0.66  ,  0.0   , 0.031 , 0.094 , 0.125 , TEX_PIG_SNOUT     , TEX_PIG_SNOUT    , TEX_PIG_SNOUT    , TEX_PIG_SNOUT    , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.12 + p_swing , 0.1875,  0.1875, 0.125 , 0.1875, 0.125 , TEX_PIG_LEG       , TEX_PIG_LEG      , TEX_PIG_LEG      , TEX_PIG_LEG      , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw,  0.12 - p_swing , 0.1875, -0.1875, 0.125 , 0.1875, 0.125 , TEX_PIG_LEG       , TEX_PIG_LEG      , TEX_PIG_LEG      , TEX_PIG_LEG      , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw, -0.50 - p_swing , 0.1875,  0.1875, 0.125 , 0.1875, 0.125 , TEX_PIG_LEG       , TEX_PIG_LEG      , TEX_PIG_LEG      , TEX_PIG_LEG      , p_tint);
+  render_mob_part(p_x, p_y, p_z, p_yaw, -0.50 + p_swing , 0.1875, -0.1875, 0.125 , 0.1875, 0.125 , TEX_PIG_LEG       , TEX_PIG_LEG      , TEX_PIG_LEG      , TEX_PIG_LEG      , p_tint);
+}
+
 void render_collect_cows(Attributes &p_cows)
 // ----------------------------------------------------------------
-// Queue every cow in view: body, head and four swinging legs
+// Queue every animal in view: cows, pigs and zombies, each made of
+// boxes with swinging legs
 // ----------------------------------------------------------------
 {
   Integer l_cow   = 0;
@@ -892,6 +910,10 @@ void render_collect_cows(Attributes &p_cows)
     l_swing = Sin(cow_step(p_cows, l_cow)) * 0.09;
     if (mob_kind(p_cows, l_cow) == MOB_ZOMBIE) {
       render_zombie(l_x, l_y, l_z, l_yaw, l_swing * 1.6, l_tint);
+      continue;
+    }
+    if (mob_kind(p_cows, l_cow) == MOB_PIG) {
+      render_pig(l_x, l_y, l_z, l_yaw, l_swing * 0.8, l_tint);
       continue;
     }
 

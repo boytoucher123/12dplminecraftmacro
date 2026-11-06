@@ -23,12 +23,13 @@
 //
 // Images are looked up under assets/minecraft/textures/ (block/...,
 // item/..., entity/...). Mob skins (entity/cow/cow.png,
-// entity/zombie/zombie.png) hold every face of the model in one
-// image: each of our mob part textures is sampled from its own
-// rectangle of the skin (pack_map_part), given in pixels of a
-// 64 pixel wide skin so larger skins work too. Grey images that the game colours by biome (grass,
-// leaves, water) are tinted with the pack's colormap/grass.png and
-// colormap/foliage.png, or fixed colours if those are missing.
+// entity/pig/pig.png, entity/zombie/zombie.png) hold every face of
+// the model in one image: each of our mob part textures is sampled
+// from its own rectangle of the skin (pack_map_part), given in
+// pixels of a 64 pixel wide skin so larger skins work too. Grey
+// images that the game colours by biome (grass, leaves, water) are
+// tinted with the pack's colormap/grass.png and colormap/foliage.png,
+// or fixed colours if those are missing.
 //
 // Table functions: everything here reads or writes the g_pack_* and
 // g_inflate_* byte buffers, which belong to this module, and writes

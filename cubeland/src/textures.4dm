@@ -976,6 +976,88 @@ void make_texture_item_stick(Integer p_tex)
   texture_row(p_tex, 16, "................");
 }
 
+void make_texture_pig(Integer p_tex, Integer p_part)
+// ----------------------------------------------------------------
+// The faces of a pig: face with eyes (p_part 1), head side (2),
+// body side (3), back and belly (4), ends of the body (5), leg with
+// a dark trotter (6) and the snout (7)
+// ----------------------------------------------------------------
+{
+  texture_set_palette(p_tex, 1, 238, 156, 156);   // pink skin
+  texture_set_palette(p_tex, 2, 220, 132, 136);   // darker pink
+  texture_set_palette(p_tex, 3, 248, 186, 184);   // light pink
+  texture_set_palette(p_tex, 4, 24 , 20 , 22 );   // eyes, nostrils
+  texture_set_palette(p_tex, 5, 250, 250, 250);   // whites of the eyes
+  texture_set_palette(p_tex, 6, 236, 140, 150);   // snout
+  texture_set_palette(p_tex, 7, 160, 96 , 96 );   // trotters
+  texture_set_palette(p_tex, 8, 200, 116, 120);   // shadow
+  texture_fill(p_tex, 1);
+  if (p_part == 1) {
+    texture_blotch   (p_tex, 2, 4, 0.0, 0.16, 51);
+    texture_fill_rect(p_tex, 3 , 7, 5 , 8, 5);       // eyes: white, then the pupil inside
+    texture_fill_rect(p_tex, 12, 7, 14, 8, 5);
+    texture_fill_rect(p_tex, 4 , 7, 5 , 8, 4);
+    texture_fill_rect(p_tex, 12, 7, 13, 8, 4);
+    texture_fill_rect(p_tex, 5 , 12, 12, 15, 8);     // shadow under the snout
+  } else if (p_part == 2) {
+    texture_blotch   (p_tex, 2, 4, 0.0, 0.18, 53);
+    texture_fill_rect(p_tex, 1, 1, 3, 4, 2);         // the ear
+  } else if (p_part == 3) {
+    texture_blotch   (p_tex, 2, 4, 0.0, 0.18, 55);
+    texture_blotch   (p_tex, 3, 6, 0.0, 0.14, 57);
+    texture_fill_rect(p_tex, 1, 14, 16, 16, 8);      // belly shadow
+  } else if (p_part == 4) {
+    texture_blotch   (p_tex, 2, 4, 0.0, 0.18, 59);
+    texture_blotch   (p_tex, 3, 6, 0.0, 0.16, 61);
+  } else if (p_part == 5) {
+    texture_blotch   (p_tex, 2, 4, 0.0, 0.18, 63);
+    texture_fill_rect(p_tex, 8, 5, 9, 6, 6);         // a curly tail at the back end
+    texture_fill_rect(p_tex, 9, 4, 10, 5, 6);
+  } else if (p_part == 6) {
+    texture_blotch   (p_tex, 2, 4, 0.0, 0.18, 65);
+    texture_fill_rect(p_tex, 1, 13, 16, 16, 7);      // trotters
+  } else {
+    texture_fill     (p_tex, 6);
+    texture_fill_rect(p_tex, 1, 1, 16, 2, 2);        // rim
+    texture_fill_rect(p_tex, 3, 6, 6, 11, 4);        // nostrils
+    texture_fill_rect(p_tex, 11, 6, 14, 11, 4);
+  }
+}
+
+void make_texture_item_porkchop(Integer p_tex, Integer p_cooked)
+// ----------------------------------------------------------------
+// Item picture: a chop with a rim of fat, pink when raw and brown
+// when cooked
+// ----------------------------------------------------------------
+{
+  texture_set_palette(p_tex, 1, 84 , 34 , 34 );
+  texture_set_palette(p_tex, 2, 232, 128, 132);
+  texture_set_palette(p_tex, 3, 250, 226, 214);
+  texture_set_palette(p_tex, 4, 200, 92 , 100);
+  if (p_cooked) {
+    texture_set_palette(p_tex, 1, 54 , 30 , 16 );
+    texture_set_palette(p_tex, 2, 160, 98 , 54 );
+    texture_set_palette(p_tex, 3, 226, 196, 140);
+    texture_set_palette(p_tex, 4, 118, 68 , 36 );
+  }
+  texture_row(p_tex,  1, "................");
+  texture_row(p_tex,  2, "................");
+  texture_row(p_tex,  3, ".........111....");
+  texture_row(p_tex,  4, ".......1133311..");
+  texture_row(p_tex,  5, ".....113222231..");
+  texture_row(p_tex,  6, "....13222442231.");
+  texture_row(p_tex,  7, "...132224422231.");
+  texture_row(p_tex,  8, "..1322222222231.");
+  texture_row(p_tex,  9, "..1322244222231.");
+  texture_row(p_tex, 10, ".13222244222331.");
+  texture_row(p_tex, 11, ".1322222222331..");
+  texture_row(p_tex, 12, ".132222233311...");
+  texture_row(p_tex, 13, "..13333311......");
+  texture_row(p_tex, 14, "...11111........");
+  texture_row(p_tex, 15, "................");
+  texture_row(p_tex, 16, "................");
+}
+
 void make_texture_item_beef(Integer p_tex, Integer p_cooked)
 // ----------------------------------------------------------------
 // Item picture: a steak, red when raw and brown when cooked
@@ -1502,11 +1584,20 @@ void textures_generate()
   make_texture_cow           (TEX_COW_BODY_END, 4);
   make_texture_cow           (TEX_COW_LEG, 5);
   make_texture_cow           (TEX_COW_HORN, 6);
+  make_texture_pig           (TEX_PIG_FACE, 1);
+  make_texture_pig           (TEX_PIG_HEAD_SIDE, 2);
+  make_texture_pig           (TEX_PIG_BODY_SIDE, 3);
+  make_texture_pig           (TEX_PIG_BODY_TOP, 4);
+  make_texture_pig           (TEX_PIG_BODY_END, 5);
+  make_texture_pig           (TEX_PIG_LEG, 6);
+  make_texture_pig           (TEX_PIG_SNOUT, 7);
   make_texture_torch         (TEX_TORCH);
   make_texture_chest         (TEX_CHEST_TOP, FALSE);
   make_texture_chest         (TEX_CHEST_SIDE, TRUE);
   make_texture_glass         (TEX_GLASS);
   make_texture_item_rotten_flesh(TEX_ITEM_ROTTEN_FLESH);
+  make_texture_item_porkchop (TEX_ITEM_RAW_PORKCHOP, FALSE);
+  make_texture_item_porkchop (TEX_ITEM_COOKED_PORKCHOP, TRUE);
 }
 
 #endif

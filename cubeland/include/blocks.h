@@ -88,7 +88,9 @@
 #define ITEM_IRON_SHOVEL      79
 #define ITEM_IRON_SWORD       80
 #define ITEM_ROTTEN_FLESH     81
-#define MAX_ITEM_ID           81
+#define ITEM_RAW_PORKCHOP     82
+#define ITEM_COOKED_PORKCHOP  83
+#define MAX_ITEM_ID           83
 
 // Tool kinds and tiers
 #define TOOL_NONE             0
