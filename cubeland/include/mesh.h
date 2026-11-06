@@ -33,6 +33,16 @@
 #define LIGHT_DEPTH_STEP   6      // light lost per block below the sky top
 #define LIGHT_AO_STRENGTH  35     // percent lost when fully enclosed
 #define FACE_TORCH_SCALE   1000   // g_face_light = sky + FACE_TORCH_SCALE * torch light
+#define BACKGROUND_BUILDS  2      // sections out of view built ahead of time per frame
+
+// What a g_world cell value (block + LIGHT_SHIFT * light) is to the
+// mesh builder, looked up in g_cell_kind instead of asking blocks.4dm
+#define CELL_VALUES        1024   // every possible cell value (LIGHT_SHIFT * (LIGHT_MAX_LEVEL + 1))
+#define CELL_AIR           0
+#define CELL_HIDES         1      // hides its neighbours' faces (solid, not see-through)
+#define CELL_SEE_THROUGH   2      // glass
+#define CELL_WATER         3
+#define CELL_PLANT         4
 
 /*Global variables*/ {
   Integer g_section_state[NUM_SECTIONS];
@@ -68,10 +78,20 @@
 
   Integer g_mesh_overflow = 0;
   Integer g_mesh_builds   = 0;
+
+  // Lookup tables by cell value + 1 (filled once by mesh_reset)
+  Integer g_cell_kind [CELL_VALUES];   // CELL_*
+  Integer g_cell_block[CELL_VALUES];   // the block
+  Integer g_cell_light[CELL_VALUES];   // the torch light 0..LIGHT_MAX_LEVEL
+  Integer g_cell_solid[CELL_VALUES];   // TRUE if it counts as solid for corner shading
+  Integer g_cell_tables_ready = 0;
 }
 
 Integer mesh_section_index (Integer p_sx, Integer p_sy, Integer p_sz);
 void    mesh_reset         ();
+void    mesh_fill_cell_tables();
+Integer mesh_add_face      (Integer p_entry, Integer p_x, Integer p_y, Integer p_z, Integer p_direction, Integer p_flag, Integer p_block);
+void    mesh_build_nearby  (Real p_eye_x, Real p_eye_y, Real p_eye_z, Integer p_range, Integer p_budget);
 Integer mesh_section_buried(Integer p_sx, Integer p_sy, Integer p_sz);
 void    mesh_build_section (Integer p_sx, Integer p_sy, Integer p_sz);
 void    mesh_group_faces   (Integer p_section, Integer p_x0, Integer p_y0, Integer p_z0);

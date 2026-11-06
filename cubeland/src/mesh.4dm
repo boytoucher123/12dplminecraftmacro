@@ -25,12 +25,43 @@ void mesh_reset()
 {
   Integer l_section = 0;
 
+  if (!g_cell_tables_ready) mesh_fill_cell_tables();
   for (l_section = 1; l_section <= NUM_SECTIONS; ++l_section) {
     g_section_state[l_section] = SECTION_UNBUILT;
     g_section_count[l_section] = 0;
   }
   g_mesh_overflow = 0;
   g_mesh_builds   = 0;
+}
+
+void mesh_fill_cell_tables()
+// ----------------------------------------------------------------
+// Work out, for every possible g_world cell value, its block, torch
+// light, kind (CELL_*) and solidity, so the mesh builder can read
+// them straight from a table
+// ----------------------------------------------------------------
+{
+  Integer l_value = 0;
+  Integer l_block = 0;
+
+  for (l_value = 0; l_value < CELL_VALUES; ++l_value) {
+    l_block = world_cell_block(l_value);
+    g_cell_block[l_value + 1] = l_block;
+    g_cell_light[l_value + 1] = world_cell_light(l_value);
+    g_cell_solid[l_value + 1] = block_is_solid(l_block);
+    if (l_block == BLOCK_AIR) {
+      g_cell_kind[l_value + 1] = CELL_AIR;
+    } else if (l_block == BLOCK_WATER) {
+      g_cell_kind[l_value + 1] = CELL_WATER;
+    } else if (block_is_plant(l_block)) {
+      g_cell_kind[l_value + 1] = CELL_PLANT;
+    } else if (block_is_see_through(l_block)) {
+      g_cell_kind[l_value + 1] = CELL_SEE_THROUGH;
+    } else {
+      g_cell_kind[l_value + 1] = CELL_HIDES;
+    }
+  }
+  g_cell_tables_ready = TRUE;
 }
 
 Integer mesh_section_buried(Integer p_sx, Integer p_sy, Integer p_sz)
@@ -58,14 +89,35 @@ Integer mesh_section_buried(Integer p_sx, Integer p_sy, Integer p_sz)
   return TRUE;
 }
 
+Integer mesh_add_face(Integer p_entry, Integer p_x, Integer p_y, Integer p_z, Integer p_direction, Integer p_flag, Integer p_block)
+// ----------------------------------------------------------------
+// Write face entry p_entry of the pool (direction 0 for a plant's
+// one entry) and return p_entry
+// ----------------------------------------------------------------
+{
+  Integer l_direction = p_direction;
+
+  if (l_direction == 0) l_direction = DIR_PLANT;
+  g_face_x    [p_entry] = p_x;
+  g_face_y    [p_entry] = p_y;
+  g_face_z    [p_entry] = p_z;
+  g_face_dir  [p_entry] = l_direction + p_flag;
+  g_face_light[p_entry] = mesh_face_light(p_x, p_y, p_z, p_direction);
+  g_face_block[p_entry] = p_block;
+  return p_entry;
+}
+
 void mesh_build_section(Integer p_sx, Integer p_sy, Integer p_sz)
 // ----------------------------------------------------------------
 // Rebuild the face list of one section
 // A solid block shows a face wherever its neighbour doesn't hide it
 // (air or a plant); faces against water are kept too but flagged
 // wet (only drawn when the camera is under water). Water only
-// shows faces against air. Plants are one DIR_PLANT entry.
+// shows faces against air. Glass hides nothing but shows no face
+// against glass. Plants are one DIR_PLANT entry.
 // Outside the world counts as solid so the world edge isn't drawn.
+// Cells are read straight from g_world and looked up in the
+// g_cell_* tables: this runs for every cell of the section.
 // ----------------------------------------------------------------
 {
   Integer l_section   = mesh_section_index(p_sx, p_sy, p_sz);
@@ -79,10 +131,12 @@ void mesh_build_section(Integer p_sx, Integer p_sy, Integer p_sz)
   Integer l_z         = 0;
   Integer l_column    = 0;
   Integer l_cell      = 0;
+  Integer l_value     = 0;
+  Integer l_kind      = 0;
   Integer l_block     = 0;
   Integer l_direction = 0;
-  Integer l_neighbour = 0;
-  Integer l_is_water  = 0;
+  Integer l_other     = 0;
+  Integer l_other_kind = 0;
   Integer l_flag      = 0;
 
   ++g_mesh_builds;
@@ -101,48 +155,46 @@ void mesh_build_section(Integer p_sx, Integer p_sy, Integer p_sz)
       l_column = world_index(l_x, 0, l_z);
       for (l_y = l_y0; l_y < l_y0 + SECTION_SIZE; ++l_y) {
         l_cell  = l_column + l_y;
-        l_block = world_cell_block(g_world[l_cell]);
-        if (l_block == BLOCK_AIR) continue;
+        l_value = g_world[l_cell];
+        l_kind  = g_cell_kind[l_value + 1];
+        if (l_kind == CELL_AIR) continue;
+        l_block = g_cell_block[l_value + 1];
 
-        if (block_is_plant(l_block)) {
+        if (l_kind == CELL_PLANT) {
           if (l_count >= SECTION_FACE_CAP) {
             ++g_mesh_overflow;
             continue;
           }
           ++l_count;
-          g_face_x    [l_start + l_count] = l_x;
-          g_face_y    [l_start + l_count] = l_y;
-          g_face_z    [l_start + l_count] = l_z;
-          g_face_dir  [l_start + l_count] = DIR_PLANT;
-          g_face_light[l_start + l_count] = mesh_face_light(l_x, l_y, l_z, 0);
-          g_face_block[l_start + l_count] = l_block;
+          mesh_add_face(l_start + l_count, l_x, l_y, l_z, 0, 0, l_block);
           continue;
         }
 
-        l_is_water = l_block == BLOCK_WATER;
-
         for (l_direction = DIR_PX; l_direction <= DIR_NZ; ++l_direction) {
-          l_neighbour = BLOCK_STONE;
+          // the neighbour's value (outside the world: stone, or air above)
+          l_other = BLOCK_STONE;
           if (l_direction == DIR_PX) {
-            if (l_x + 1 < WORLD_SIZE_X) l_neighbour = world_cell_block(g_world[l_cell + WORLD_STRIDE_X]);
+            if (l_x + 1 < WORLD_SIZE_X) l_other = g_world[l_cell + WORLD_STRIDE_X];
           } else if (l_direction == DIR_NX) {
-            if (l_x > 0) l_neighbour = world_cell_block(g_world[l_cell - WORLD_STRIDE_X]);
+            if (l_x > 0) l_other = g_world[l_cell - WORLD_STRIDE_X];
           } else if (l_direction == DIR_PY) {
-            l_neighbour = BLOCK_AIR;
-            if (l_y + 1 < WORLD_HEIGHT) l_neighbour = world_cell_block(g_world[l_cell + 1]);
+            l_other = BLOCK_AIR;
+            if (l_y + 1 < WORLD_HEIGHT) l_other = g_world[l_cell + 1];
           } else if (l_direction == DIR_NY) {
-            if (l_y > 0) l_neighbour = world_cell_block(g_world[l_cell - 1]);
+            if (l_y > 0) l_other = g_world[l_cell - 1];
           } else if (l_direction == DIR_PZ) {
-            if (l_z + 1 < WORLD_SIZE_Z) l_neighbour = world_cell_block(g_world[l_cell + WORLD_STRIDE_Z]);
+            if (l_z + 1 < WORLD_SIZE_Z) l_other = g_world[l_cell + WORLD_STRIDE_Z];
           } else {
-            if (l_z > 0) l_neighbour = world_cell_block(g_world[l_cell - WORLD_STRIDE_Z]);
+            if (l_z > 0) l_other = g_world[l_cell - WORLD_STRIDE_Z];
           }
+          l_other_kind = g_cell_kind[l_other + 1];
 
-          if (block_hides_faces(l_neighbour)) continue;
-          if (l_neighbour == l_block && block_is_see_through(l_block)) continue;   // glass against glass
+          if (l_other_kind == CELL_HIDES) continue;
           l_flag = 0;
-          if (l_neighbour == BLOCK_WATER) {
-            if (l_is_water) continue;
+          if (l_other_kind == CELL_SEE_THROUGH) {
+            if (l_kind == CELL_SEE_THROUGH && g_cell_block[l_other + 1] == l_block) continue;   // glass against glass
+          } else if (l_other_kind == CELL_WATER) {
+            if (l_kind == CELL_WATER) continue;
             l_flag = DIR_WET_FLAG;
           }
 
@@ -151,12 +203,7 @@ void mesh_build_section(Integer p_sx, Integer p_sy, Integer p_sz)
             continue;
           }
           ++l_count;
-          g_face_x    [l_start + l_count] = l_x;
-          g_face_y    [l_start + l_count] = l_y;
-          g_face_z    [l_start + l_count] = l_z;
-          g_face_dir  [l_start + l_count] = l_direction + l_flag;
-          g_face_light[l_start + l_count] = mesh_face_light(l_x, l_y, l_z, l_direction);
-          g_face_block[l_start + l_count] = l_block;
+          mesh_add_face(l_start + l_count, l_x, l_y, l_z, l_direction, l_flag, l_block);
         }
       }
     }
@@ -177,17 +224,25 @@ Integer mesh_face_light(Integer p_x, Integer p_y, Integer p_z, Integer p_directi
 // front of the face; then the face is darkened by solid blocks
 // around the cell in front: 4 edge neighbours count 2, 4 corner
 // neighbours count 1, out of 12.
+// When the cell in front and all its neighbours across the face are
+// inside the world (nearly always), they are read straight from
+// g_world through the g_cell_* tables.
 // ----------------------------------------------------------------
 {
   Integer l_front_x  = p_x;
   Integer l_front_y  = p_y;
   Integer l_front_z  = p_z;
-  Integer l_sky_top  = 0;
+  Integer l_sky_top  = -1;
   Integer l_light    = LIGHT_FULL;
   Integer l_enclosed = 0;
   Integer l_a        = 0;
   Integer l_b        = 0;
   Integer l_torch    = 0;
+  Integer l_front    = 0;
+  Integer l_step_a   = 0;
+  Integer l_step_b   = 0;
+  Integer l_inside   = FALSE;
+  Integer l_solid    = 0;
 
   if (p_direction == DIR_PX) l_front_x = p_x + 1;
   if (p_direction == DIR_NX) l_front_x = p_x - 1;
@@ -196,25 +251,53 @@ Integer mesh_face_light(Integer p_x, Integer p_y, Integer p_z, Integer p_directi
   if (p_direction == DIR_PZ) l_front_z = p_z + 1;
   if (p_direction == DIR_NZ) l_front_z = p_z - 1;
 
-  l_sky_top = world_sky_top(l_front_x, l_front_z);
+  // A whole block of neighbours around the front cell in the world?
+  if (l_front_x >= 1 && l_front_x < WORLD_SIZE_X - 1) {
+    if (l_front_z >= 1 && l_front_z < WORLD_SIZE_Z - 1) {
+      if (l_front_y >= 1 && l_front_y < WORLD_HEIGHT - 1) l_inside = TRUE;
+    }
+  }
+
+  if (l_inside) {
+    l_sky_top = g_column_top[l_front_x * WORLD_SIZE_Z + l_front_z + 1];
+    l_front   = (l_front_x * WORLD_SIZE_Z + l_front_z) * WORLD_HEIGHT + l_front_y + 1;
+    l_torch   = g_cell_light[g_world[l_front] + 1];
+  } else {
+    l_sky_top = world_sky_top(l_front_x, l_front_z);
+    l_torch   = world_get_light(l_front_x, l_front_y, l_front_z);
+  }
   if (l_front_y <= l_sky_top) {
     l_light = LIGHT_FULL - (l_sky_top - l_front_y + 1) * LIGHT_DEPTH_STEP;
     if (l_light < LIGHT_MIN) l_light = LIGHT_MIN;
   }
-  l_torch = floor_divide(world_get_light(l_front_x, l_front_y, l_front_z) * LIGHT_FULL, LIGHT_MAX_LEVEL);
+  l_torch = floor_divide(l_torch * LIGHT_FULL, LIGHT_MAX_LEVEL);
   if (p_direction == 0) return l_light + FACE_TORCH_SCALE * l_torch;
 
-  // The two axes across the face, a and b, each -1..1
+  // The two axes across the face, a and b, as steps in g_world
+  if (p_direction == DIR_PX || p_direction == DIR_NX) {
+    l_step_a = 1;
+    l_step_b = WORLD_STRIDE_Z;
+  } else if (p_direction == DIR_PY || p_direction == DIR_NY) {
+    l_step_a = WORLD_STRIDE_X;
+    l_step_b = WORLD_STRIDE_Z;
+  } else {
+    l_step_a = WORLD_STRIDE_X;
+    l_step_b = 1;
+  }
+
   for (l_a = -1; l_a <= 1; ++l_a) {
     for (l_b = -1; l_b <= 1; ++l_b) {
       if (l_a == 0 && l_b == 0) continue;
-      if (p_direction == DIR_PX || p_direction == DIR_NX) {
-        if (!world_is_solid(l_front_x, l_front_y + l_a, l_front_z + l_b)) continue;
+      if (l_inside) {
+        l_solid = g_cell_solid[g_world[l_front + l_a * l_step_a + l_b * l_step_b] + 1];
+      } else if (p_direction == DIR_PX || p_direction == DIR_NX) {
+        l_solid = world_is_solid(l_front_x, l_front_y + l_a, l_front_z + l_b);
       } else if (p_direction == DIR_PY || p_direction == DIR_NY) {
-        if (!world_is_solid(l_front_x + l_a, l_front_y, l_front_z + l_b)) continue;
+        l_solid = world_is_solid(l_front_x + l_a, l_front_y, l_front_z + l_b);
       } else {
-        if (!world_is_solid(l_front_x + l_a, l_front_y + l_b, l_front_z)) continue;
+        l_solid = world_is_solid(l_front_x + l_a, l_front_y + l_b, l_front_z);
       }
+      if (!l_solid) continue;
       if (l_a == 0 || l_b == 0) {
         l_enclosed = l_enclosed + 2;
       } else {
@@ -299,6 +382,63 @@ void mesh_group_faces(Integer p_section, Integer p_x0, Integer p_y0, Integer p_z
     g_face_dir  [l_start + l_entry] = g_sort_dir  [l_entry];
     g_face_light[l_start + l_entry] = g_sort_light[l_entry];
     g_face_block[l_start + l_entry] = g_sort_block[l_entry];
+  }
+}
+
+void mesh_build_nearby(Real p_eye_x, Real p_eye_y, Real p_eye_z, Integer p_range, Integer p_budget)
+// ----------------------------------------------------------------
+// Background loading: build up to budget sections that are within
+// range of the eye but not current yet, nearest first, whether or
+// not they are in view. The renderer builds the sections it is
+// about to draw itself; this gets the others ready a few per frame,
+// so turning round doesn't have to build them all in one frame.
+// ----------------------------------------------------------------
+{
+  Integer l_sx0     = clamp_integer(floor_integer((p_eye_x - p_range) / SECTION_SIZE), 0, SECTIONS_X - 1);
+  Integer l_sx1     = clamp_integer(floor_integer((p_eye_x + p_range) / SECTION_SIZE), 0, SECTIONS_X - 1);
+  Integer l_sy0     = clamp_integer(floor_integer((p_eye_y - p_range) / SECTION_SIZE), 0, SECTIONS_Y - 1);
+  Integer l_sy1     = clamp_integer(floor_integer((p_eye_y + p_range) / SECTION_SIZE), 0, SECTIONS_Y - 1);
+  Integer l_sz0     = clamp_integer(floor_integer((p_eye_z - p_range) / SECTION_SIZE), 0, SECTIONS_Z - 1);
+  Integer l_sz1     = clamp_integer(floor_integer((p_eye_z + p_range) / SECTION_SIZE), 0, SECTIONS_Z - 1);
+  Integer l_sx      = 0;
+  Integer l_sy      = 0;
+  Integer l_sz      = 0;
+  Integer l_built   = 0;
+  Integer l_best_x  = 0;
+  Integer l_best_y  = 0;
+  Integer l_best_z  = 0;
+  Integer l_found   = FALSE;
+  Real    l_reach   = p_range + 14.0;
+  Real    l_dx      = 0.0;
+  Real    l_dy      = 0.0;
+  Real    l_dz      = 0.0;
+  Real    l_dist_sq = 0.0;
+  Real    l_best_sq = 0.0;
+
+  for (l_built = 1; l_built <= p_budget; ++l_built) {
+    l_found = FALSE;
+    for (l_sx = l_sx0; l_sx <= l_sx1; ++l_sx) {
+      for (l_sz = l_sz0; l_sz <= l_sz1; ++l_sz) {
+        for (l_sy = l_sy0; l_sy <= l_sy1; ++l_sy) {
+          if (g_section_state[mesh_section_index(l_sx, l_sy, l_sz)] == SECTION_BUILT) continue;
+          l_dx = l_sx * SECTION_SIZE + 8.0 - p_eye_x;
+          l_dy = l_sy * SECTION_SIZE + 8.0 - p_eye_y;
+          l_dz = l_sz * SECTION_SIZE + 8.0 - p_eye_z;
+          l_dist_sq = l_dx * l_dx + l_dy * l_dy + l_dz * l_dz;
+          if (l_dist_sq > l_reach * l_reach) continue;
+          if (l_found) {
+            if (l_dist_sq >= l_best_sq) continue;
+          }
+          l_found   = TRUE;
+          l_best_sq = l_dist_sq;
+          l_best_x  = l_sx;
+          l_best_y  = l_sy;
+          l_best_z  = l_sz;
+        }
+      }
+    }
+    if (!l_found) return;
+    mesh_build_section(l_best_x, l_best_y, l_best_z);
   }
 }
 

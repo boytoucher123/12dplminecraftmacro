@@ -1921,6 +1921,7 @@ void render_world(Draw_Box p_box, Real p_w, Real p_h, Real p_view_bottom, Attrib
 
   render_sky(p_box);
   render_collect_blocks(p_furnaces);
+  mesh_build_nearby(g_cam_x, g_cam_y, g_cam_z, min_integer(g_render_distance, VERTICAL_RANGE + SECTION_SIZE), BACKGROUND_BUILDS);
   render_collect_cows  (p_cows);
   render_collect_drops (p_drops);
   g_box_light = 1.0;

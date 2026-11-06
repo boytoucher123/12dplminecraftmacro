@@ -135,6 +135,7 @@ Integer world_top_solid_y(Integer p_x, Integer p_z)
 
   l_base = world_index(p_x, 0, p_z);
   for (l_y = WORLD_HEIGHT - 1; l_y >= 0; --l_y) {
+    if (g_world[l_base + l_y] == BLOCK_AIR) continue;   // most of a column (quick, no calls)
     if (block_is_solid(world_cell_block(g_world[l_base + l_y]))) return l_y;
   }
   return -1;
@@ -153,6 +154,7 @@ Integer world_top_opaque_y(Integer p_x, Integer p_z)
 
   l_base = world_index(p_x, 0, p_z);
   for (l_y = WORLD_HEIGHT - 1; l_y >= 0; --l_y) {
+    if (g_world[l_base + l_y] == BLOCK_AIR) continue;   // most of a column (quick, no calls)
     if (block_hides_faces(world_cell_block(g_world[l_base + l_y]))) return l_y;
   }
   return -1;
