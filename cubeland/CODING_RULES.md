@@ -171,10 +171,14 @@ other:
   without `l_`.
 - Write constants as object-like macros in the appropriate header:
   `SUCCESS (0)`, `FAILURE (-1)`, field names, sizes.
+- Sources live in `src/<part>/` (core, blocks, world, items, mobs, player,
+  render, program, ui) and each module's header in `include/<part>/`, the
+  same folder name. A new module goes in the folder of the part it belongs
+  to, and `src/build.4dm` gets a line for it in that folder's group.
 - Each file includes the headers it uses. `src/build.4dm` includes every
   source file and must work in any order.
 - Use the debug macros (`D1`..`D4`, `DVAR1`..`DVAR4`) from
-  `include/debug.h`. They compile to nothing unless `DEBUG` is defined.
+  `include/core/debug.h`. They compile to nothing unless `DEBUG` is defined.
 
 ## 5. 12dPL pitfalls to avoid
 
@@ -194,7 +198,7 @@ other:
 
 ## 6. Safety
 
-- `include/safety.h` is the first include of `src/build.4dm`. It
+- `include/core/safety.h` is the first include of `src/build.4dm`. It
   `#define`s every dangerous 12d call as `illegal_call`, so using one is
   a compile error. Never include anything before it, never `#undef` its
   names, and add any new dangerous call you come across to it.

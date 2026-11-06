@@ -174,4 +174,4 @@ A real pack can be tried by copying it into `packs/` and changing the path
 in the scenario.
 
 Hooks use the macro's own constants (`ITEM_STONE_SWORD`, `BLOCK_STONE`, ...),
-so they follow changes to `src/blocks.4dm`.
+so they follow changes to `src/blocks/blocks.4dm`.
