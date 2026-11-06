@@ -45,6 +45,8 @@ int Draw_to(const Draw_Box&,double x,double y){ double dx=x-pen_x,dy=y-pen_y; in
 int Draw_text(const Draw_Box&,double x,double y,double s,double,const Text&t){ texts.push_back({x,y,s,align,txtc[0],txtc[1],txtc[2],t}); return 0; }
 int Set_text_align(const Draw_Box&,int a){ align=a; return 0; }
 int Set_text_colour(const Draw_Box&,int r,int g,int b){ txtc[0]=r;txtc[1]=g;txtc[2]=b; return 0; }
+Text g_text_font="";
+int Set_text_font(const Draw_Box&,const Text&f){ g_text_font=f; return 0; }
 int End_batch_draw(const Draw_Box&){ in_batch=false; g_frames++;
   if(!g_snap_name.empty()){
     Text base="out/"+g_snap_name; mkdir("out",0755); FILE*f=fopen((base+".ppm").c_str(),"wb"); fprintf(f,"P6 %d %d 255\n",g_box_w,g_box_h); fwrite(fb.data(),1,fb.size(),f); fclose(f);

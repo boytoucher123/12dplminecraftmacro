@@ -133,6 +133,20 @@ that were looked up most often (to find hot spots).
 | `15_night_torches_zombies`    | a torch lights a cave and the light goes when it's broken; sunset and night skies; a zombie walks up and hits, a sword kills it; zombies spawn at night and burn at noon; glass; the house at night; a bed skips to morning and sets the spawn point |
 | `16_chest`                    | items put in a chest survive save and load and spill out when it's broken |
 | `17_mob_models`               | the cow from the front, side and back, and a zombie, with their per-face textures |
+| `18_plants`                   | grass, a poppy, a dandelion, a dead bush and a torch drawn as crossed pictures, from the front, an angle and above |
+| `19_fonts`                    | the font list, a typed font name, family names read from font files (Windows and Mac names, a collection, a file that isn't a font, a missing file), and the game drawing its text with the chosen font; run `make_test_fonts.py` first |
+| `20_lit_furnace`              | a furnace with fuel becomes a lit furnace block that gives off light, and goes dark again when it stops burning |
+| `21_pigs`                     | a new world has pigs; the pig model from the side and the front; a pig killed with a sword drops raw porkchops |
+
+### Font files
+
+`make_test_fonts.py` writes the small font files scenario 19 reads into
+`packs/`: just a table directory and a name table, each storing the family
+name a different way.
+
+```bash
+python3 make_test_fonts.py
+```
 
 ### Resource pack test
 
@@ -160,4 +174,4 @@ A real pack can be tried by copying it into `packs/` and changing the path
 in the scenario.
 
 Hooks use the macro's own constants (`ITEM_STONE_SWORD`, `BLOCK_STONE`, ...),
-so they follow changes to `src/blocks.4dm`.
+so they follow changes to `src/blocks/blocks.4dm`.

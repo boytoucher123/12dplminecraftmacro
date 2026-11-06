@@ -17,7 +17,7 @@ A first-person block-building sandbox for 12d Model, drawn entirely in a
 5. **Settings** (on the world menu, in game, or the **O** key) opens a panel
    of buttons for render distance (50 blocks to start with), texture
    detail, field of view, mouse speed, grass and flowers, shadows,
-   auto-jump, the HUD and statistics, and the resource pack.
+   auto-jump, the HUD and statistics, the resource pack and the font.
 
 Worlds are saved in a `cubeland_worlds` folder inside the 12d working folder.
 A world is saved when you quit to the menu, when you press **Save**, and every
@@ -37,9 +37,9 @@ for how to rebuild it after you change the macro.
 
 | Input         | Action                                                       |
 |---------------|--------------------------------------------------------------|
-| Click view    | start playing (the mouse then turns the camera)              |
+| Click view    | start playing (the mouse then turns the camera); after a pause, W A S D or Space also carries on |
 | Mouse         | look around                                                  |
-| Left click    | break blocks (harder blocks take more hits), hit cows        |
+| Left click    | break blocks (harder blocks take more hits), hit animals     |
 | Right click   | place blocks, eat food, open crafting tables, furnaces and chests, sleep in beds |
 | W A S D       | walk                                                         |
 | Space         | jump, swim up, fly up                                        |
@@ -76,11 +76,31 @@ library), so loading a pack takes a moment. It uses the images under
 Cubeland has, samples each to 16 x 16 and keeps 8 colours per texture.
 Grey images that the game colours by biome (grass, leaves, water) are
 tinted with the pack's `colormap/grass.png` and `foliage.png`. Anything the
-pack doesn't have keeps its built-in texture. Cows and zombies use the
-pack's mob skins (`entity/cow/cow.png`, `entity/zombie/zombie.png`): every
+pack doesn't have keeps its built-in texture. Cows, pigs and zombies use
+the pack's mob skins (`entity/cow/cow.png`, `entity/pig/pig.png`,
+`entity/zombie/zombie.png`): every
 face of the model is cut from its own rectangle of the skin. Packs made for
 16 x 16 work best: bigger images are sampled down, and only 8 colours of
 a detailed image survive. Interlaced PNGs aren't supported.
+
+## Fonts
+
+The game's text (hotbar counts, messages, the help and inventory screens)
+can use any font installed in Windows. In **Settings**:
+
+- **Next font** steps through fonts that come with Windows (Arial, Segoe
+  UI, Consolas, Courier New, Verdana, Tahoma, Trebuchet MS, Georgia,
+  Comic Sans MS); **12d's default** goes back to the normal font.
+- **Font name** takes the name of any installed font; press **Use this
+  font name**.
+- **Font file** takes a `.ttf`, `.otf` or `.ttc` file; **Use this font
+  file** reads the font's name from the file and uses it.
+
+12d can only draw with fonts that Windows has installed, so a font file
+you pick has to be installed too (double click it, then **Install**). If
+a font isn't installed, Windows draws a similar one instead. The choice is
+saved with the other settings. After switching back to 12d's default, the
+default font comes back the next time the game opens.
 
 ## What's in it
 
@@ -91,7 +111,8 @@ a detailed image survive. Interlaced PNGs aren't supported.
   Near faces show all 16 x 16 pixels; at the **High** texture detail
   setting they do from further away too.
 - **Plants:** grass tufts, poppies and dandelions in meadows, dead bushes
-  in deserts. They are pictures that turn to face you; you walk through
+  in deserts. Each is two pictures crossed in an X, like the block game's
+  plants, so they look the same from every side; you walk through
   them, break them with one hit, and placing a block replaces them.
 - **Terrain:** generated from the seed. Rolling hills with the odd steep
   area, forests with open clearings between them, sandy deserts with
@@ -109,7 +130,9 @@ a detailed image survive. Interlaced PNGs aren't supported.
   overhangs, the shade of trees) and in corners and creases (this can be
   turned off in the settings). **Torches** give off light that spreads
   through the air around corners and fades over 14 blocks, so caves and
-  houses can be lit at night. Glass lets light through.
+  houses can be lit at night. A **burning furnace** glows and lights its
+  surroundings too (a little less than a torch) until its fuel runs out.
+  Glass lets light through.
 - **Zombies:** at night they come out in the dark, 14 to 30 blocks away
   (never right next to torches). They walk straight at you, hit for 3
   with a knock-back, take a few hits to kill, drop rotten flesh, and burn
@@ -157,10 +180,14 @@ a detailed image survive. Interlaced PNGs aren't supported.
   ingots, and turns logs into coal.
   Coal, logs, planks, sticks, crafting tables and wooden tools burn. It keeps
   cooking while you are in a menu or paused.
-- **Cows:** they wander the grassland and avoid cliffs and water. They run
-  when hit and drop 1–3 raw beef. The model has the block game's
-  proportions (body, head with horns, four legs) and a texture per face. Raw beef heals 2, cooked beef heals 7
-  and rotten flesh 1.
+- **Cows and pigs:** they wander the grassland and avoid cliffs and
+  water. They run when hit; cows drop 1–3 raw beef and pigs 1–3 raw
+  porkchops, which cook in a furnace. The models have the block game's
+  proportions (cow: body, head with horns, four legs; pig: body, head
+  with a snout, four short legs) and a texture per face. A new world
+  starts with 10 cows and 6 pigs, and more turn up now and then away
+  from you. Raw beef and porkchops heal 2, cooked ones 7 and rotten
+  flesh 1.
 
 ## Code layout
 
@@ -168,28 +195,32 @@ a detailed image survive. Interlaced PNGs aren't supported.
 cubeland.4dm          main(): world menu, then the game, until Quit
 CODING_RULES.md       honest functions, records, events, naming, safety
 docs/                 the ScuffedMinecraft port plan and its progress
-include/safety.h      blocks dangerous 12d calls (included first)
-src/build.4dm         includes every source file (in any order)
-include/*.h           constants, record field names and prototypes per module
-src/
-  util, records       helpers; Attributes records and the random sequence
-  slots               which numbered slots (mobs, drops, furnaces) are in use
-  events              the game event queue (a record)
-  settings            the settings record and its file
-  blocks, textures    block/item rules and the procedural textures
-  resource_pack       zip, deflate and PNG reading for resource packs
-  world, mesh         block grid, terrain generator, cached visible faces
-  physics, player     collision, ray casting, movement and actions
-  inventory, crafting, furnace, chest, cows (and zombies), drops
-  render_world        the 3D view
-  render_hud          crosshair, hotbar, health, hand, help, item icons
-  render_ui           inventory, crafting table and furnace screens
-  save                world files
-  game                starting worlds, per-frame update, event dispatch
-  menu_panel          world menu panel (controller)
-  settings_panel      settings panel (controller)
-  game_panel          game panel: mouse capture, keys, frame loop (controller)
+src/build.4dm         includes include/core/safety.h first, then every source file
+src/<part>/*.4dm      the code, one folder per part of the game (below)
+include/<part>/*.h    each module's constants, record field names and prototypes,
+                      in the same folders as its source
+  core/               util, records (Attributes records, the random sequence),
+                      slots (which mob, drop and furnace numbers are in use),
+                      events (the game event queue); common.h, config.h
+                      (sizes and limits), debug.h, safety.h (blocks dangerous
+                      12d calls)
+  blocks/             blocks (block and item rules), textures (the built-in
+                      textures), resource_pack (zip, deflate and PNG reading)
+  world/              world (block grid, terrain, light), mesh (cached
+                      visible faces), physics (collision, ray casting)
+  items/              inventory, crafting, furnace, chest, drops
+  mobs/               cows (cows, pigs and zombies)
+  player/             player: movement and actions
+  render/             render_world (the 3D view), render_hud (crosshair,
+                      hotbar, health, hand, help, item icons), render_ui
+                      (inventory, crafting table, furnace and chest screens)
+  program/            settings (the settings record and its file), save
+                      (world files), game (starting worlds, the per-frame
+                      update, event dispatch)
+  ui/                 menu_panel, settings_panel, game_panel (the 12d panels:
+                      the controllers), font (font names and files)
 tools/test_harness/   runs the macro as C++ for testing (not used by 12d)
+tools/desktop/        the same macro as a Windows program (not used by 12d)
 ```
 
 The code follows model–view–controller and the rules in
@@ -238,8 +269,8 @@ module drops a broken furnace's contents.
 
 ### Tuning
 
-`include/config.h` holds the world size, physics and entity limits.
-`render_set_detail()` in `src/render_world.4dm` holds the three texture detail
+`include/core/config.h` holds the world size, physics and entity limits.
+`render_set_detail()` in `src/render/render_world.4dm` holds the three texture detail
 levels; the render distance is a setting (8 to 64 blocks). Array sizes must be plain numbers, so
 when you change the world size, also update the products written next to it
 (`WORLD_CELLS`, `WORLD_COLUMNS`, the strides, the section counts and
@@ -247,7 +278,7 @@ when you change the world size, also update the products written next to it
 
 ### Safety
 
-`include/safety.h` is the first file `src/build.4dm` includes. It
+`include/core/safety.h` is the first file `src/build.4dm` includes. It
 `#define`s every 12d call that could do harm (start a program, delete or
 copy files, delete or change models, tins, views or project settings, use
 the clipboard, databases or the network) as `illegal_call`, which doesn't
@@ -285,7 +316,7 @@ Some things could not be checked:
 - **The large arrays.** The world is a 1.5-million-cell array and the face
   cache 786,432 entries per field. If 12d refuses arrays that large, reduce
   `WORLD_SIZE_X`/`WORLD_SIZE_Z` (and the products next to them) in
-  `include/config.h`.
+  `include/core/config.h`.
 - **Attributes.** The records rely on `Get_attribute`, `Set_attribute`,
   `Attribute_delete_all` and reading attributes by number for saving. A frame
   makes roughly 1,000–2,000 attribute calls; if those turn out to be slow in

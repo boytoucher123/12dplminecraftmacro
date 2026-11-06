@@ -9,7 +9,7 @@ files shows up in the exe the next time you build it.
 
 ## Playing
 
-1. Get `cubeland.exe`: a ready-built copy is in `cubeland/release/` in the repo
+1. Get `cubeland.exe`: a ready-built copy is in `release/` in the repo
    (on GitHub, open the file and click **Download raw file**), or build it
    yourself (below). Put it in a folder of its own, for example `Documents\Cubeland`.
 2. Double-click it. The **Cubeland - worlds** panel opens, just as it does in 12d.

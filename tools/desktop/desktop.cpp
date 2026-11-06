@@ -339,7 +339,8 @@ static unsigned g_pen = 0, g_fill = 0, g_text = 0xffffff;
 static int g_align = 0;
 static double g_pen_x = 0, g_pen_y = 0;
 static bool g_gdi_dirty = false;
-static std::map<int, HFONT> g_fonts;
+static std::map<std::pair<std::string, int>, HFONT> g_fonts;
+static std::string g_font_name = "Segoe UI";   // Set_text_font; Segoe UI stands in for 12d's default
 
 static unsigned rgb(int r, int g, int b) {
   if (r < 0) r = 0; if (r > 255) r = 255; if (g < 0) g = 0; if (g > 255) g = 255; if (b < 0) b = 0; if (b > 255) b = 255;
@@ -391,12 +392,13 @@ int Draw_to(const Draw_Box &, double x, double y) {
 }
 int Set_text_align(const Draw_Box &, int a) { g_align = a; return 0; }
 int Set_text_colour(const Draw_Box &, int r, int g, int b) { g_text = rgb(r, g, b); return 0; }
+int Set_text_font(const Draw_Box &, const Text &font) { g_font_name = font.empty() ? "Segoe UI" : font; return 0; }
 int Draw_text(const Draw_Box &, double x, double y, double size, double, const Text &t) {
   if (!g_mdc) return 1;
   int px = (int)(size + 0.5); if (px < 6) px = 6;
-  HFONT &f = g_fonts[px];
+  HFONT &f = g_fonts[std::make_pair(g_font_name, px)];
   if (!f) f = CreateFontA(-px, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                          ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_SWISS, "Segoe UI");
+                          ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_SWISS, g_font_name.c_str());
   SelectObject(g_mdc, f);
   SetTextColor(g_mdc, RGB((g_text >> 16) & 255, (g_text >> 8) & 255, g_text & 255));
   SetTextAlign(g_mdc, (g_align == 30 ? TA_CENTER : TA_LEFT) | TA_TOP);

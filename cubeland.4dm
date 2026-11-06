@@ -30,13 +30,17 @@
 //
 // Structure
 //   cubeland.4dm      this file: main()
-//   src/build.4dm     includes include/safety.h (which blocks every
-//                     dangerous 12d call) and then every source file
-//   include/*.h       constants, global data and prototypes
-//   src/*.4dm         model (world, player, cows, ...), views
-//                     (render_*) and controllers (*_panel)
+//   src/build.4dm     includes include/core/safety.h (which blocks
+//                     every dangerous 12d call) and then every
+//                     source file
+//   src/<part>/       the code by part of the game: core, blocks,
+//                     world, items, mobs, player and program (the
+//                     model), render (the views) and ui (the
+//                     controllers: the 12d panels)
+//   include/<part>/   each module's constants, global data and
+//                     prototypes, in the same folders
 // Modules don't report to each other directly: they emit game
-// events (include/events.h) and game_dispatch_events() passes each
+// events (include/core/events.h) and game_dispatch_events() passes each
 // event to every module's *_on_event() handler.
 // Game state lives in records (12d Attributes used like structs)
 // that are passed to every function that uses them; see

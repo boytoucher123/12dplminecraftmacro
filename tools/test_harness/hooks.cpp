@@ -102,7 +102,10 @@ static void register_hooks(){
   g_calls["torch_ahead"]=[]{ int x=(int)px()+2,y=(int)py(),z=(int)pz(); if(world_get_block(x,y,z)!=0||!world_is_solid(x,y-1,z)){ y=world_top_solid_y(x,z)+1; } world_place_block(g_events,x,y,z,BLOCK_TORCH); printf("[hook] torch at %d %d %d: light here %d, 1 away %d, 5 away %d, 14 away %d, light steps %d\n",x,y,z,world_get_light(x,y,z),world_get_light(x,y+1,z),world_get_light(x,y+5,z),world_get_light(x,y+14,z),g_light_steps); };
   g_calls["torch_light_check"]=[]{ int x=(int)px()+2,y=(int)py(),z=(int)pz(); int lit=0; for(int dx=-15;dx<=15;dx++) for(int dy=-15;dy<=15;dy++) for(int dz=-15;dz<=15;dz++) if(world_get_light(x+dx,y+dy,z+dz)>0) lit++; printf("[hook] lit cells near the torch: %d\n",lit); };
   g_calls["zombie_front"]=[]{ int c=mobs_spawn(g_cows,g_random,MOB_ZOMBIE,px()+4.5,py()+0.01,pz(),PI); set_look(0,-0.1); printf("[hook] zombie %d\n",c); };
-  g_calls["mobs"]=[]{ printf("[hook] cows %d zombies %d\n",mobs_count_kind(g_cows,MOB_COW),mobs_count_kind(g_cows,MOB_ZOMBIE)); };
+  g_calls["mobs"]=[]{ printf("[hook] cows %d pigs %d zombies %d\n",mobs_count_kind(g_cows,MOB_COW),mobs_count_kind(g_cows,MOB_PIG),mobs_count_kind(g_cows,MOB_ZOMBIE)); };
+  g_calls["pig_near"]=[]{ int c=mobs_spawn(g_cows,g_random,MOB_PIG,px()+2.5,py()+0.2,pz()+0.8,2.3); record_set_real_at(g_cows,ATTR_TIMER,c,100.0); record_set_integer_at(g_cows,ATTR_COW_WALKING,c,0); printf("[hook] pig %d\n",c); };
+  // Items on the ground, by item
+  g_calls["drop_items"]=[]{ printf("[hook] drops:"); for(int d=1;d<=MAX_DROPS;d++) if(drop_used(g_drops,d)) printf(" %s x%d",item_name(drop_item(g_drops,d)).c_str(),drop_count(g_drops,d)); printf("\n"); };
   g_calls["glass_wall"]=[]{ int x=(int)px()+3,y=(int)py(),z=(int)pz(); for(int dz=-1;dz<=1;dz++) for(int dy=0;dy<=2;dy++) world_place_block(g_events,x,y+dy,z+dz,BLOCK_GLASS); set_look(0,0.1); };
   g_calls["bed_front"]=[]{ int x=(int)px()+2,y=(int)py(),z=(int)pz(); world_place_block(g_events,x,y,z,BLOCK_BED); set_look(0,-0.5); printf("[hook] bed at %d %d %d\n",x,y,z); };
   g_calls["spawn_point"]=[]{ printf("[hook] spawn %.1f %.1f %.1f\n",record_real(g_info,ATTR_SPAWN_X),record_real(g_info,ATTR_SPAWN_Y),record_real(g_info,ATTR_SPAWN_Z)); };
@@ -115,6 +118,21 @@ static void register_hooks(){
     grid_clear(g_grid,2);
     printf("[recipe] iron ore smelts into %s\n",item_name(item_smelt_result(ITEM_IRON_ORE)).c_str()); };
   g_calls["block_below_target"]=[]{ int x,y,z; player_target_cell(g_player,x,y,z); printf("[hook] target block %s, selected slot %d holds %s\n",item_name(world_get_block(x,y,z)).c_str(),player_selected(g_player),item_name(player_held_item(g_player,g_inventory)).c_str()); };
+  g_calls["cover"]=[]{ printf("[hook] cover"); int st=getenv("COVER_ALL")?1:20; for(int c=1;c<=g_cover_columns;c+=st){ printf(" "); for(int k=1;k<=g_cover_count[c];k++) printf("%s%.0f..%.0f",k>1?",":"",g_cover_low[(c-1)*COVER_SPANS+k]<-1e29?-1:g_cover_low[(c-1)*COVER_SPANS+k],g_cover_high[(c-1)*COVER_SPANS+k]>1e29?9999:g_cover_high[(c-1)*COVER_SPANS+k]); } printf("\n"); };
+  // A row of plants two blocks ahead (+x) of the player, standing on flat ground
+  g_calls["plant_row"]=[]{ double x,y,z; player_position(g_player,x,y,z); int px=(int)floor(x)+3, py=(int)floor(y), pz=(int)floor(z);
+     int kinds[4]={BLOCK_TALL_GRASS,BLOCK_POPPY,BLOCK_DANDELION,BLOCK_DEAD_BUSH};
+     for(int dz=-3;dz<=4;dz++) for(int dx=-1;dx<=4;dx++){ world_set_block(px+dx,py-1,pz+dz,BLOCK_GRASS); for(int dy=0;dy<4;dy++) world_set_block(px+dx,py+dy,pz+dz,BLOCK_AIR); mesh_mark_dirty(px+dx,py,pz+dz); mesh_mark_dirty(px+dx,py-1,pz+dz); }
+     for(int k=0;k<4;k++){ world_set_block(px,py,pz-1+k,kinds[k]); mesh_mark_dirty(px,py,pz-1+k); }
+     world_set_block(px+2,py,pz,BLOCK_TORCH); mesh_mark_dirty(px+2,py,pz);
+     printf("[hook] plants at x %d, z %d..%d, y %d; torch at x %d\n",px,pz-1,pz+2,py,px+2);
+     set_look(0.12,-0.35); };
+  g_calls["font"]=[]{ extern Text g_text_font; printf("[hook] font setting \"%s\", drawn with \"%s\"\n",settings_font(g_settings).c_str(),g_text_font.c_str()); };
+  // The furnace placed last: its block and the brightest block light next to it
+  g_calls["furnace_light"]=[]{ for(int e=g_edit_count;e>=1;e--){ int cell=g_edit_index[e]-1; int y=cell%WORLD_HEIGHT; cell/=WORLD_HEIGHT; int z=cell%WORLD_SIZE_Z, x=cell/WORLD_SIZE_Z;
+       int b=world_get_block(x,y,z); if(!block_is_furnace(b)) continue; int best=0; for(int d=0;d<6;d++){ int dx=d==0?1:d==1?-1:0, dy=d==2?1:d==3?-1:0, dz=d==4?1:d==5?-1:0; best=std::max(best,world_get_light(x+dx,y+dy,z+dz)); }
+       printf("[hook] furnace at %d %d %d block %d lit %d light beside it %d\n",x,y,z,b,block_furnace_is_lit(b),best); return; } printf("[hook] no furnace placed\n"); };
+  g_calls["render_stats"]=[]{ printf("[hook] render: %s\n",render_stats_text().c_str()); };
   g_calls["frame_stats"]=[]{ printf("[hook] frame stats: %s\n",hud_frame_stats(g_hud).c_str()); };
   g_calls["give_planks_far"]=[]{ slot_set(g_inventory,20,ITEM_PLANKS,7,0); };
   g_calls["settings"]=[]{ printf("[settings] view %d detail %d plants %d shading %d fov %d mouse %d jump %d hud %d\n",settings_render_distance(g_settings),settings_detail(g_settings),

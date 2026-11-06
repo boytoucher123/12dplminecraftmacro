@@ -15,7 +15,7 @@ them exactly. The images cycle through every PNG colour type and bit
 depth the macro supports (grey 1/2/4/8/16 bit, RGB 8/16, palette 1/2/4/8
 with transparency, grey + alpha, RGBA 8/16), all five row filters,
 stored and compressed deflate data, images bigger than 16 x 16 and a tall
-animation strip. Mob skins (a 64 x 32 cow and a 128 x 128 zombie, so the
+animation strip. Mob skins (64 x 32 cow and pig skins and a 128 x 128 zombie, so the
 scaling to a 64 pixel wide layout is tested) check that each mob part is
 sampled from the right rectangle, turned the right way. The zip mixes stored and deflated entries and ends with
 a comment, so the end record has to be searched for.
@@ -29,12 +29,12 @@ COLORMAP_AT = (51, 173)
 
 def map_entries():
     """(tex macro name, kind, name, tint, overlay) from pack_map_entry()"""
-    src = open(os.path.join(MACRO, 'src', 'resource_pack.4dm')).read()
+    src = open(os.path.join(MACRO, 'src', 'blocks', 'resource_pack.4dm')).read()
     return re.findall(r'pack_entry\(p_tex, p_kind, p_name, p_tint, p_overlay, (\w+)\s*, "(\w+)"\s*, "(\w+)"\s*, (\w+)\s*, "(\w*)"\)', src)
 
 def part_entries():
     """(tex macro name, skin name, x, y, w, h, turn macro) from pack_map_part()"""
-    src = open(os.path.join(MACRO, 'src', 'resource_pack.4dm')).read()
+    src = open(os.path.join(MACRO, 'src', 'blocks', 'resource_pack.4dm')).read()
     return [(t, n, int(x), int(y), int(w), int(h), turn) for t, n, x, y, w, h, turn in re.findall(
         r'pack_part\(p_tex, p_name, p_x, p_y, p_w, p_h, p_turn, (\w+)\s*, "([\w/]+)"\s*, (\d+)\s*, (\d+)\s*, (\d+)\s*, (\d+)\s*, (\w+)\s*\)', src)]
 
@@ -57,7 +57,7 @@ def expected_part(pixels, width, x, y, w, h, turn):
 
 def macro_value(name):
     for header in ('textures.h', 'resource_pack.h'):
-        m = re.search(r'#define\s+' + name + r'\s+(\w+)', open(os.path.join(MACRO, 'include', header)).read())
+        m = re.search(r'#define\s+' + name + r'\s+(\w+)', open(os.path.join(MACRO, 'include', 'blocks', header)).read())
         if m: return int(m.group(1)) if m.group(1).isdigit() else macro_value(m.group(1))
     raise KeyError(name)
 
@@ -229,7 +229,7 @@ def make():
 
     # mob skins: 8 colours each, solid (mob textures have no holes)
     skins = {}
-    for name, (w, h, ctype) in {'cow/cow': (64, 32, 2), 'zombie/zombie': (128, 128, 6)}.items():
+    for name, (w, h, ctype) in {'cow/cow': (64, 32, 2), 'pig/pig': (64, 32, 6), 'zombie/zombie': (128, 128, 6)}.items():
         colours = [(rng.randrange(256), rng.randrange(256), rng.randrange(256), 255) for _ in range(8)]
         pixels = [[rng.choice(colours) for _ in range(w)] for _ in range(h)]
         skins[name] = (pixels, w)
