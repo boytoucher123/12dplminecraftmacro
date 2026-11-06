@@ -491,15 +491,45 @@ void mesh_mark_dirty(Integer p_x, Integer p_y, Integer p_z)
   if (l_sy >= 0) g_section_state[mesh_section_index(l_sx, l_sy, l_sz)] = SECTION_DIRTY;
 }
 
+void mesh_mark_box_dirty(Integer p_x, Integer p_y, Integer p_z, Integer p_radius)
+// ----------------------------------------------------------------
+// Every section touching the box of radius cells round (x, y, z)
+// must be rebuilt (its faces' light may have changed)
+// ----------------------------------------------------------------
+{
+  Integer l_sx0 = clamp_integer(floor_divide(p_x - p_radius, SECTION_SIZE), 0, SECTIONS_X - 1);
+  Integer l_sx1 = clamp_integer(floor_divide(p_x + p_radius, SECTION_SIZE), 0, SECTIONS_X - 1);
+  Integer l_sy0 = clamp_integer(floor_divide(p_y - p_radius, SECTION_SIZE), 0, SECTIONS_Y - 1);
+  Integer l_sy1 = clamp_integer(floor_divide(p_y + p_radius, SECTION_SIZE), 0, SECTIONS_Y - 1);
+  Integer l_sz0 = clamp_integer(floor_divide(p_z - p_radius, SECTION_SIZE), 0, SECTIONS_Z - 1);
+  Integer l_sz1 = clamp_integer(floor_divide(p_z + p_radius, SECTION_SIZE), 0, SECTIONS_Z - 1);
+  Integer l_sx  = 0;
+  Integer l_sy  = 0;
+  Integer l_sz  = 0;
+
+  for (l_sx = l_sx0; l_sx <= l_sx1; ++l_sx) {
+    for (l_sy = l_sy0; l_sy <= l_sy1; ++l_sy) {
+      for (l_sz = l_sz0; l_sz <= l_sz1; ++l_sz) {
+        if (g_section_state[mesh_section_index(l_sx, l_sy, l_sz)] == SECTION_BUILT) {
+          g_section_state[mesh_section_index(l_sx, l_sy, l_sz)] = SECTION_DIRTY;
+        }
+      }
+    }
+  }
+}
+
 void mesh_on_event(Attributes &p_event)
 // ----------------------------------------------------------------
-// Event handler: rebuild sections around changed blocks
+// Event handler: rebuild sections around changed blocks, and every
+// section a change of block light can reach
 // ----------------------------------------------------------------
 {
   Integer l_type = event_type(p_event);
 
-  if (l_type == EVT_BLOCK_BROKEN || l_type == EVT_BLOCK_PLACED) {
+  if (l_type == EVT_BLOCK_BROKEN || l_type == EVT_BLOCK_PLACED || l_type == EVT_FURNACE_LIT) {
     mesh_mark_dirty(event_integer(p_event, 1), event_integer(p_event, 2), event_integer(p_event, 3));
+  } else if (l_type == EVT_LIGHT_CHANGED) {
+    mesh_mark_box_dirty(event_integer(p_event, 1), event_integer(p_event, 2), event_integer(p_event, 3), LIGHT_RADIUS + 1);
   }
 }
 

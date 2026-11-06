@@ -8,6 +8,7 @@
 #include "../include/events.h"
 #include "../include/inventory.h"
 #include "../include/slots.h"
+#include "../include/world.h"
 #include "../include/furnace.h"
 
 // ---------------------------------------------------------------- accessors
@@ -173,18 +174,6 @@ void furnace_remove(Attributes &p_furnaces, Attributes &p_events, Integer p_furn
   furnace_set_used(p_furnaces, p_furnace, FALSE);
 }
 
-Integer furnace_is_lit(Attributes &p_furnaces, Integer p_x, Integer p_y, Integer p_z)
-// ----------------------------------------------------------------
-// TRUE if the furnace at a cell is burning fuel
-// ----------------------------------------------------------------
-{
-  Integer l_furnace = furnace_find(p_furnaces, p_x, p_y, p_z);
-
-  if (l_furnace == 0) return FALSE;
-  if (furnace_burn_left(p_furnaces, l_furnace) > 0.0) return TRUE;
-  return FALSE;
-}
-
 Integer furnace_can_cook(Attributes &p_furnaces, Integer p_furnace)
 // ----------------------------------------------------------------
 // TRUE if the input can be cooked and the output has room for it
@@ -253,20 +242,27 @@ void furnace_step(Attributes &p_furnaces, Integer p_furnace, Real p_dt)
   furnace_set_state(p_furnaces, p_furnace, l_burn_left, l_burn_total, l_progress);
 }
 
-void furnaces_update(Attributes &p_furnaces, Real p_dt)
+void furnaces_update(Attributes &p_furnaces, Attributes &p_events, Real p_dt)
 // ----------------------------------------------------------------
 // Advance every furnace by dt seconds, in small steps so a long
-// gap between frames (paused game) still cooks correctly
+// gap between frames (paused game) still cooks correctly. A furnace
+// whose block doesn't show whether it is burning (it just lit or
+// went out, or the world was just loaded) asks for its block to be
+// swapped with EVT_FURNACE_LIT.
 // ----------------------------------------------------------------
 {
   Integer l_furnace   = 0;
+  Integer l_live      = 0;
+  Integer l_lit       = FALSE;
+  Integer l_x         = 0;
+  Integer l_y         = 0;
+  Integer l_z         = 0;
+  Integer l_block     = 0;
   Real    l_remaining = p_dt;
   Real    l_step      = 0.0;
 
-  if (l_remaining > 3600.0) l_remaining = 3600.0;
-
-  for (l_furnace = 1; l_furnace <= MAX_FURNACES; ++l_furnace) {
-    if (!furnace_used(p_furnaces, l_furnace)) continue;
+  for (l_live = 1; l_live <= slots_count(SLOT_POOL_FURNACES); ++l_live) {
+    l_furnace   = slots_at(SLOT_POOL_FURNACES, l_live);
     l_remaining = p_dt;
     if (l_remaining > 3600.0) l_remaining = 3600.0;
     while (l_remaining > 0.0) {
@@ -275,6 +271,14 @@ void furnaces_update(Attributes &p_furnaces, Real p_dt)
       l_remaining = l_remaining - l_step;
       furnace_step(p_furnaces, l_furnace, l_step);
     }
+
+    l_lit = FALSE;
+    if (furnace_burn_left(p_furnaces, l_furnace) > 0.0) l_lit = TRUE;
+    furnace_cell(p_furnaces, l_furnace, l_x, l_y, l_z);
+    l_block = world_get_block(l_x, l_y, l_z);
+    if (!block_is_furnace(l_block)) continue;
+    if (block_furnace_is_lit(l_block) == l_lit) continue;
+    emit_event(p_events, EVT_FURNACE_LIT, l_x, l_y, l_z, l_lit, 0.0, 0.0, 0.0, "");
   }
 }
 

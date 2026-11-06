@@ -95,7 +95,7 @@ Integer world_is_night      (Real p_time_of_day);
 Text    world_clock_text    (Real p_time_of_day);
 Integer world_cell_light    (Integer p_cell);
 Integer world_get_light     (Integer p_x, Integer p_y, Integer p_z);
-void    world_light_update  (Integer p_x, Integer p_y, Integer p_z);
+Integer world_light_update  (Integer p_x, Integer p_y, Integer p_z);
 void    world_on_event      (Attributes &p_event, Attributes &p_info, Attributes &p_events);
 Integer world_solid_below   (Integer p_x, Integer p_z);
 Integer world_biome         (Integer p_x, Integer p_z);

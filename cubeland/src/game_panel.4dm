@@ -155,7 +155,7 @@ void game_panel_render(Draw_Box p_box, Integer p_captured, Real p_frame_ms, Real
              world_time_of_day(g_info), p_frame_ms, render_stats_text(), p_now);
     ui_draw (p_box, l_w, l_h, g_ui, g_inventory, g_grid, g_furnaces, g_book);
   } else {
-    render_world(p_box, l_w, l_h, STATUS_STRIP_HEIGHT, g_player, g_cows, g_drops, g_furnaces, g_settings, world_time_of_day(g_info), p_now);
+    render_world(p_box, l_w, l_h, STATUS_STRIP_HEIGHT, g_player, g_cows, g_drops, g_settings, world_time_of_day(g_info), p_now);
     hud_draw    (p_box, l_w, l_h, p_captured, FALSE, g_hud, g_player, g_inventory, g_settings, world_info_seed(g_info),
                  world_time_of_day(g_info), p_frame_ms, render_stats_text(), p_now);
   }

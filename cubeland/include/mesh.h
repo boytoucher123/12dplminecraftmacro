@@ -99,6 +99,7 @@ Integer mesh_layer_key     (Integer p_direction, Integer p_local_x, Integer p_lo
 Integer mesh_ensure_section(Integer p_sx, Integer p_sy, Integer p_sz);
 Integer mesh_face_light    (Integer p_x, Integer p_y, Integer p_z, Integer p_direction);
 void    mesh_mark_dirty    (Integer p_x, Integer p_y, Integer p_z);
+void    mesh_mark_box_dirty(Integer p_x, Integer p_y, Integer p_z, Integer p_radius);
 void    mesh_on_event      (Attributes &p_event);
 
 #endif

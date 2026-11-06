@@ -35,6 +35,8 @@
 #define EVT_PLAYER_RESPAWNED  15
 #define EVT_SLEEP             16   // i1..i3 cell of the bed used
 #define EVT_ZOMBIE_ATTACK     17   // i1 damage (a zombie hit the player)
+#define EVT_LIGHT_CHANGED     18   // i1..i3 cell: block light may have changed up to LIGHT_RADIUS from it
+#define EVT_FURNACE_LIT       19   // i1..i3 cell of a furnace, i4 TRUE if it started burning, FALSE if it went out
 
 // Screens that EVT_OPEN_SCREEN can open
 #define SCREEN_NONE           0

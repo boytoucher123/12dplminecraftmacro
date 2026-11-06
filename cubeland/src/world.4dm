@@ -221,7 +221,7 @@ void world_break_block(Attributes &p_events, Integer p_x, Integer p_y, Integer p
 
   world_set_block        (p_x, p_y, p_z, l_new_block);
   world_update_column_top(p_x, p_z);
-  world_light_update     (p_x, p_y, p_z);
+  if (world_light_update(p_x, p_y, p_z)) emit_cell_event(p_events, EVT_LIGHT_CHANGED, p_x, p_y, p_z, 0);
   emit_event(p_events, EVT_BLOCK_BROKEN, p_x, p_y, p_z, l_old_block, p_tool_item * 1.0, 0.0, 0.0, "");
   if (l_new_block == BLOCK_WATER) emit_cell_event(p_events, EVT_BLOCK_PLACED, p_x, p_y, p_z, BLOCK_WATER);
 
@@ -239,7 +239,7 @@ void world_place_block(Attributes &p_events, Integer p_x, Integer p_y, Integer p
 
   world_set_block        (p_x, p_y, p_z, p_block);
   world_update_column_top(p_x, p_z);
-  world_light_update     (p_x, p_y, p_z);
+  if (world_light_update(p_x, p_y, p_z)) emit_cell_event(p_events, EVT_LIGHT_CHANGED, p_x, p_y, p_z, 0);
   emit_cell_event(p_events, EVT_BLOCK_PLACED, p_x, p_y, p_z, p_block);
 }
 
@@ -316,13 +316,24 @@ Text world_clock_text(Real p_time_of_day)
 
 void world_on_event(Attributes &p_event, Attributes &p_info, Attributes &p_events)
 // ----------------------------------------------------------------
+// EVT_FURNACE_LIT: a furnace started or stopped burning, so its
+// block becomes the lit (light giving) or unlit furnace.
 // EVT_SLEEP: a bed was used. At night the clock jumps to the next
 // morning; either way the bed becomes the place to respawn.
 // ----------------------------------------------------------------
 {
-  Integer l_x = event_integer(p_event, 1);
-  Integer l_y = event_integer(p_event, 2);
-  Integer l_z = event_integer(p_event, 3);
+  Integer l_x     = event_integer(p_event, 1);
+  Integer l_y     = event_integer(p_event, 2);
+  Integer l_z     = event_integer(p_event, 3);
+  Integer l_block = 0;
+
+  if (event_type(p_event) == EVT_FURNACE_LIT) {
+    l_block = world_get_block(l_x, l_y, l_z);
+    if (!block_is_furnace(l_block)) return;
+    world_set_block(l_x, l_y, l_z, block_furnace_lit_as(l_block, event_integer(p_event, 4)));
+    if (world_light_update(l_x, l_y, l_z)) emit_cell_event(p_events, EVT_LIGHT_CHANGED, l_x, l_y, l_z, 0);
+    return;
+  }
 
   if (event_type(p_event) != EVT_SLEEP) return;
 
@@ -369,7 +380,7 @@ Integer world_light_seed_outside(Integer p_tail, Integer p_x, Integer p_y, Integ
   return world_light_push(p_tail, p_x, p_y, p_z);
 }
 
-void world_light_update(Integer p_x, Integer p_y, Integer p_z)
+Integer world_light_update(Integer p_x, Integer p_y, Integer p_z)
 // ----------------------------------------------------------------
 // Work block light out again after the cell (x, y, z) changed.
 // A change can only alter light within LIGHT_MAX_LEVEL - 1 cells of
@@ -377,6 +388,8 @@ void world_light_update(Integer p_x, Integer p_y, Integer p_z)
 // relight it from the light sources inside and from the lit cells
 // just outside, then spread it with a breadth-first flood. Quick
 // when there is no light nearby (the usual case in daylight).
+// Returns TRUE if the light was worked out again (so the faces
+// within LIGHT_RADIUS need rebuilding), FALSE if there was none.
 // ----------------------------------------------------------------
 {
   Integer l_x0    = max_integer(p_x - LIGHT_RADIUS, 0);
@@ -399,14 +412,14 @@ void world_light_update(Integer p_x, Integer p_y, Integer p_z)
   Integer l_block = 0;
   Integer l_near  = 0;
 
-  if (!world_in_bounds(p_x, p_y, p_z)) return;
+  if (!world_in_bounds(p_x, p_y, p_z)) return FALSE;
 
   // Nothing to do if nothing near the cell is or gives light
   l_near = block_light_emission(world_get_block(p_x, p_y, p_z)) + world_get_light(p_x, p_y, p_z)
          + world_get_light(p_x + 1, p_y, p_z) + world_get_light(p_x - 1, p_y, p_z)
          + world_get_light(p_x, p_y + 1, p_z) + world_get_light(p_x, p_y - 1, p_z)
          + world_get_light(p_x, p_y, p_z + 1) + world_get_light(p_x, p_y, p_z - 1);
-  if (l_near == 0) return;
+  if (l_near == 0) return FALSE;
 
   // Clear the box and light its sources
   for (l_x = l_x0; l_x <= l_x1; ++l_x) {
@@ -470,6 +483,7 @@ void world_light_update(Integer p_x, Integer p_y, Integer p_z)
     }
   }
   g_light_steps = l_tail;
+  return TRUE;
 }
 
 // ---------------------------------------------------------------- world record

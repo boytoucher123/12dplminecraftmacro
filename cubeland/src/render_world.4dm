@@ -12,7 +12,6 @@
 #include "../include/cows.h"
 #include "../include/slots.h"
 #include "../include/drops.h"
-#include "../include/furnace.h"
 #include "../include/records.h"
 #include "../include/settings.h"
 #include "../include/render.h"
@@ -312,7 +311,7 @@ void render_add_face(Real p_c0x, Real p_c0y, Real p_c0z, Real p_e1x, Real p_e1y,
   g_bucket_head[l_bucket] = l_face;
 }
 
-void render_add_block_face(Attributes &p_furnaces, Integer p_x, Integer p_y, Integer p_z, Integer p_direction, Integer p_block,
+void render_add_block_face(Integer p_x, Integer p_y, Integer p_z, Integer p_direction, Integer p_block,
                            Real p_distance_squared, Integer p_crack, Real p_light)
 // ----------------------------------------------------------------
 // Queue one face of the block at cell (x, y, z), lit by light
@@ -350,12 +349,8 @@ void render_add_block_face(Attributes &p_furnaces, Integer p_x, Integer p_y, Int
     }
   }
   l_before = g_face_total;
-  if (l_tex == TEX_FURNACE_FRONT) {
-    if (furnace_is_lit(p_furnaces, p_x, p_y, p_z)) {
-      l_tex   = TEX_FURNACE_FRONT_LIT;
-      l_shade = block_face_shade(p_direction);
-    }
-  }
+  // A burning furnace's door glows whatever the light around it
+  if (l_tex == TEX_FURNACE_FRONT_LIT) l_shade = block_face_shade(p_direction);
 
   if (p_direction == DIR_PX) {
     render_add_face(l_ox + l_ax_x + l_az_x, l_oy + l_ax_y + l_az_y, l_oz + l_ax_z + l_az_z,
@@ -519,7 +514,7 @@ Integer render_layer_count(Real p_limit)
   return l_count;
 }
 
-void render_collect_blocks(Attributes &p_furnaces)
+void render_collect_blocks()
 // ----------------------------------------------------------------
 // Walk the cached face lists of the sections in view and queue the
 // faces that point towards the eye, are within the view distance
@@ -707,7 +702,7 @@ void render_collect_blocks(Attributes &p_furnaces)
             if (l_stage > 0) {
               if (l_x == g_view_break_x && l_y == g_view_break_y && l_z == g_view_break_z) l_crack = l_stage;
             }
-            render_add_block_face(p_furnaces, l_x, l_y, l_z, l_direction, l_block, l_dist_sq, l_crack, l_light);
+            render_add_block_face(l_x, l_y, l_z, l_direction, l_block, l_dist_sq, l_crack, l_light);
           }
         }
       }
@@ -1884,7 +1879,7 @@ void render_target_outline(Draw_Box p_box)
 }
 
 void render_world(Draw_Box p_box, Real p_w, Real p_h, Real p_view_bottom, Attributes &p_player, Attributes &p_cows,
-                  Attributes &p_drops, Attributes &p_furnaces, Attributes &p_settings, Real p_time_of_day, Real p_now)
+                  Attributes &p_drops, Attributes &p_settings, Real p_time_of_day, Real p_now)
 // ----------------------------------------------------------------
 // Draw the 3D view from the player's eyes: sky, then every face far
 // to near, then the outline of the targeted block. Must be inside a
@@ -1910,7 +1905,7 @@ void render_world(Draw_Box p_box, Real p_w, Real p_h, Real p_view_bottom, Attrib
   g_stat_hidden    = 0;
 
   render_sky(p_box);
-  render_collect_blocks(p_furnaces);
+  render_collect_blocks();
   mesh_build_nearby(g_cam_x, g_cam_y, g_cam_z, min_integer(g_render_distance, VERTICAL_RANGE + SECTION_SIZE), BACKGROUND_BUILDS);
   render_collect_cows  (p_cows);
   render_collect_drops (p_drops);

@@ -129,7 +129,9 @@ default font comes back the next time the game opens.
   overhangs, the shade of trees) and in corners and creases (this can be
   turned off in the settings). **Torches** give off light that spreads
   through the air around corners and fades over 14 blocks, so caves and
-  houses can be lit at night. Glass lets light through.
+  houses can be lit at night. A **burning furnace** glows and lights its
+  surroundings too (a little less than a torch) until its fuel runs out.
+  Glass lets light through.
 - **Zombies:** at night they come out in the dark, 14 to 30 blocks away
   (never right next to torches). They walk straight at you, hit for 3
   with a knock-back, take a few hits to kill, drop rotten flesh, and burn

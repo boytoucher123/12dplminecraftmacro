@@ -125,6 +125,10 @@ static void register_hooks(){
      printf("[hook] plants at x %d, z %d..%d, y %d; torch at x %d\n",px,pz-1,pz+2,py,px+2);
      set_look(0.12,-0.35); };
   g_calls["font"]=[]{ extern Text g_text_font; printf("[hook] font setting \"%s\", drawn with \"%s\"\n",settings_font(g_settings).c_str(),g_text_font.c_str()); };
+  // The furnace placed last: its block and the brightest block light next to it
+  g_calls["furnace_light"]=[]{ for(int e=g_edit_count;e>=1;e--){ int cell=g_edit_index[e]-1; int y=cell%WORLD_HEIGHT; cell/=WORLD_HEIGHT; int z=cell%WORLD_SIZE_Z, x=cell/WORLD_SIZE_Z;
+       int b=world_get_block(x,y,z); if(!block_is_furnace(b)) continue; int best=0; for(int d=0;d<6;d++){ int dx=d==0?1:d==1?-1:0, dy=d==2?1:d==3?-1:0, dz=d==4?1:d==5?-1:0; best=std::max(best,world_get_light(x+dx,y+dy,z+dz)); }
+       printf("[hook] furnace at %d %d %d block %d lit %d light beside it %d\n",x,y,z,b,block_furnace_is_lit(b),best); return; } printf("[hook] no furnace placed\n"); };
   g_calls["render_stats"]=[]{ printf("[hook] render: %s\n",render_stats_text().c_str()); };
   g_calls["frame_stats"]=[]{ printf("[hook] frame stats: %s\n",hud_frame_stats(g_hud).c_str()); };
   g_calls["give_planks_far"]=[]{ slot_set(g_inventory,20,ITEM_PLANKS,7,0); };

@@ -36,6 +36,7 @@ Integer block_light_emission(Integer p_block)
 // ----------------------------------------------------------------
 {
   if (p_block == BLOCK_TORCH) return TORCH_LIGHT;
+  if (block_furnace_is_lit(p_block)) return FURNACE_LIGHT;
   return 0;
 }
 
@@ -76,11 +77,34 @@ Integer block_plant_texture(Integer p_block)
 
 Integer block_is_furnace(Integer p_block)
 // ----------------------------------------------------------------
-// TRUE for any of the four furnace orientations
+// TRUE for any of the four furnace orientations, burning or not
 // ----------------------------------------------------------------
 {
   if (p_block >= BLOCK_FURNACE_PX && p_block <= BLOCK_FURNACE_NZ) return TRUE;
+  if (p_block >= BLOCK_LIT_FURNACE_PX && p_block <= BLOCK_LIT_FURNACE_NZ) return TRUE;
   return FALSE;
+}
+
+Integer block_furnace_is_lit(Integer p_block)
+// ----------------------------------------------------------------
+// TRUE for a burning furnace block
+// ----------------------------------------------------------------
+{
+  if (p_block >= BLOCK_LIT_FURNACE_PX && p_block <= BLOCK_LIT_FURNACE_NZ) return TRUE;
+  return FALSE;
+}
+
+Integer block_furnace_lit_as(Integer p_block, Integer p_lit)
+// ----------------------------------------------------------------
+// The furnace block facing the same way as p_block, burning (lit
+// TRUE) or not
+// ----------------------------------------------------------------
+{
+  Integer l_unlit = p_block;
+
+  if (block_furnace_is_lit(p_block)) l_unlit = p_block - BLOCK_LIT_FURNACE_PX + BLOCK_FURNACE_PX;
+  if (p_lit) return l_unlit - BLOCK_FURNACE_PX + BLOCK_LIT_FURNACE_PX;
+  return l_unlit;
 }
 
 Integer block_furnace_front(Integer p_block)
@@ -88,10 +112,12 @@ Integer block_furnace_front(Integer p_block)
 // Direction the door of a furnace block faces, 0 if not a furnace
 // ----------------------------------------------------------------
 {
-  if (p_block == BLOCK_FURNACE_PX) return DIR_PX;
-  if (p_block == BLOCK_FURNACE_NX) return DIR_NX;
-  if (p_block == BLOCK_FURNACE_PZ) return DIR_PZ;
-  if (p_block == BLOCK_FURNACE_NZ) return DIR_NZ;
+  Integer l_unlit = block_furnace_lit_as(p_block, FALSE);
+
+  if (l_unlit == BLOCK_FURNACE_PX) return DIR_PX;
+  if (l_unlit == BLOCK_FURNACE_NX) return DIR_NX;
+  if (l_unlit == BLOCK_FURNACE_PZ) return DIR_PZ;
+  if (l_unlit == BLOCK_FURNACE_NZ) return DIR_NZ;
   return 0;
 }
 
@@ -288,7 +314,10 @@ Integer block_face_texture(Integer p_block, Integer p_direction)
   }
   if (block_is_furnace(p_block)) {
     if (p_direction == DIR_PY || p_direction == DIR_NY) return TEX_FURNACE_TOP;
-    if (p_direction == block_furnace_front(p_block)   ) return TEX_FURNACE_FRONT;
+    if (p_direction == block_furnace_front(p_block)) {
+      if (block_furnace_is_lit(p_block)) return TEX_FURNACE_FRONT_LIT;
+      return TEX_FURNACE_FRONT;
+    }
     return TEX_FURNACE_SIDE;
   }
 

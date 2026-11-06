@@ -243,7 +243,7 @@ void game_update(Real p_dt, Real p_real_dt, Real p_now, Integer p_running,
   Real l_z        = 0.0;
   Real l_autosave = record_real(p_game, ATTR_GAME_AUTOSAVE);
 
-  furnaces_update(p_furnaces, p_real_dt);
+  furnaces_update(p_furnaces, p_events, p_real_dt);
 
   if (p_running) {
     world_advance_time(p_info, p_dt);

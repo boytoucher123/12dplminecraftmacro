@@ -223,13 +223,13 @@ void    render_to_camera       (Real p_rel_x, Real p_rel_y, Real p_rel_z);
 Integer render_sphere_visible  (Real p_rel_x, Real p_rel_y, Real p_rel_z, Real p_radius);
 void    render_add_face        (Real p_c0x, Real p_c0y, Real p_c0z, Real p_e1x, Real p_e1y, Real p_e1z, Real p_e2x, Real p_e2y, Real p_e2z,
                                 Integer p_tex, Real p_shade, Real p_distance_squared, Real p_size, Real p_tint, Integer p_crack);
-void    render_add_block_face  (Attributes &p_furnaces, Integer p_x, Integer p_y, Integer p_z, Integer p_direction, Integer p_block,
+void    render_add_block_face  (Integer p_x, Integer p_y, Integer p_z, Integer p_direction, Integer p_block,
                                 Real p_distance_squared, Integer p_crack, Real p_light);
 void    render_add_sprite      (Real p_rel_x, Real p_rel_y, Real p_rel_z, Real p_half_width, Real p_height, Integer p_tex,
                                 Real p_shade, Real p_distance_squared);
 void    render_add_plant       (Integer p_x, Integer p_y, Integer p_z, Integer p_tex, Real p_light);
 Integer render_layer_count     (Real p_limit);
-void    render_collect_blocks  (Attributes &p_furnaces);
+void    render_collect_blocks  ();
 void    render_add_box         (Real p_centre_x, Real p_centre_y, Real p_centre_z, Real p_yaw, Real p_half_f, Real p_half_y, Real p_half_s,
                                 Integer p_tex_side, Integer p_tex_top, Integer p_tex_front, Integer p_tex_back, Real p_tint);
 void    render_collect_cows    (Attributes &p_cows);
@@ -259,6 +259,6 @@ void    render_sky_colours     (Real p_time_of_day);
 void    render_sky_disc        (Draw_Box p_box, Real p_dir_x, Real p_dir_y, Real p_dir_z, Real p_size, Integer p_moon);
 void    render_stars           (Draw_Box p_box, Real p_brightness);
 void    render_world           (Draw_Box p_box, Real p_w, Real p_h, Real p_view_bottom, Attributes &p_player, Attributes &p_cows,
-                                Attributes &p_drops, Attributes &p_furnaces, Attributes &p_settings, Real p_time_of_day, Real p_now);
+                                Attributes &p_drops, Attributes &p_settings, Real p_time_of_day, Real p_now);
 
 #endif

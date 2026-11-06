@@ -37,10 +37,9 @@ void    furnace_set_state     (Attributes &p_furnaces, Integer p_furnace, Real p
 Integer furnace_find          (Attributes &p_furnaces, Integer p_x, Integer p_y, Integer p_z);
 Integer furnace_get_or_create (Attributes &p_furnaces, Integer p_x, Integer p_y, Integer p_z);
 void    furnace_remove        (Attributes &p_furnaces, Attributes &p_events, Integer p_furnace);
-Integer furnace_is_lit        (Attributes &p_furnaces, Integer p_x, Integer p_y, Integer p_z);
 Integer furnace_can_cook      (Attributes &p_furnaces, Integer p_furnace);
 void    furnace_step          (Attributes &p_furnaces, Integer p_furnace, Real p_dt);
-void    furnaces_update       (Attributes &p_furnaces, Real p_dt);
+void    furnaces_update      (Attributes &p_furnaces, Attributes &p_events, Real p_dt);
 void    furnace_on_event      (Attributes &p_event, Attributes &p_furnaces, Attributes &p_events);
 
 #endif

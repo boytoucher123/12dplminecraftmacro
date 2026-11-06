@@ -38,8 +38,13 @@
 #define BLOCK_GLASS           26   // solid, but you see through it
 #define BLOCK_BED             27   // right click at night to sleep
 #define BLOCK_CHEST           28   // right click to store things
-#define MAX_BLOCK_ID          28
+#define BLOCK_LIT_FURNACE_PX  29   // a burning furnace (gives light): the
+#define BLOCK_LIT_FURNACE_NX  30   // furnace's block is swapped for one
+#define BLOCK_LIT_FURNACE_PZ  31   // of these while it burns; there is no
+#define BLOCK_LIT_FURNACE_NZ  32   // item for them
+#define MAX_BLOCK_ID          28   // highest block that is also an item
 #define TORCH_LIGHT           14
+#define FURNACE_LIGHT         13
 
 #define ITEM_NONE             0
 #define ITEM_BEDROCK          1
@@ -114,6 +119,8 @@ Integer block_light_emission (Integer p_block);
 Integer block_is_see_through (Integer p_block);
 Integer block_is_furnace     (Integer p_block);
 Integer block_furnace_front  (Integer p_block);
+Integer block_furnace_is_lit (Integer p_block);
+Integer block_furnace_lit_as (Integer p_block, Integer p_lit);
 Integer block_falls          (Integer p_block);
 Integer block_hand_hits      (Integer p_block);
 Integer block_tool_kind      (Integer p_block);
