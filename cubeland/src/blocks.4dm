@@ -20,8 +20,8 @@ Integer block_is_solid(Integer p_block)
 
 Integer block_is_plant(Integer p_block)
 // ----------------------------------------------------------------
-// TRUE for grass tufts, flowers, dead bushes and torches: pictures
-// that face the camera, that nothing collides with and that break
+// TRUE for grass tufts, flowers, dead bushes and torches: two
+// pictures crossed in an X, that nothing collides with and that break
 // with one hit
 // ----------------------------------------------------------------
 {

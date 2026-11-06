@@ -21,9 +21,13 @@
 
 void render_init()
 // ----------------------------------------------------------------
-// One-off set up: the crack pattern and default detail
+// One-off set up: the crack pattern, default detail, empty buckets
+// (render_draw_faces empties the buckets it used) and the stars
 // ----------------------------------------------------------------
 {
+  Integer l_bucket = 0;
+  Integer l_star   = 0;
+
   g_crack_u0[1] = 0.50; g_crack_v0[1] = 0.50; g_crack_u1[1] = 0.30; g_crack_v1[1] = 0.62;
   g_crack_u0[2] = 0.50; g_crack_v0[2] = 0.50; g_crack_u1[2] = 0.66; g_crack_v1[2] = 0.36;
   g_crack_u0[3] = 0.30; g_crack_v0[3] = 0.62; g_crack_u1[3] = 0.14; g_crack_v1[3] = 0.56;
@@ -34,6 +38,18 @@ void render_init()
   g_crack_u0[8] = 0.36; g_crack_v0[8] = 0.28; g_crack_u1[8] = 0.22; g_crack_v1[8] = 0.14;
 
   render_set_detail(2);
+
+  for (l_bucket = 1; l_bucket <= MAX_BUCKETS; ++l_bucket) g_bucket_head[l_bucket] = 0;
+  g_bucket_low  = MAX_BUCKETS + 1;
+  g_bucket_high = 0;
+
+  // Fixed directions and brightness of the stars
+  for (l_star = 1; l_star <= NUM_STARS; ++l_star) {
+    g_star_x    [l_star] = hash_real(l_star * 1.0, 3.7, 11.0) * 2.0 - 1.0;
+    g_star_z    [l_star] = hash_real(l_star * 1.0, 8.1, 5.0) * 2.0 - 1.0;
+    g_star_y    [l_star] = 0.15 + hash_real(l_star * 1.0, 1.3, 7.0);
+    g_star_level[l_star] = 150.0 + 100.0 * hash_real(l_star * 1.0, 2.0, 2.0);
+  }
 }
 
 void render_set_detail(Integer p_level)
@@ -88,7 +104,7 @@ Text render_stats_text()
 // One line of drawing statistics for the last frame
 // ----------------------------------------------------------------
 {
-  return "faces " + To_text(g_stat_faces) + "   polygons " + To_text(g_stat_polygons) + "   sections " + To_text(g_stat_sections);
+  return "faces " + To_text(g_stat_faces) + "   polygons " + To_text(g_stat_polygons) + "   sections " + To_text(g_stat_sections) + "   looked at " + To_text(g_stat_examined) + "   hidden " + To_text(g_stat_hidden);
 }
 
 // ---------------------------------------------------------------- 2D helpers
@@ -277,6 +293,10 @@ void render_add_face(Real p_c0x, Real p_c0y, Real p_c0z, Real p_e1x, Real p_e1y,
   g_df_fog   [l_face] = l_fog;
   g_df_tint  [l_face] = p_tint;
   g_df_crack [l_face] = p_crack;
+  g_df_u0    [l_face] = 0.0;
+  g_df_u1    [l_face] = 1.0;
+  g_df_opaque[l_face] = FALSE;
+  g_df_hidden[l_face] = FALSE;
   l_pixels = g_focal * p_size / max_real(l_distance, 0.1);
   g_df_detail[l_face] = DETAIL_FLAT;
   if (l_pixels > g_lod_major_pixels) g_df_detail[l_face] = DETAIL_MAJOR;
@@ -286,6 +306,8 @@ void render_add_face(Real p_c0x, Real p_c0y, Real p_c0z, Real p_e1x, Real p_e1y,
   l_bucket = Floor(p_distance_squared * g_bucket_scale) + 1;
   if (l_bucket > MAX_BUCKETS) l_bucket = MAX_BUCKETS;
   if (l_bucket < 1) l_bucket = 1;
+  if (l_bucket < g_bucket_low ) g_bucket_low  = l_bucket;
+  if (l_bucket > g_bucket_high) g_bucket_high = l_bucket;
   g_df_next[l_face]       = g_bucket_head[l_bucket];
   g_bucket_head[l_bucket] = l_face;
 }
@@ -317,6 +339,7 @@ void render_add_block_face(Attributes &p_furnaces, Integer p_x, Integer p_y, Int
   Real    l_top   = 1.0;
   Integer l_tex   = block_face_texture(p_block, p_direction);
   Real    l_shade = block_face_shade(p_direction) * p_light;
+  Integer l_before = 0;
 
   if (p_block == BLOCK_WATER) {
     l_top = WATER_TOP;
@@ -326,6 +349,7 @@ void render_add_block_face(Attributes &p_furnaces, Integer p_x, Integer p_y, Int
                                + 0.05 * Sin(p_z * 1.3 - p_x * 0.4 + g_view_now * 2.7));
     }
   }
+  l_before = g_face_total;
   if (l_tex == TEX_FURNACE_FRONT) {
     if (furnace_is_lit(p_furnaces, p_x, p_y, p_z)) {
       l_tex   = TEX_FURNACE_FRONT_LIT;
@@ -358,6 +382,14 @@ void render_add_block_face(Attributes &p_furnaces, Integer p_x, Integer p_y, Int
                     -l_ax_x, -l_ax_y, -l_ax_z,  0.0, l_ay_y * l_top, l_ay_z * l_top,
                     l_tex, l_shade, p_distance_squared, 1.0, 0.0, p_crack);
   }
+
+  // Faces of opaque blocks with a solid base colour hide what is
+  // behind them (not glass, water or textures with holes)
+  if (g_face_total > l_before) {
+    if (g_tex_base[l_tex] > 0) {
+      if (block_hides_faces(p_block)) g_df_opaque[g_face_total] = TRUE;
+    }
+  }
 }
 
 void render_add_sprite(Real p_rel_x, Real p_rel_y, Real p_rel_z, Real p_half_width, Real p_height, Integer p_tex,
@@ -377,25 +409,143 @@ void render_add_sprite(Real p_rel_x, Real p_rel_y, Real p_rel_z, Real p_half_wid
                   p_tex, p_shade, p_distance_squared, p_half_width * 2.0, 0.0, 0);
 }
 
+void render_add_plant(Integer p_x, Integer p_y, Integer p_z, Integer p_tex, Real p_light)
+// ----------------------------------------------------------------
+// Queue a plant in cell (x, y, z): two pictures crossed in an X
+// along the cell's diagonals, fixed in the world (seen from both
+// sides). Two crossing pictures can't be painted one after the
+// other, so each is split at the crossing into two halves ("fins")
+// that only meet along the middle; the fins are queued by the
+// distance to their own middle, nearest first, so in a shared
+// bucket the farther ones are painted first.
+// ----------------------------------------------------------------
+{
+  Real    l_half    = PLANT_HALF_WIDTH;
+  Real    l_height  = PLANT_HEIGHT;
+  Real    l_mid_x   = p_x + 0.5 - g_cam_x;
+  Real    l_mid_y   = p_y + l_height * 0.5 - g_cam_y;
+  Real    l_mid_z   = p_z + 0.5 - g_cam_z;
+  Real    l_up_x    = 0.0;
+  Real    l_up_y    = 0.0;
+  Real    l_up_z    = 0.0;
+  Real    l_c0_x    = 0.0;
+  Real    l_c0_y    = 0.0;
+  Real    l_c0_z    = 0.0;
+  Real    l_e1_x    = 0.0;
+  Real    l_e1_y    = 0.0;
+  Real    l_e1_z    = 0.0;
+  Real    l_dir_x   = 0.0;
+  Real    l_dir_z   = 0.0;
+  Real    l_fin_x   = 0.0;
+  Real    l_fin_z   = 0.0;
+  Integer l_fin     = 0;
+  Integer l_pick    = 0;
+  Integer l_picked  = 0;
+  Integer l_before  = 0;
+
+  if (p_tex <= 0) return;
+
+  // Distance to each fin's middle: fins 1 and 2 are the first and
+  // second halves of the picture from (-1, -1) to (+1, +1), fins 3
+  // and 4 of the one from (-1, +1) to (+1, -1)
+  for (l_fin = 1; l_fin <= 4; ++l_fin) {
+    l_fin_x = l_half * 0.5;
+    l_fin_z = l_half * 0.5;
+    if (l_fin == 1) {
+      l_fin_x = -l_fin_x;
+      l_fin_z = -l_fin_z;
+    }
+    if (l_fin == 3) l_fin_x = -l_fin_x;
+    if (l_fin == 4) l_fin_z = -l_fin_z;
+    g_fin_dist[l_fin] = (l_mid_x + l_fin_x) * (l_mid_x + l_fin_x) + l_mid_y * l_mid_y + (l_mid_z + l_fin_z) * (l_mid_z + l_fin_z);
+    g_fin_done[l_fin] = FALSE;
+  }
+
+  render_to_camera(0.0, l_height, 0.0);
+  l_up_x = g_tc_x;
+  l_up_y = g_tc_y;
+  l_up_z = g_tc_z;
+
+  for (l_pick = 1; l_pick <= 4; ++l_pick) {
+    // nearest fin not queued yet
+    l_picked = 0;
+    for (l_fin = 1; l_fin <= 4; ++l_fin) {
+      if (g_fin_done[l_fin]) continue;
+      if (l_picked == 0) {
+        l_picked = l_fin;
+      } else if (g_fin_dist[l_fin] < g_fin_dist[l_picked]) {
+        l_picked = l_fin;
+      }
+    }
+    g_fin_done[l_picked] = TRUE;
+
+    // The whole picture runs from the corner at -dir to +dir; the
+    // fin is its first or second half (u 0..0.5 or 0.5..1)
+    l_dir_x = l_half;
+    l_dir_z = l_half;
+    if (l_picked >= 3) l_dir_z = -l_half;
+    render_to_camera(l_mid_x - l_dir_x, l_mid_y - l_height * 0.5, l_mid_z - l_dir_z);
+    l_c0_x = g_tc_x;
+    l_c0_y = g_tc_y;
+    l_c0_z = g_tc_z;
+    render_to_camera(2.0 * l_dir_x, 0.0, 2.0 * l_dir_z);
+    l_e1_x = g_tc_x;
+    l_e1_y = g_tc_y;
+    l_e1_z = g_tc_z;
+
+    l_before = g_face_total;
+    render_add_face(l_c0_x, l_c0_y, l_c0_z, l_e1_x, l_e1_y, l_e1_z, l_up_x, l_up_y, l_up_z,
+                    p_tex, p_light, g_fin_dist[l_picked], 2.0 * l_half, 0.0, 0);
+    if (g_face_total > l_before) {
+      if (l_picked == 1 || l_picked == 3) {
+        g_df_u1[g_face_total] = 0.5;
+      } else {
+        g_df_u0[g_face_total] = 0.5;
+      }
+    }
+  }
+}
+
+Integer render_layer_count(Real p_limit)
+// ----------------------------------------------------------------
+// How many of a section's layers 0..15 lie below limit (layer k
+// counts if k < limit): clamp(ceiling(limit), 0, 16)
+// ----------------------------------------------------------------
+{
+  Integer l_count = -floor_integer(-p_limit);
+
+  if (l_count < 0) return 0;
+  if (l_count > SECTION_SIZE) return SECTION_SIZE;
+  return l_count;
+}
+
 void render_collect_blocks(Attributes &p_furnaces)
 // ----------------------------------------------------------------
 // Walk the cached face lists of the sections in view and queue the
 // faces that point towards the eye, are within the view distance
 // and inside the screen
+// Faces are sorted by direction and layer (see mesh.h), so for each
+// direction only the layers on the eye's side of the faces are
+// walked: a face of DIR_PX at x faces the eye when x + 1 < eye x.
 // ----------------------------------------------------------------
 {
   Integer l_range     = g_render_distance;
   Real    l_range_sq  = l_range * l_range;
   Integer l_sx0       = clamp_integer(floor_integer((g_cam_x - l_range) / SECTION_SIZE), 0, SECTIONS_X - 1);
   Integer l_sx1       = clamp_integer(floor_integer((g_cam_x + l_range) / SECTION_SIZE), 0, SECTIONS_X - 1);
-  Integer l_sy0       = clamp_integer(floor_integer((g_cam_y - l_range) / SECTION_SIZE), 0, SECTIONS_Y - 1);
-  Integer l_sy1       = clamp_integer(floor_integer((g_cam_y + l_range) / SECTION_SIZE), 0, SECTIONS_Y - 1);
+  Integer l_sy0       = 0;
+  Integer l_sy1       = 0;
   Integer l_sz0       = clamp_integer(floor_integer((g_cam_z - l_range) / SECTION_SIZE), 0, SECTIONS_Z - 1);
   Integer l_sz1       = clamp_integer(floor_integer((g_cam_z + l_range) / SECTION_SIZE), 0, SECTIONS_Z - 1);
   Integer l_sx        = 0;
   Integer l_sy        = 0;
   Integer l_sz        = 0;
   Integer l_section   = 0;
+  Integer l_base      = 0;
+  Integer l_table     = 0;
+  Integer l_key0      = 0;
+  Integer l_layer0    = 0;
+  Integer l_layer1    = 0;
   Integer l_start     = 0;
   Integer l_last      = 0;
   Integer l_entry     = 0;
@@ -408,25 +558,36 @@ void render_collect_blocks(Attributes &p_furnaces)
   Integer l_crack     = 0;
   Integer l_stage     = g_view_break_stage;
   Integer l_plant_sq  = g_view_plant_range * g_view_plant_range;
-  Integer l_entry_tex = 0;
+  Integer l_in_water  = g_view_eye_in_water;
   Real    l_light     = 1.0;
   Integer l_code      = 0;
   Integer l_torch     = 0;
   Integer l_sky       = 0;
   Integer l_vertical  = min_integer(l_range, VERTICAL_RANGE);
+  Real    l_origin_x  = 0.0;
+  Real    l_origin_y  = 0.0;
+  Real    l_origin_z  = 0.0;
   Real    l_centre_x  = 0.0;
   Real    l_centre_y  = 0.0;
   Real    l_centre_z  = 0.0;
-  Real    l_reach     = 0.0;
+  Real    l_reach     = l_range + SECTION_RADIUS;
   Real    l_rel_x     = 0.0;
   Real    l_rel_y     = 0.0;
   Real    l_rel_z     = 0.0;
   Real    l_dist_sq   = 0.0;
-  Real    l_normal_x  = 0.0;
-  Real    l_normal_y  = 0.0;
-  Real    l_normal_z  = 0.0;
-
-  l_reach = l_range + SECTION_RADIUS;
+  Real    l_offset_x  = 0.0;
+  Real    l_offset_y  = 0.0;
+  Real    l_offset_z  = 0.0;
+  Real    l_radius    = 0.72;
+  Real    l_tc_x      = 0.0;
+  Real    l_tc_y      = 0.0;
+  Real    l_tc_z      = 0.0;
+  Real    l_daylight  = g_view_daylight;
+  Real    l_cos_x     = g_cull_cos_x;
+  Real    l_sin_x     = g_cull_sin_x;
+  Real    l_cos_y     = g_cull_cos_y;
+  Real    l_sin_y     = g_cull_sin_y;
+  Integer l_shading   = g_view_shading;
 
   // Not much is worth drawing far above or below the eye
   l_sy0 = clamp_integer(floor_integer((g_cam_y - l_vertical) / SECTION_SIZE), 0, SECTIONS_Y - 1);
@@ -435,92 +596,113 @@ void render_collect_blocks(Attributes &p_furnaces)
   for (l_sx = l_sx0; l_sx <= l_sx1; ++l_sx) {
     for (l_sz = l_sz0; l_sz <= l_sz1; ++l_sz) {
       for (l_sy = l_sy0; l_sy <= l_sy1; ++l_sy) {
-        l_centre_x = l_sx * SECTION_SIZE + 8.0 - g_cam_x;
-        l_centre_y = l_sy * SECTION_SIZE + 8.0 - g_cam_y;
-        l_centre_z = l_sz * SECTION_SIZE + 8.0 - g_cam_z;
+        l_origin_x = l_sx * SECTION_SIZE;
+        l_origin_y = l_sy * SECTION_SIZE;
+        l_origin_z = l_sz * SECTION_SIZE;
+        l_centre_x = l_origin_x + 8.0 - g_cam_x;
+        l_centre_y = l_origin_y + 8.0 - g_cam_y;
+        l_centre_z = l_origin_z + 8.0 - g_cam_z;
         if (l_centre_x * l_centre_x + l_centre_y * l_centre_y + l_centre_z * l_centre_z > l_reach * l_reach) continue;
         if (!render_sphere_visible(l_centre_x, l_centre_y, l_centre_z, SECTION_RADIUS)) continue;
 
         l_section = mesh_ensure_section(l_sx, l_sy, l_sz);
         if (g_section_count[l_section] == 0) continue;
         ++g_stat_sections;
+        l_base  = (l_section - 1) * SECTION_FACE_CAP;
+        l_table = (l_section - 1) * SECTION_LAYER_SLOTS;
 
         for (l_group = 1; l_group <= NUM_FACE_GROUPS; ++l_group) {
-          // Skip a direction whose faces all point away from the eye
-          if (l_group == DIR_PX && g_cam_x <= l_sx * SECTION_SIZE + 1.0 ) continue;
-          if (l_group == DIR_NX && g_cam_x >= l_sx * SECTION_SIZE + 15.0) continue;
-          if (l_group == DIR_PY && g_cam_y <= l_sy * SECTION_SIZE + 1.0 && !g_view_eye_in_water) continue;
-          if (l_group == DIR_NY && g_cam_y >= l_sy * SECTION_SIZE + 15.0) continue;
-          if (l_group == DIR_PZ && g_cam_z <= l_sz * SECTION_SIZE + 1.0 ) continue;
-          if (l_group == DIR_NZ && g_cam_z >= l_sz * SECTION_SIZE + 15.0) continue;
+          // The run of layers whose faces point towards the eye, and
+          // the offset from a cell's corner to its face's centre
+          l_layer0   = 0;
+          l_layer1   = SECTION_SIZE;
+          l_offset_x = 0.5;
+          l_offset_y = 0.5;
+          l_offset_z = 0.5;
+          if (l_group == DIR_PX) {
+            l_layer1   = render_layer_count(g_cam_x - 1.0 - l_origin_x);
+            l_offset_x = 1.0;
+          } else if (l_group == DIR_NX) {
+            l_layer0   = clamp_integer(floor_integer(g_cam_x - l_origin_x) + 1, 0, SECTION_SIZE);
+            l_offset_x = 0.0;
+          } else if (l_group == DIR_PY) {
+            // under water, water surfaces are seen from below too
+            if (!l_in_water) l_layer1 = render_layer_count(g_cam_y - 1.0 - l_origin_y);
+            l_offset_y = 1.0;
+          } else if (l_group == DIR_NY) {
+            l_layer0   = clamp_integer(floor_integer(g_cam_y - l_origin_y) + 1, 0, SECTION_SIZE);
+            l_offset_y = 0.0;
+          } else if (l_group == DIR_PZ) {
+            l_layer1   = render_layer_count(g_cam_z - 1.0 - l_origin_z);
+            l_offset_z = 1.0;
+          } else if (l_group == DIR_NZ) {
+            l_layer0   = clamp_integer(floor_integer(g_cam_z - l_origin_z) + 1, 0, SECTION_SIZE);
+            l_offset_z = 0.0;
+          } else {
+            if (!g_view_plants) continue;
+            l_offset_y = 0.45;
+          }
+          if (l_layer0 >= l_layer1) continue;
 
-          if (l_group == DIR_PLANT && !g_view_plants) continue;
+          l_key0  = l_table + (l_group - 1) * SECTION_SIZE;
+          l_start = l_base + g_section_layer_start[l_key0 + l_layer0 + 1];
+          l_last  = l_base + g_section_layer_start[l_key0 + l_layer1 + 1] - 1;
 
-          l_start = (l_section - 1) * SECTION_FACE_CAP + g_section_dir_start[(l_section - 1) * NUM_FACE_GROUPS + l_group];
-          l_last  = l_start + g_section_dir_count[(l_section - 1) * NUM_FACE_GROUPS + l_group] - 1;
           for (l_entry = l_start; l_entry <= l_last; ++l_entry) {
+            ++g_stat_examined;
             l_direction = g_face_dir[l_entry];
             if (l_direction > DIR_WET_FLAG) {
-              if (!g_view_eye_in_water) continue;
+              if (!l_in_water) continue;
               l_direction = l_direction - DIR_WET_FLAG;
             }
             l_x = g_face_x[l_entry];
             l_y = g_face_y[l_entry];
             l_z = g_face_z[l_entry];
+            l_block = g_face_block[l_entry];
             l_rel_x = l_x - g_cam_x;
             l_rel_y = l_y - g_cam_y;
             l_rel_z = l_z - g_cam_z;
+
+            // Under water a top face seen from below must be water
+            if (l_direction == DIR_PY) {
+              if (l_rel_y + 1.0 >= 0.0) {
+                if (l_block != BLOCK_WATER) continue;
+              }
+            }
+
+            // Within range (by the cell's centre) and on screen (a
+            // ball around the face's centre); the camera space test
+            // is written out here, it runs for every face
+            l_dist_sq = (l_rel_x + 0.5) * (l_rel_x + 0.5) + (l_rel_y + 0.5) * (l_rel_y + 0.5) + (l_rel_z + 0.5) * (l_rel_z + 0.5);
+            if (l_dist_sq > l_range_sq) continue;
+            if (l_direction == DIR_PLANT) {
+              if (l_dist_sq > l_plant_sq) continue;
+            }
+            l_rel_x = l_rel_x + l_offset_x;
+            l_rel_y = l_rel_y + l_offset_y;
+            l_rel_z = l_rel_z + l_offset_z;
+            l_tc_z  = l_rel_x * g_fwd_x + l_rel_y * g_fwd_y + l_rel_z * g_fwd_z;
+            if (l_tc_z < -l_radius) continue;
+            l_tc_x  = l_rel_x * g_right_x + l_rel_z * g_right_z;
+            if ( l_tc_x * l_cos_x - l_tc_z * l_sin_x > l_radius) continue;
+            if (-l_tc_x * l_cos_x - l_tc_z * l_sin_x > l_radius) continue;
+            l_tc_y  = l_rel_x * g_up_x + l_rel_y * g_up_y + l_rel_z * g_up_z;
+            if ( l_tc_y * l_cos_y - l_tc_z * l_sin_y > l_radius) continue;
+            if (-l_tc_y * l_cos_y - l_tc_z * l_sin_y > l_radius) continue;
+
             // Sky light (dimmed at night) or torch light, whichever is brighter
             l_code  = g_face_light[l_entry];
             l_torch = 0;
             if (l_code >= FACE_TORCH_SCALE) l_torch = Floor(l_code / (1.0 * FACE_TORCH_SCALE));
             l_sky   = l_code - FACE_TORCH_SCALE * l_torch;
-            if (!g_view_shading) l_sky = LIGHT_FULL;
-            l_light = max_real(l_sky * g_view_daylight, l_torch * 1.0) / LIGHT_FULL;
+            if (!l_shading) l_sky = LIGHT_FULL;
+            l_light = max_real(l_sky * l_daylight, l_torch * 1.0) / LIGHT_FULL;
 
-            // Plants: a picture facing the camera, only fairly close
             if (l_direction == DIR_PLANT) {
-              l_dist_sq = (l_rel_x + 0.5) * (l_rel_x + 0.5) + (l_rel_y + 0.5) * (l_rel_y + 0.5) + (l_rel_z + 0.5) * (l_rel_z + 0.5);
-              if (l_dist_sq > l_plant_sq || l_dist_sq > l_range_sq) continue;
-              if (!render_sphere_visible(l_rel_x + 0.5, l_rel_y + 0.5, l_rel_z + 0.5, 0.72)) continue;
-              l_entry_tex = block_plant_texture(world_cell_block(g_world[world_index(l_x, l_y, l_z)]));
-              if (l_entry_tex > 0) render_add_sprite(l_rel_x + 0.5, l_rel_y, l_rel_z + 0.5, PLANT_HALF_WIDTH, 0.9, l_entry_tex, l_light, l_dist_sq);
+              render_add_plant(l_x, l_y, l_z, block_plant_texture(l_block), l_light);
               continue;
             }
 
-            // Only faces that point towards the eye (water surfaces
-            // can be seen from either side)
-            l_normal_x = 0.0;
-            l_normal_y = 0.0;
-            l_normal_z = 0.0;
-            if (l_direction == DIR_PX) {
-              if (l_rel_x + 1.0 >= 0.0) continue;
-              l_normal_x = 1.0;
-            } else if (l_direction == DIR_NX) {
-              if (l_rel_x <= 0.0) continue;
-              l_normal_x = -1.0;
-            } else if (l_direction == DIR_PY) {
-              if (l_rel_y + 1.0 >= 0.0) {
-                if (!g_view_eye_in_water) continue;
-                if (world_cell_block(g_world[world_index(l_x, l_y, l_z)]) != BLOCK_WATER) continue;
-              }
-              l_normal_y = 1.0;
-            } else if (l_direction == DIR_NY) {
-              if (l_rel_y <= 0.0) continue;
-              l_normal_y = -1.0;
-            } else if (l_direction == DIR_PZ) {
-              if (l_rel_z + 1.0 >= 0.0) continue;
-              l_normal_z = 1.0;
-            } else {
-              if (l_rel_z <= 0.0) continue;
-              l_normal_z = -1.0;
-            }
-
-            l_dist_sq = (l_rel_x + 0.5) * (l_rel_x + 0.5) + (l_rel_y + 0.5) * (l_rel_y + 0.5) + (l_rel_z + 0.5) * (l_rel_z + 0.5);
-            if (l_dist_sq > l_range_sq) continue;
-            if (!render_sphere_visible(l_rel_x + 0.5 + l_normal_x * 0.5, l_rel_y + 0.5 + l_normal_y * 0.5, l_rel_z + 0.5 + l_normal_z * 0.5, 0.72)) continue;
-
-            l_block = world_cell_block(g_world[world_index(l_x, l_y, l_z)]);
             l_crack = 0;
             if (l_stage > 0) {
               if (l_x == g_view_break_x && l_y == g_view_break_y && l_z == g_view_break_z) l_crack = l_stage;
@@ -1007,6 +1189,10 @@ void render_draw_face(Draw_Box p_box, Integer p_face)
   Real    l_z       = 0.0;
   Real    l_px      = 0.0;
   Real    l_py      = 0.0;
+  Real    l_u0      = g_df_u0[p_face];
+  Real    l_u1      = g_df_u1[p_face];
+  Real    l_rect_u0 = 0.0;
+  Real    l_rect_u1 = 0.0;
 
   g_q_c0x   = g_df_c0x[p_face];
   g_q_c0y   = g_df_c0y[p_face];
@@ -1058,11 +1244,11 @@ void render_draw_face(Draw_Box p_box, Integer p_face)
     render_set_face_colour(p_box, g_tex_avg_r[l_tex] * g_q_keep + g_q_add_r,
                            g_tex_avg_g[l_tex] * g_q_keep + g_q_add_g,
                            g_tex_avg_b[l_tex] * g_q_keep + g_q_add_b);
-    render_quad(p_box, 0.0, 0.0, 1.0, 1.0);
+    render_quad(p_box, l_u0, 0.0, l_u1, 1.0);
   } else {
     if (g_tex_base[l_tex] > 0) {
       render_palette_colour(p_box, l_tex, g_tex_base[l_tex]);
-      render_quad(p_box, 0.0, 0.0, 1.0, 1.0);
+      render_quad(p_box, l_u0, 0.0, l_u1, 1.0);
     }
 
     l_first = g_tex_rect_first[l_tex];
@@ -1072,11 +1258,17 @@ void render_draw_face(Draw_Box p_box, Integer p_face)
     l_colour = 0;
     for (l_rect = l_first; l_rect <= l_last; ++l_rect) {
       if (l_detail == DETAIL_MAJOR && g_rect_area[l_rect] < MAJOR_RECT_AREA) continue;
+      // only the part inside the face's u span (half pictures)
+      l_rect_u0 = g_rect_u0[l_rect];
+      l_rect_u1 = g_rect_u1[l_rect];
+      if (l_rect_u1 <= l_u0 || l_rect_u0 >= l_u1) continue;
+      if (l_rect_u0 < l_u0) l_rect_u0 = l_u0;
+      if (l_rect_u1 > l_u1) l_rect_u1 = l_u1;
       if (g_rect_pal[l_rect] != l_colour) {
         l_colour = g_rect_pal[l_rect];
         render_palette_colour(p_box, l_tex, l_colour);
       }
-      render_quad(p_box, g_rect_u0[l_rect], g_rect_v0[l_rect], g_rect_u1[l_rect], g_rect_v1[l_rect]);
+      render_quad(p_box, l_rect_u0, g_rect_v0[l_rect], l_rect_u1, g_rect_v1[l_rect]);
     }
   }
 
@@ -1088,21 +1280,265 @@ void render_draw_face(Draw_Box p_box, Integer p_face)
   }
 }
 
+void render_cover_reset()
+// ----------------------------------------------------------------
+// Nothing covered yet, apart from what is below the view (the
+// status strip) and above the top of the screen
+// ----------------------------------------------------------------
+{
+  Integer l_line = 0;
+  Integer l_slot = 0;
+
+  g_cover_columns = Floor(g_screen_w / COVER_COLUMN_PIXELS) + 2;
+  if (g_cover_columns > MAX_COVER_COLUMNS) g_cover_columns = MAX_COVER_COLUMNS;
+  for (l_line = 1; l_line <= g_cover_columns; ++l_line) {
+    l_slot = (l_line - 1) * COVER_SPANS;
+    g_cover_count[l_line] = 2;
+    g_cover_low [l_slot + 1] = -1.0e30;
+    g_cover_high[l_slot + 1] = g_view_bottom;
+    g_cover_low [l_slot + 2] = g_screen_h;
+    g_cover_high[l_slot + 2] = 1.0e30;
+  }
+}
+
+void render_cover_extent(Real p_x, Real &p_low, Real &p_high)
+// ----------------------------------------------------------------
+// Lowest and highest screen y of the face in g_cover_x/y (a convex
+// quadrilateral) on the vertical line at x, which must cross it
+// ----------------------------------------------------------------
+{
+  Integer l_corner = 0;
+  Integer l_next   = 0;
+  Real    l_x0     = 0.0;
+  Real    l_x1     = 0.0;
+  Real    l_y      = 0.0;
+
+  p_low  =  1.0e30;
+  p_high = -1.0e30;
+  for (l_corner = 1; l_corner <= 4; ++l_corner) {
+    l_next = l_corner + 1;
+    if (l_next > 4) l_next = 1;
+    l_x0 = g_cover_x[l_corner];
+    l_x1 = g_cover_x[l_next];
+    if (l_x0 < p_x && l_x1 < p_x) continue;
+    if (l_x0 > p_x && l_x1 > p_x) continue;
+    if (l_x0 == l_x1) {
+      p_low  = min_real(p_low,  min_real(g_cover_y[l_corner], g_cover_y[l_next]));
+      p_high = max_real(p_high, max_real(g_cover_y[l_corner], g_cover_y[l_next]));
+      continue;
+    }
+    l_y = g_cover_y[l_corner] + (p_x - l_x0) * (g_cover_y[l_next] - g_cover_y[l_corner]) / (l_x1 - l_x0);
+    if (l_y < p_low ) p_low  = l_y;
+    if (l_y > p_high) p_high = l_y;
+  }
+}
+
+void render_cover_add(Integer p_line, Real p_low, Real p_high)
+// ----------------------------------------------------------------
+// Add the stretch low..high to a line's covered spans, merging it
+// with every span it overlaps or nearly touches (COVER_JOIN). The
+// spans are kept in order, bottom first. If the line already has
+// COVER_SPANS separate spans, a stretch that joins none of them is
+// left out (that only means less is hidden).
+// ----------------------------------------------------------------
+{
+  Integer l_base  = (p_line - 1) * COVER_SPANS;
+  Integer l_count = g_cover_count[p_line];
+  Integer l_first = 0;
+  Integer l_last  = 0;
+  Integer l_span  = 0;
+  Integer l_gone  = 0;
+
+  // Spans that touch the stretch form one run, first..last
+  for (l_span = 1; l_span <= l_count; ++l_span) {
+    if (g_cover_high[l_base + l_span] < p_low - COVER_JOIN) continue;
+    if (g_cover_low [l_base + l_span] > p_high + COVER_JOIN) break;
+    if (l_first == 0) l_first = l_span;
+    l_last = l_span;
+  }
+
+  if (l_first == 0) {
+    // A separate span: insert it before the first span above it
+    if (l_count >= COVER_SPANS) return;
+    l_span = l_count;
+    while (l_span >= 1) {
+      if (g_cover_low[l_base + l_span] < p_low) break;
+      g_cover_low [l_base + l_span + 1] = g_cover_low [l_base + l_span];
+      g_cover_high[l_base + l_span + 1] = g_cover_high[l_base + l_span];
+      --l_span;
+    }
+    g_cover_low [l_base + l_span + 1] = p_low;
+    g_cover_high[l_base + l_span + 1] = p_high;
+    g_cover_count[p_line] = l_count + 1;
+    return;
+  }
+
+  // Merge the run into its first span and close the gap after it
+  g_cover_low [l_base + l_first] = min_real(g_cover_low [l_base + l_first], p_low);
+  g_cover_high[l_base + l_first] = max_real(g_cover_high[l_base + l_last ], p_high);
+  l_gone = l_last - l_first;
+  if (l_gone == 0) return;
+  for (l_span = l_last + 1; l_span <= l_count; ++l_span) {
+    g_cover_low [l_base + l_span - l_gone] = g_cover_low [l_base + l_span];
+    g_cover_high[l_base + l_span - l_gone] = g_cover_high[l_base + l_span];
+  }
+  g_cover_count[p_line] = l_count - l_gone;
+}
+
+void render_cover_corners(Integer p_face)
+// ----------------------------------------------------------------
+// Screen positions of a queued face's corners into g_cover_x/y
+// (the face must be in front of the camera)
+// ----------------------------------------------------------------
+{
+  Integer l_corner = 0;
+  Real    l_x      = 0.0;
+  Real    l_y      = 0.0;
+  Real    l_z      = 0.0;
+
+  for (l_corner = 1; l_corner <= 4; ++l_corner) {
+    l_x = g_df_c0x[p_face];
+    l_y = g_df_c0y[p_face];
+    l_z = g_df_c0z[p_face];
+    if (l_corner == 2 || l_corner == 3) {
+      l_x = l_x + g_df_e1x[p_face];
+      l_y = l_y + g_df_e1y[p_face];
+      l_z = l_z + g_df_e1z[p_face];
+    }
+    if (l_corner >= 3) {
+      l_x = l_x + g_df_e2x[p_face];
+      l_y = l_y + g_df_e2y[p_face];
+      l_z = l_z + g_df_e2z[p_face];
+    }
+    g_cover_x[l_corner] = g_centre_x + l_x * g_focal / l_z;
+    g_cover_y[l_corner] = g_centre_y + l_y * g_focal / l_z;
+  }
+}
+
+void render_cover_face(Integer p_face)
+// ----------------------------------------------------------------
+// Check one queued face against the coverage so far (every face
+// checked before it is nearer, see render_hide_covered): mark it
+// hidden if, on every coverage line from just left of it to just
+// right of it, its whole height range lies inside one covered span,
+// or if it is off the screen. Otherwise, if it is opaque, add the
+// stretch it covers on each line that crosses it.
+// ----------------------------------------------------------------
+{
+  Integer l_corner  = 0;
+  Integer l_line    = 0;
+  Integer l_first   = 0;
+  Integer l_last    = 0;
+  Integer l_base    = 0;
+  Integer l_span    = 0;
+  Integer l_inside  = FALSE;
+  Integer l_covered = TRUE;
+  Real    l_min_x   =  1.0e30;
+  Real    l_max_x   = -1.0e30;
+  Real    l_min_y   =  1.0e30;
+  Real    l_max_y   = -1.0e30;
+  Real    l_low     = 0.0;
+  Real    l_high    = 0.0;
+
+  // Faces cut by the near plane are always drawn and hide nothing
+  if (!g_df_front[p_face]) return;
+
+  render_cover_corners(p_face);
+  for (l_corner = 1; l_corner <= 4; ++l_corner) {
+    if (g_cover_x[l_corner] < l_min_x) l_min_x = g_cover_x[l_corner];
+    if (g_cover_x[l_corner] > l_max_x) l_max_x = g_cover_x[l_corner];
+    if (g_cover_y[l_corner] < l_min_y) l_min_y = g_cover_y[l_corner];
+    if (g_cover_y[l_corner] > l_max_y) l_max_y = g_cover_y[l_corner];
+  }
+
+  // Off the screen: nothing to draw
+  if (l_max_x < 0.0 || l_min_x > g_screen_w || l_max_y < g_view_bottom || l_min_y > g_screen_h) {
+    g_df_hidden[p_face] = TRUE;
+    return;
+  }
+  // Huge on screen (very close): leave it to the clipping
+  if (l_min_x < -GUARD_BAND || l_max_x > g_screen_w + GUARD_BAND) return;
+  if (l_min_y < -GUARD_BAND || l_max_y > g_screen_h + GUARD_BAND) return;
+
+  l_first = clamp_integer(Floor(l_min_x / COVER_COLUMN_PIXELS) + 1, 1, g_cover_columns);
+  l_last  = clamp_integer(Floor(l_max_x / COVER_COLUMN_PIXELS) + 2, 1, g_cover_columns);
+  for (l_line = l_first; l_line <= l_last; ++l_line) {
+    l_base   = (l_line - 1) * COVER_SPANS;
+    l_inside = FALSE;
+    for (l_span = 1; l_span <= g_cover_count[l_line]; ++l_span) {
+      if (g_cover_high[l_base + l_span] < l_max_y + COVER_MARGIN) continue;
+      if (g_cover_low [l_base + l_span] <= l_min_y - COVER_MARGIN) l_inside = TRUE;
+      break;
+    }
+    if (!l_inside) {
+      l_covered = FALSE;
+      break;
+    }
+  }
+  if (l_covered) {
+    g_df_hidden[p_face] = TRUE;
+    ++g_stat_hidden;
+    return;
+  }
+
+  if (!g_df_opaque[p_face]) return;
+
+  // Lines that cross the face
+  l_first = Floor(l_min_x / COVER_COLUMN_PIXELS) + 1;
+  if ((l_first - 1) * COVER_COLUMN_PIXELS < l_min_x) ++l_first;
+  l_last  = Floor(l_max_x / COVER_COLUMN_PIXELS) + 1;
+  if (l_first < 1) l_first = 1;
+  if (l_last > g_cover_columns) l_last = g_cover_columns;
+  for (l_line = l_first; l_line <= l_last; ++l_line) {
+    render_cover_extent((l_line - 1) * COVER_COLUMN_PIXELS, l_low, l_high);
+    if (l_high > l_low) render_cover_add(l_line, l_low, l_high);
+  }
+}
+
+void render_hide_covered()
+// ----------------------------------------------------------------
+// Walk the queued faces in the opposite order to painting (nearest
+// bucket first, and each bucket's list backwards) and mark the
+// faces that nearer ones would paint over
+// ----------------------------------------------------------------
+{
+  Integer l_bucket = 0;
+  Integer l_face   = 0;
+  Integer l_count  = 0;
+  Integer l_index  = 0;
+
+  render_cover_reset();
+  for (l_bucket = g_bucket_low; l_bucket <= g_bucket_high; ++l_bucket) {
+    l_count = 0;
+    l_face  = g_bucket_head[l_bucket];
+    while (l_face > 0) {
+      ++l_count;
+      g_bucket_order[l_count] = l_face;
+      l_face = g_df_next[l_face];
+    }
+    for (l_index = l_count; l_index >= 1; --l_index) render_cover_face(g_bucket_order[l_index]);
+  }
+}
+
 void render_draw_faces(Draw_Box p_box)
 // ----------------------------------------------------------------
-// Paint every queued face, farthest bucket first
+// Paint every queued face that isn't hidden, farthest bucket first,
+// and empty the buckets for the next frame
 // ----------------------------------------------------------------
 {
   Integer l_bucket = 0;
   Integer l_face   = 0;
 
-  for (l_bucket = MAX_BUCKETS; l_bucket >= 1; --l_bucket) {
+  for (l_bucket = g_bucket_high; l_bucket >= g_bucket_low; --l_bucket) {
     l_face = g_bucket_head[l_bucket];
     while (l_face > 0) {
-      render_draw_face(p_box, l_face);
+      if (!g_df_hidden[l_face]) render_draw_face(p_box, l_face);
       l_face = g_df_next[l_face];
     }
+    g_bucket_head[l_bucket] = 0;
   }
+  g_bucket_low  = MAX_BUCKETS + 1;
+  g_bucket_high = 0;
 }
 
 // ---------------------------------------------------------------- sky and overlays
@@ -1164,23 +1600,17 @@ void render_stars(Draw_Box p_box, Real p_brightness)
 // ----------------------------------------------------------------
 {
   Integer l_star  = 0;
-  Real    l_x     = 0.0;
-  Real    l_y     = 0.0;
-  Real    l_z     = 0.0;
   Real    l_px    = 0.0;
   Real    l_py    = 0.0;
   Real    l_level = 0.0;
 
   for (l_star = 1; l_star <= NUM_STARS; ++l_star) {
-    l_x = hash_real(l_star * 1.0, 3.7, 11.0) * 2.0 - 1.0;
-    l_z = hash_real(l_star * 1.0, 8.1, 5.0) * 2.0 - 1.0;
-    l_y = 0.15 + hash_real(l_star * 1.0, 1.3, 7.0);
-    render_to_camera(l_x, l_y, l_z);
+    render_to_camera(g_star_x[l_star], g_star_y[l_star], g_star_z[l_star]);
     if (g_tc_z <= 0.1) continue;
     l_px = g_centre_x + g_tc_x * g_focal / g_tc_z;
     l_py = g_centre_y + g_tc_y * g_focal / g_tc_z;
     if (l_px < 0.0 || l_px > g_screen_w || l_py < g_view_bottom || l_py > g_screen_h) continue;
-    l_level = p_brightness * (150.0 + 100.0 * hash_real(l_star * 1.0, 2.0, 2.0));
+    l_level = p_brightness * g_star_level[l_star];
     render_set_colour(p_box, lerp_real(g_sky_top_r, 255.0, l_level / 255.0), lerp_real(g_sky_top_g, 255.0, l_level / 255.0), lerp_real(g_sky_top_b, 240.0, l_level / 255.0));
     render_fill_rect(p_box, l_px - 1.0, l_py - 1.0, l_px + 1.0, l_py + 1.0);
   }
@@ -1234,70 +1664,232 @@ void render_sky(Draw_Box p_box)
   render_sky_disc(p_box, -l_sun_x, -l_sun_y, -l_sun_z, 0.05, TRUE);
 }
 
-void render_target_outline(Draw_Box p_box)
+Integer render_point_visible(Real p_x, Real p_y, Real p_z, Integer p_skip_x, Integer p_skip_y, Integer p_skip_z)
 // ----------------------------------------------------------------
-// Thin dark frame around the edges of the targeted block's faces
-// that face the eye
+// TRUE if no block that hides faces lies on the straight line from
+// the eye to the point (x, y, z), apart from the cell skip_x/y/z
+// (a 3D DDA walk through the cells the line crosses)
 // ----------------------------------------------------------------
 {
-  Real    l_rel_x = 0.0;
-  Real    l_rel_y = 0.0;
-  Real    l_rel_z = 0.0;
-  Real    l_grow  = 0.004;
-  Integer l_face  = 0;
+  Real    l_dir_x  = p_x - g_cam_x;
+  Real    l_dir_y  = p_y - g_cam_y;
+  Real    l_dir_z  = p_z - g_cam_z;
+  Integer l_cell_x = Floor(g_cam_x);
+  Integer l_cell_y = Floor(g_cam_y);
+  Integer l_cell_z = Floor(g_cam_z);
+  Integer l_step_x = 1;
+  Integer l_step_y = 1;
+  Integer l_step_z = 1;
+  Real    l_delta_x = 1.0e30;
+  Real    l_delta_y = 1.0e30;
+  Real    l_delta_z = 1.0e30;
+  Real    l_next_x = 1.0e30;
+  Real    l_next_y = 1.0e30;
+  Real    l_next_z = 1.0e30;
+  Real    l_t      = 0.0;
+  Integer l_guard  = 0;
+
+  // t runs from 0 at the eye to 1 at the point
+  if (l_dir_x != 0.0) l_delta_x = Absolute(1.0 / l_dir_x);
+  if (l_dir_y != 0.0) l_delta_y = Absolute(1.0 / l_dir_y);
+  if (l_dir_z != 0.0) l_delta_z = Absolute(1.0 / l_dir_z);
+  if (l_dir_x < 0.0) {
+    l_step_x = -1;
+    l_next_x = (g_cam_x - l_cell_x) * l_delta_x;
+  } else {
+    l_next_x = (l_cell_x + 1.0 - g_cam_x) * l_delta_x;
+  }
+  if (l_dir_y < 0.0) {
+    l_step_y = -1;
+    l_next_y = (g_cam_y - l_cell_y) * l_delta_y;
+  } else {
+    l_next_y = (l_cell_y + 1.0 - g_cam_y) * l_delta_y;
+  }
+  if (l_dir_z < 0.0) {
+    l_step_z = -1;
+    l_next_z = (g_cam_z - l_cell_z) * l_delta_z;
+  } else {
+    l_next_z = (l_cell_z + 1.0 - g_cam_z) * l_delta_z;
+  }
+
+  while (l_guard < 64) {
+    ++l_guard;
+    // step into the next cell, unless the point comes first
+    if (l_next_x <= l_next_y && l_next_x <= l_next_z) {
+      l_t      = l_next_x;
+      l_next_x = l_next_x + l_delta_x;
+      l_cell_x = l_cell_x + l_step_x;
+    } else if (l_next_y <= l_next_z) {
+      l_t      = l_next_y;
+      l_next_y = l_next_y + l_delta_y;
+      l_cell_y = l_cell_y + l_step_y;
+    } else {
+      l_t      = l_next_z;
+      l_next_z = l_next_z + l_delta_z;
+      l_cell_z = l_cell_z + l_step_z;
+    }
+    if (l_t >= 1.0) return TRUE;
+
+    if (l_cell_x == p_skip_x && l_cell_y == p_skip_y && l_cell_z == p_skip_z) continue;
+    if (block_hides_faces(world_get_block(l_cell_x, l_cell_y, l_cell_z))) return FALSE;
+  }
+  return TRUE;
+}
+
+void render_world_line(Draw_Box p_box, Real p_x0, Real p_y0, Real p_z0, Real p_x1, Real p_y1, Real p_z1)
+// ----------------------------------------------------------------
+// Line between two world points, shortened where it crosses the
+// near plane
+// ----------------------------------------------------------------
+{
+  Real l_ax = 0.0;
+  Real l_ay = 0.0;
+  Real l_az = 0.0;
+  Real l_bx = 0.0;
+  Real l_by = 0.0;
+  Real l_bz = 0.0;
+  Real l_t  = 0.0;
+
+  render_to_camera(p_x0 - g_cam_x, p_y0 - g_cam_y, p_z0 - g_cam_z);
+  l_ax = g_tc_x;
+  l_ay = g_tc_y;
+  l_az = g_tc_z;
+  render_to_camera(p_x1 - g_cam_x, p_y1 - g_cam_y, p_z1 - g_cam_z);
+  l_bx = g_tc_x;
+  l_by = g_tc_y;
+  l_bz = g_tc_z;
+
+  if (l_az < NEAR_PLANE && l_bz < NEAR_PLANE) return;
+  if (l_az < NEAR_PLANE) {
+    l_t  = (NEAR_PLANE - l_az) / (l_bz - l_az);
+    l_ax = l_ax + (l_bx - l_ax) * l_t;
+    l_ay = l_ay + (l_by - l_ay) * l_t;
+    l_az = NEAR_PLANE;
+  } else if (l_bz < NEAR_PLANE) {
+    l_t  = (NEAR_PLANE - l_bz) / (l_az - l_bz);
+    l_bx = l_bx + (l_ax - l_bx) * l_t;
+    l_by = l_by + (l_ay - l_by) * l_t;
+    l_bz = NEAR_PLANE;
+  }
+
+  render_line(p_box, g_centre_x + l_ax * g_focal / l_az, g_centre_y + l_ay * g_focal / l_az,
+                     g_centre_x + l_bx * g_focal / l_bz, g_centre_y + l_by * g_focal / l_bz);
+}
+
+void render_target_outline(Draw_Box p_box)
+// ----------------------------------------------------------------
+// Thin dark frame around the targeted block: each of its 12 edges
+// that borders a face pointing towards the eye, split into
+// OUTLINE_PIECES pieces, and only the pieces that no other block
+// hides from the eye (a ray to each piece's middle). The outline is
+// drawn after the world, so without this test it would show
+// through blocks in front of the target.
+// ----------------------------------------------------------------
+{
+  Integer l_edge    = 0;
+  Integer l_piece   = 0;
+  Integer l_axis    = 0;
+  Integer l_a       = 0;
+  Integer l_b       = 0;
+  Integer l_bx      = g_view_target_x;
+  Integer l_by      = g_view_target_y;
+  Integer l_bz      = g_view_target_z;
+  Integer l_front_a = 0;
+  Integer l_front_b = 0;
+  Real    l_x0      = 0.0;
+  Real    l_y0      = 0.0;
+  Real    l_z0      = 0.0;
+  Real    l_dx      = 0.0;
+  Real    l_dy      = 0.0;
+  Real    l_dz      = 0.0;
+  Real    l_px      = 0.0;
+  Real    l_py      = 0.0;
+  Real    l_pz      = 0.0;
+  Real    l_mx      = 0.0;
+  Real    l_my      = 0.0;
+  Real    l_mz      = 0.0;
+  Real    l_to_x    = 0.0;
+  Real    l_to_y    = 0.0;
+  Real    l_to_z    = 0.0;
+  Real    l_length  = 0.0;
+  Real    l_lo      = -0.004;
+  Real    l_hi      = 1.004;
 
   if (g_view_target_kind != TARGET_BLOCK) return;
 
-  l_rel_x = g_view_target_x - l_grow - g_cam_x;
-  l_rel_y = g_view_target_y - l_grow - g_cam_y;
-  l_rel_z = g_view_target_z - l_grow - g_cam_z;
-  g_q_front = FALSE;
   render_set_colour(p_box, 16.0, 16.0, 16.0);
 
-  for (l_face = DIR_PX; l_face <= DIR_NZ; ++l_face) {
-    if (l_face == DIR_PX && l_rel_x + 1.0 + 2.0 * l_grow >= 0.0) continue;
-    if (l_face == DIR_NX && l_rel_x <= 0.0) continue;
-    if (l_face == DIR_PY && l_rel_y + 1.0 + 2.0 * l_grow >= 0.0) continue;
-    if (l_face == DIR_NY && l_rel_y <= 0.0) continue;
-    if (l_face == DIR_PZ && l_rel_z + 1.0 + 2.0 * l_grow >= 0.0) continue;
-    if (l_face == DIR_NZ && l_rel_z <= 0.0) continue;
+  // Edge number 1..12: axis 1 (x), 2 (y) or 3 (z) it runs along, and
+  // which side (a, b) of the block it is on across the other two axes
+  for (l_edge = 1; l_edge <= 12; ++l_edge) {
+    l_axis = Floor((l_edge - 1) / 4.0) + 1;
+    l_a    = Floor((l_edge - 1) / 2.0) - (l_axis - 1) * 2;
+    l_b    = l_edge - 1 - (l_axis - 1) * 4 - l_a * 2;
 
-    // The face as c0, e1, e2 in camera space, then its four edges
-    if (l_face == DIR_PX) {
-      render_to_camera(l_rel_x + 1.0 + 2.0 * l_grow, l_rel_y, l_rel_z);
-    } else if (l_face == DIR_PY) {
-      render_to_camera(l_rel_x, l_rel_y + 1.0 + 2.0 * l_grow, l_rel_z);
-    } else if (l_face == DIR_PZ) {
-      render_to_camera(l_rel_x, l_rel_y, l_rel_z + 1.0 + 2.0 * l_grow);
+    // The two faces beside the edge; draw it if either faces the eye
+    l_front_a = FALSE;
+    l_front_b = FALSE;
+    if (l_axis == 1) {
+      // across: y (a) and z (b)
+      if (l_a == 1) l_front_a = g_cam_y > l_by + 1.0;
+      if (l_a == 0) l_front_a = g_cam_y < l_by;
+      if (l_b == 1) l_front_b = g_cam_z > l_bz + 1.0;
+      if (l_b == 0) l_front_b = g_cam_z < l_bz;
+      l_x0 = l_bx + l_lo;
+      l_y0 = l_by + l_lo + l_a * (l_hi - l_lo);
+      l_z0 = l_bz + l_lo + l_b * (l_hi - l_lo);
+      l_dx = l_hi - l_lo;
+      l_dy = 0.0;
+      l_dz = 0.0;
+    } else if (l_axis == 2) {
+      // across: x (a) and z (b)
+      if (l_a == 1) l_front_a = g_cam_x > l_bx + 1.0;
+      if (l_a == 0) l_front_a = g_cam_x < l_bx;
+      if (l_b == 1) l_front_b = g_cam_z > l_bz + 1.0;
+      if (l_b == 0) l_front_b = g_cam_z < l_bz;
+      l_x0 = l_bx + l_lo + l_a * (l_hi - l_lo);
+      l_y0 = l_by + l_lo;
+      l_z0 = l_bz + l_lo + l_b * (l_hi - l_lo);
+      l_dx = 0.0;
+      l_dy = l_hi - l_lo;
+      l_dz = 0.0;
     } else {
-      render_to_camera(l_rel_x, l_rel_y, l_rel_z);
+      // across: x (a) and y (b)
+      if (l_a == 1) l_front_a = g_cam_x > l_bx + 1.0;
+      if (l_a == 0) l_front_a = g_cam_x < l_bx;
+      if (l_b == 1) l_front_b = g_cam_y > l_by + 1.0;
+      if (l_b == 0) l_front_b = g_cam_y < l_by;
+      l_x0 = l_bx + l_lo + l_a * (l_hi - l_lo);
+      l_y0 = l_by + l_lo + l_b * (l_hi - l_lo);
+      l_z0 = l_bz + l_lo;
+      l_dx = 0.0;
+      l_dy = 0.0;
+      l_dz = l_hi - l_lo;
     }
-    g_q_c0x = g_tc_x;
-    g_q_c0y = g_tc_y;
-    g_q_c0z = g_tc_z;
+    if (!l_front_a && !l_front_b) continue;
 
-    if (l_face == DIR_PX || l_face == DIR_NX) {
-      render_to_camera(0.0, 0.0, 1.0 + 2.0 * l_grow);
-    } else {
-      render_to_camera(1.0 + 2.0 * l_grow, 0.0, 0.0);
+    for (l_piece = 1; l_piece <= OUTLINE_PIECES; ++l_piece) {
+      // middle of the piece, moved a little towards the eye so the
+      // ray doesn't end inside a block that shares the edge
+      l_px = l_x0 + l_dx * (l_piece - 1) / OUTLINE_PIECES;
+      l_py = l_y0 + l_dy * (l_piece - 1) / OUTLINE_PIECES;
+      l_pz = l_z0 + l_dz * (l_piece - 1) / OUTLINE_PIECES;
+      l_mx = l_px + l_dx * 0.5 / OUTLINE_PIECES;
+      l_my = l_py + l_dy * 0.5 / OUTLINE_PIECES;
+      l_mz = l_pz + l_dz * 0.5 / OUTLINE_PIECES;
+      l_to_x = g_cam_x - l_mx;
+      l_to_y = g_cam_y - l_my;
+      l_to_z = g_cam_z - l_mz;
+      l_length = Sqrt(l_to_x * l_to_x + l_to_y * l_to_y + l_to_z * l_to_z);
+      if (l_length > 0.05) {
+        l_mx = l_mx + l_to_x * OUTLINE_NUDGE / l_length;
+        l_my = l_my + l_to_y * OUTLINE_NUDGE / l_length;
+        l_mz = l_mz + l_to_z * OUTLINE_NUDGE / l_length;
+      }
+      if (!render_point_visible(l_mx, l_my, l_mz, l_bx, l_by, l_bz)) continue;
+
+      render_world_line(p_box, l_px, l_py, l_pz, l_px + l_dx / OUTLINE_PIECES, l_py + l_dy / OUTLINE_PIECES, l_pz + l_dz / OUTLINE_PIECES);
     }
-    g_q_e1x = g_tc_x;
-    g_q_e1y = g_tc_y;
-    g_q_e1z = g_tc_z;
-
-    if (l_face == DIR_PY || l_face == DIR_NY) {
-      render_to_camera(0.0, 0.0, 1.0 + 2.0 * l_grow);
-    } else {
-      render_to_camera(0.0, 1.0 + 2.0 * l_grow, 0.0);
-    }
-    g_q_e2x = g_tc_x;
-    g_q_e2y = g_tc_y;
-    g_q_e2z = g_tc_z;
-
-    render_face_line(p_box, 0.0, 0.0, 1.0, 0.0);
-    render_face_line(p_box, 1.0, 0.0, 1.0, 1.0);
-    render_face_line(p_box, 1.0, 1.0, 0.0, 1.0);
-    render_face_line(p_box, 0.0, 1.0, 0.0, 0.0);
   }
 }
 
@@ -1309,7 +1901,6 @@ void render_world(Draw_Box p_box, Real p_w, Real p_h, Real p_view_bottom, Attrib
 // batch draw.
 // ----------------------------------------------------------------
 {
-  Integer l_bucket = 0;
   Real    l_x      = 0.0;
   Real    l_y      = 0.0;
   Real    l_z      = 0.0;
@@ -1325,7 +1916,8 @@ void render_world(Draw_Box p_box, Real p_w, Real p_h, Real p_view_bottom, Attrib
   g_stat_faces     = 0;
   g_stat_polygons  = 0;
   g_stat_sections  = 0;
-  for (l_bucket = 1; l_bucket <= MAX_BUCKETS; ++l_bucket) g_bucket_head[l_bucket] = 0;
+  g_stat_examined  = 0;
+  g_stat_hidden    = 0;
 
   render_sky(p_box);
   render_collect_blocks(p_furnaces);
@@ -1334,6 +1926,7 @@ void render_world(Draw_Box p_box, Real p_w, Real p_h, Real p_view_bottom, Attrib
   g_box_light = 1.0;
   g_stat_faces = g_face_total;
 
+  render_hide_covered();
   render_draw_faces(p_box);
   render_target_outline(p_box);
 }

@@ -115,6 +115,16 @@ static void register_hooks(){
     grid_clear(g_grid,2);
     printf("[recipe] iron ore smelts into %s\n",item_name(item_smelt_result(ITEM_IRON_ORE)).c_str()); };
   g_calls["block_below_target"]=[]{ int x,y,z; player_target_cell(g_player,x,y,z); printf("[hook] target block %s, selected slot %d holds %s\n",item_name(world_get_block(x,y,z)).c_str(),player_selected(g_player),item_name(player_held_item(g_player,g_inventory)).c_str()); };
+  g_calls["cover"]=[]{ printf("[hook] cover"); int st=getenv("COVER_ALL")?1:20; for(int c=1;c<=g_cover_columns;c+=st){ printf(" "); for(int k=1;k<=g_cover_count[c];k++) printf("%s%.0f..%.0f",k>1?",":"",g_cover_low[(c-1)*COVER_SPANS+k]<-1e29?-1:g_cover_low[(c-1)*COVER_SPANS+k],g_cover_high[(c-1)*COVER_SPANS+k]>1e29?9999:g_cover_high[(c-1)*COVER_SPANS+k]); } printf("\n"); };
+  // A row of plants two blocks ahead (+x) of the player, standing on flat ground
+  g_calls["plant_row"]=[]{ double x,y,z; player_position(g_player,x,y,z); int px=(int)floor(x)+3, py=(int)floor(y), pz=(int)floor(z);
+     int kinds[4]={BLOCK_TALL_GRASS,BLOCK_POPPY,BLOCK_DANDELION,BLOCK_DEAD_BUSH};
+     for(int dz=-3;dz<=4;dz++) for(int dx=-1;dx<=4;dx++){ world_set_block(px+dx,py-1,pz+dz,BLOCK_GRASS); for(int dy=0;dy<4;dy++) world_set_block(px+dx,py+dy,pz+dz,BLOCK_AIR); mesh_mark_dirty(px+dx,py,pz+dz); mesh_mark_dirty(px+dx,py-1,pz+dz); }
+     for(int k=0;k<4;k++){ world_set_block(px,py,pz-1+k,kinds[k]); mesh_mark_dirty(px,py,pz-1+k); }
+     world_set_block(px+2,py,pz,BLOCK_TORCH); mesh_mark_dirty(px+2,py,pz);
+     printf("[hook] plants at x %d, z %d..%d, y %d; torch at x %d\n",px,pz-1,pz+2,py,px+2);
+     set_look(0.12,-0.35); };
+[]{ printf("[hook] render: %s\n",render_stats_text().c_str()); };
   g_calls["frame_stats"]=[]{ printf("[hook] frame stats: %s\n",hud_frame_stats(g_hud).c_str()); };
   g_calls["give_planks_far"]=[]{ slot_set(g_inventory,20,ITEM_PLANKS,7,0); };
   g_calls["settings"]=[]{ printf("[settings] view %d detail %d plants %d shading %d fov %d mouse %d jump %d hud %d\n",settings_render_distance(g_settings),settings_detail(g_settings),

@@ -17,8 +17,8 @@
 // just the larger patches, distant faces as one average colour.
 // Colours are shaded per face direction and by the light level the
 // mesh stored for the face, and fade into the sky with distance.
-// Plants and dropped non-block items are pictures that always face
-// the camera.
+// Plants are two pictures crossed in an X, fixed in the world;
+// dropped non-block items are pictures that always face the camera.
 //
 // Table functions: everything in this module works on the frame
 // scratch tables below. render_world copies what it needs from the
@@ -28,7 +28,8 @@
 
 #define MAX_DRAW_FACES     20000
 #define MAX_BUCKETS        4096
-#define PLANT_HALF_WIDTH   0.45
+#define PLANT_HALF_WIDTH   0.45    // a plant's crossed pictures reach this far from the cell centre along x and z
+#define PLANT_HEIGHT       0.9
 #define NEAR_PLANE         0.05
 #define GUARD_BAND         3000.0  // screen clipping only past this many pixels
 #define MAX_POLY_POINTS    24
@@ -41,6 +42,21 @@
 #define MAJOR_RECT_AREA    3       // patches of fewer pixels are left out at DETAIL_MAJOR
 #define VERTICAL_RANGE     40      // sections further than this above or below the eye are skipped
 #define NUM_STARS          70
+#define OUTLINE_PIECES     8       // each edge of the target's outline is tested for being hidden in this many pieces
+#define OUTLINE_NUDGE      0.03    // a piece's test point is moved this far towards the eye
+
+// Hidden face removal: before painting, the queued faces are walked
+// near to far, and vertical coverage lines every COVER_COLUMN_PIXELS
+// across the screen remember which stretches of them (up to
+// COVER_SPANS separate spans each) opaque faces already cover. A
+// face that falls entirely inside covered spans of the lines it
+// spans would be painted over, so it is not drawn at all.
+#define COVER_COLUMN_PIXELS 2.0   // gap between coverage lines
+#define MAX_COVER_COLUMNS   1600  // enough for a view 3200 pixels wide
+#define COVER_SPANS         6     // separate covered spans a line can hold
+#define COVER_SPAN_SLOTS    9600  // MAX_COVER_COLUMNS * COVER_SPANS
+#define COVER_JOIN          0.5   // a face this close to the covered part extends it (pixels)
+#define COVER_MARGIN        1.0   // a face must be this far inside the covered part to be dropped
 
 /*Global variables*/ {
   // Copied from the settings and the player at the start of a frame
@@ -117,8 +133,26 @@
   Integer g_df_detail [MAX_DRAW_FACES];
   Integer g_df_front  [MAX_DRAW_FACES];
   Integer g_df_crack  [MAX_DRAW_FACES];
+  Real    g_df_u0     [MAX_DRAW_FACES];   // part of the texture drawn across the face
+  Real    g_df_u1     [MAX_DRAW_FACES];   // (0..1 except for half pictures)
   Integer g_df_next   [MAX_DRAW_FACES];
+  Integer g_df_opaque [MAX_DRAW_FACES];   // hides what is behind it (an opaque block face)
+  Integer g_df_hidden [MAX_DRAW_FACES];   // covered by nearer faces: not drawn
   Integer g_bucket_head[MAX_BUCKETS];
+  Integer g_bucket_low  = 1;              // range of buckets used this frame
+  Integer g_bucket_high = 0;
+  Integer g_bucket_order[MAX_DRAW_FACES]; // one bucket's faces, while walking it backwards
+
+  // Coverage (see COVER_*): line n is at screen x
+  // (n - 1) * COVER_COLUMN_PIXELS and has g_cover_count[n] covered
+  // spans, bottom first; span k runs from screen y g_cover_low to
+  // g_cover_high at slot (n - 1) * COVER_SPANS + k
+  Integer g_cover_columns = 0;
+  Integer g_cover_count[MAX_COVER_COLUMNS];
+  Real    g_cover_low  [COVER_SPAN_SLOTS];
+  Real    g_cover_high [COVER_SPAN_SLOTS];
+  Real    g_cover_x[4];                   // the face being checked, on screen
+  Real    g_cover_y[4];
 
   // The face being drawn
   Real    g_q_c0x = 0.0;
@@ -153,16 +187,28 @@
   Real    g_temp_y[MAX_POLY_POINTS];
   Real    g_temp_z[MAX_POLY_POINTS];
 
+  // Star directions and brightness (set by render_init)
+  Real    g_star_x    [NUM_STARS];
+  Real    g_star_y    [NUM_STARS];
+  Real    g_star_z    [NUM_STARS];
+  Real    g_star_level[NUM_STARS];
+
   // Crack pattern drawn over a block being broken (face u, v)
   Real    g_crack_u0[8];
   Real    g_crack_v0[8];
   Real    g_crack_u1[8];
   Real    g_crack_v1[8];
 
+  // A plant's four half pictures, while queueing them
+  Real    g_fin_dist[4];
+  Integer g_fin_done[4];
+
   // Statistics for the frame
   Integer g_stat_faces    = 0;
   Integer g_stat_polygons = 0;
   Integer g_stat_sections = 0;
+  Integer g_stat_examined = 0;   // cached faces looked at
+  Integer g_stat_hidden   = 0;   // queued faces dropped as covered
 }
 
 void    render_init            ();
@@ -181,6 +227,8 @@ void    render_add_block_face  (Attributes &p_furnaces, Integer p_x, Integer p_y
                                 Real p_distance_squared, Integer p_crack, Real p_light);
 void    render_add_sprite      (Real p_rel_x, Real p_rel_y, Real p_rel_z, Real p_half_width, Real p_height, Integer p_tex,
                                 Real p_shade, Real p_distance_squared);
+void    render_add_plant       (Integer p_x, Integer p_y, Integer p_z, Integer p_tex, Real p_light);
+Integer render_layer_count     (Real p_limit);
 void    render_collect_blocks  (Attributes &p_furnaces);
 void    render_add_box         (Real p_centre_x, Real p_centre_y, Real p_centre_z, Real p_yaw, Real p_half_f, Real p_half_y, Real p_half_s,
                                 Integer p_tex_side, Integer p_tex_top, Integer p_tex_front, Integer p_tex_back, Real p_tint);
@@ -189,8 +237,16 @@ void    render_collect_drops   (Attributes &p_drops);
 Integer render_clip_and_draw   (Draw_Box p_box);
 void    render_quad            (Draw_Box p_box, Real p_u0, Real p_v0, Real p_u1, Real p_v1);
 void    render_draw_face       (Draw_Box p_box, Integer p_face);
+void    render_cover_reset     ();
+void    render_cover_extent    (Real p_x, Real &p_low, Real &p_high);
+void    render_cover_add       (Integer p_line, Real p_low, Real p_high);
+void    render_cover_corners   (Integer p_face);
+void    render_cover_face      (Integer p_face);
+void    render_hide_covered    ();
 void    render_draw_faces      (Draw_Box p_box);
 void    render_sky             (Draw_Box p_box);
+Integer render_point_visible   (Real p_x, Real p_y, Real p_z, Integer p_skip_x, Integer p_skip_y, Integer p_skip_z);
+void    render_world_line      (Draw_Box p_box, Real p_x0, Real p_y0, Real p_z0, Real p_x1, Real p_y1, Real p_z1);
 void    render_target_outline  (Draw_Box p_box);
 void    render_view_from       (Attributes &p_player, Attributes &p_settings, Real p_time_of_day, Real p_now);
 Text    render_stats_text      ();

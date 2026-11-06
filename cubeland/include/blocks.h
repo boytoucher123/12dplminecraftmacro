@@ -29,8 +29,8 @@
 #define BLOCK_CACTUS          17
 #define BLOCK_COAL_ORE        18
 #define BLOCK_GRAVEL          19
-#define BLOCK_TALL_GRASS      20   // plants: drawn as one picture that
-#define BLOCK_POPPY           21   // faces the camera, nothing collides
+#define BLOCK_TALL_GRASS      20   // plants: drawn as two pictures crossed
+#define BLOCK_POPPY           21   // in an X, nothing collides
 #define BLOCK_DANDELION       22   // with them and placing a block
 #define BLOCK_DEAD_BUSH       23   // replaces them
 #define BLOCK_IRON_ORE        24

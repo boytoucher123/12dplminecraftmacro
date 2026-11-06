@@ -91,7 +91,8 @@ a detailed image survive. Interlaced PNGs aren't supported.
   Near faces show all 16 x 16 pixels; at the **High** texture detail
   setting they do from further away too.
 - **Plants:** grass tufts, poppies and dandelions in meadows, dead bushes
-  in deserts. They are pictures that turn to face you; you walk through
+  in deserts. Each is two pictures crossed in an X, like the block game's
+  plants, so they look the same from every side; you walk through
   them, break them with one hit, and placing a block replaces them.
 - **Terrain:** generated from the seed. Rolling hills with the odd steep
   area, forests with open clearings between them, sandy deserts with

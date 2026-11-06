@@ -91,7 +91,7 @@ void mesh_build_section(Integer p_sx, Integer p_sy, Integer p_sz)
     if (mesh_section_buried(p_sx, p_sy, p_sz)) {
       g_section_count[l_section] = 0;
       g_section_state[l_section] = SECTION_BUILT;
-      mesh_group_faces(l_section);
+      mesh_group_faces(l_section, l_x0, l_y0, l_z0);
       return;
     }
   }
@@ -115,6 +115,7 @@ void mesh_build_section(Integer p_sx, Integer p_sy, Integer p_sz)
           g_face_z    [l_start + l_count] = l_z;
           g_face_dir  [l_start + l_count] = DIR_PLANT;
           g_face_light[l_start + l_count] = mesh_face_light(l_x, l_y, l_z, 0);
+          g_face_block[l_start + l_count] = l_block;
           continue;
         }
 
@@ -155,6 +156,7 @@ void mesh_build_section(Integer p_sx, Integer p_sy, Integer p_sz)
           g_face_z    [l_start + l_count] = l_z;
           g_face_dir  [l_start + l_count] = l_direction + l_flag;
           g_face_light[l_start + l_count] = mesh_face_light(l_x, l_y, l_z, l_direction);
+          g_face_block[l_start + l_count] = l_block;
         }
       }
     }
@@ -162,7 +164,7 @@ void mesh_build_section(Integer p_sx, Integer p_sy, Integer p_sz)
 
   g_section_count[l_section] = l_count;
   g_section_state[l_section] = SECTION_BUILT;
-  mesh_group_faces(l_section);
+  mesh_group_faces(l_section, l_x0, l_y0, l_z0);
 }
 
 Integer mesh_face_light(Integer p_x, Integer p_y, Integer p_z, Integer p_direction)
@@ -226,54 +228,77 @@ Integer mesh_face_light(Integer p_x, Integer p_y, Integer p_z, Integer p_directi
   return l_light + FACE_TORCH_SCALE * l_torch;
 }
 
-void mesh_group_faces(Integer p_section)
+Integer mesh_layer_key(Integer p_direction, Integer p_local_x, Integer p_local_y, Integer p_local_z)
 // ----------------------------------------------------------------
-// Sort a section's faces by direction (a counting sort) and record
-// where each direction's group starts. The renderer can then skip a
-// whole group when the camera is behind every face in it.
+// Sort key 1..LAYER_KEYS of a face: its direction group, then its
+// layer (the cell's 0..15 position in the section along the face's
+// axis). direction may carry DIR_WET_FLAG.
 // ----------------------------------------------------------------
 {
-  Integer l_start     = (p_section - 1) * SECTION_FACE_CAP;
-  Integer l_count     = g_section_count[p_section];
-  Integer l_group     = (p_section - 1) * NUM_FACE_GROUPS;
-  Integer l_entry     = 0;
-  Integer l_direction = 0;
-  Integer l_position  = 0;
-  Integer l_running   = 0;
+  Integer l_group = p_direction;
+  Integer l_layer = 0;
 
-  for (l_direction = 1; l_direction <= NUM_FACE_GROUPS; ++l_direction) g_section_dir_count[l_group + l_direction] = 0;
+  if (l_group > DIR_WET_FLAG) l_group = l_group - DIR_WET_FLAG;
+  if (l_group == DIR_PX || l_group == DIR_NX) l_layer = p_local_x;
+  if (l_group == DIR_PY || l_group == DIR_NY) l_layer = p_local_y;
+  if (l_group == DIR_PZ || l_group == DIR_NZ) l_layer = p_local_z;
+
+  return (l_group - 1) * SECTION_SIZE + l_layer + 1;
+}
+
+void mesh_group_faces(Integer p_section, Integer p_x0, Integer p_y0, Integer p_z0)
+// ----------------------------------------------------------------
+// Sort a section (whose lowest cell is x0, y0, z0) by layer key (a
+// counting sort) and record where each key starts. The renderer
+// then takes, for each direction, only the layers whose faces point
+// towards the eye, instead of testing every face.
+// ----------------------------------------------------------------
+{
+  Integer l_start    = (p_section - 1) * SECTION_FACE_CAP;
+  Integer l_table    = (p_section - 1) * SECTION_LAYER_SLOTS;
+  Integer l_count    = g_section_count[p_section];
+  Integer l_entry    = 0;
+  Integer l_key      = 0;
+  Integer l_position = 0;
+  Integer l_running  = 0;
+
+  for (l_key = 1; l_key <= SECTION_LAYER_SLOTS; ++l_key) g_sort_next[l_key] = 0;
 
   for (l_entry = 1; l_entry <= l_count; ++l_entry) {
-    l_direction = g_face_dir[l_start + l_entry];
-    if (l_direction > DIR_WET_FLAG) l_direction = l_direction - DIR_WET_FLAG;
-    g_section_dir_count[l_group + l_direction] = g_section_dir_count[l_group + l_direction] + 1;
+    l_key = mesh_layer_key(g_face_dir[l_start + l_entry], g_face_x[l_start + l_entry] - p_x0,
+                           g_face_y[l_start + l_entry] - p_y0, g_face_z[l_start + l_entry] - p_z0);
+    g_sort_key[l_entry] = l_key;
+    g_sort_next[l_key]  = g_sort_next[l_key] + 1;
   }
 
-  l_running = 0;
-  for (l_direction = 1; l_direction <= NUM_FACE_GROUPS; ++l_direction) {
-    g_section_dir_start[l_group + l_direction] = l_running + 1;
-    g_sort_next[l_direction] = l_running + 1;
-    l_running = l_running + g_section_dir_count[l_group + l_direction];
+  // Counts to starting entries
+  l_running = 1;
+  for (l_key = 1; l_key <= LAYER_KEYS; ++l_key) {
+    g_section_layer_start[l_table + l_key] = l_running;
+    l_running          = l_running + g_sort_next[l_key];
+    g_sort_next[l_key] = g_section_layer_start[l_table + l_key];
   }
+  g_section_layer_start[l_table + SECTION_LAYER_SLOTS] = l_running;
 
   for (l_entry = 1; l_entry <= l_count; ++l_entry) {
-    l_direction = g_face_dir[l_start + l_entry];
-    if (l_direction > DIR_WET_FLAG) l_direction = l_direction - DIR_WET_FLAG;
-    l_position = g_sort_next[l_direction];
-    g_sort_next[l_direction] = l_position + 1;
-    g_sort_x  [l_position] = g_face_x  [l_start + l_entry];
-    g_sort_y  [l_position] = g_face_y  [l_start + l_entry];
-    g_sort_z  [l_position] = g_face_z  [l_start + l_entry];
-    g_sort_dir[l_position] = g_face_dir[l_start + l_entry];
+    l_key      = g_sort_key[l_entry];
+    l_position = g_sort_next[l_key];
+    g_sort_next[l_key] = l_position + 1;
+    g_sort_x    [l_position] = g_face_x    [l_start + l_entry];
+    g_sort_y    [l_position] = g_face_y    [l_start + l_entry];
+    g_sort_z    [l_position] = g_face_z    [l_start + l_entry];
+    g_sort_dir  [l_position] = g_face_dir  [l_start + l_entry];
     g_sort_light[l_position] = g_face_light[l_start + l_entry];
+    g_sort_block[l_position] = g_face_block[l_start + l_entry];
   }
 
   for (l_entry = 1; l_entry <= l_count; ++l_entry) {
-    g_face_x  [l_start + l_entry] = g_sort_x  [l_entry];
-    g_face_y  [l_start + l_entry] = g_sort_y  [l_entry];
-    g_face_z  [l_start + l_entry] = g_sort_z  [l_entry];
-    g_face_dir[l_start + l_entry] = g_sort_dir[l_entry];
+    g_face_x    [l_start + l_entry] = g_sort_x    [l_entry];
+    g_face_y    [l_start + l_entry] = g_sort_y    [l_entry];
+    g_face_z    [l_start + l_entry] = g_sort_z    [l_entry];
+    g_face_dir  [l_start + l_entry] = g_sort_dir  [l_entry];
     g_face_light[l_start + l_entry] = g_sort_light[l_entry];
+    g_face_block[l_start + l_entry] = g_sort_block[l_entry];
   }
 }
 
