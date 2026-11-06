@@ -1,3 +1,9 @@
+@TODO this file should be cleared out, most things should go if they were covered in either
+"12dplminecraftmacro\cubeland\resources\12dPL Differences from C Language.md" or
+"12dplminecraftmacro\cubeland\resources\12dPL Style Guide.md"
+what's left over (like the harness explanation) is suited for a "READ me Claude to get your bearings on cubeland.md", obviously rename to suit
+don't modify my ones
+
 # Cubeland coding rules
 
 These rules apply to every file in `cubeland/`. They come on top of the
@@ -188,8 +194,6 @@ other:
 - A variable declared in a `for` header lives on after the loop. Declare
   loop variables at the top of the function and never declare a name twice
   in one function.
-- Don't use `+=` and friends, `?:`, or `"literal" + "literal"`. Assign a
-  macro string to a `Text` variable before joining it to another literal.
 - Convert Reals to Integers by assignment (`Integer i = Floor(x);`) or with
   `floor_integer()`. Don't pass a Real where an Integer parameter is
   expected.
